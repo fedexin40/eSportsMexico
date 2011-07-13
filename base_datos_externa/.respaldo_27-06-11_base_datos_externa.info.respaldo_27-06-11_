@@ -1,0 +1,6 @@
+; $Id$
+
+dependencies[ ] = date
+name = Administrar base de datos externa
+description = "Administra información en alguna base de datos externa"
+core = 6.x

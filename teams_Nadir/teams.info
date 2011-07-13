@@ -1,0 +1,7 @@
+; $Id$
+
+dependencies[ ] = base_datos_externa
+name = Inscripción de equipos
+description = "Facilita la inscripción de equipos con jugadores en una liga electrónica de deportes en línea"
+core = 6.x
+package = eSM

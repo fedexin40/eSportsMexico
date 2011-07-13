@@ -1,0 +1,23 @@
+/**
+ *  Hoja de estilos del match
+ */
+
+#Match {
+  border-collapse:collapse;
+  text-align:left;
+}
+
+#Match tr {
+  border: none;
+}
+
+#Match td {
+  vertical-align: top;
+  border: none;
+}
+
+#Match td.header {
+  background: #cccccc;
+  text-align:center;
+  font-weight:bold;
+}

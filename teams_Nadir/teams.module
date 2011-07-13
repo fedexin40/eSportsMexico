@@ -1,0 +1,814 @@
+<?php
+// $Id: leaguesite.module,v 1.21 2010/09/21 17:03:04 alun Exp $
+
+
+include ("db_functions.php");
+
+	/**
+	* Display help information for the module
+	* @param path - which path of the site we are displaying help
+	* @param arg - array that holds the current path as would be returned from arg() function
+	* @return help = text for the path
+	*/
+	
+	// Define los estados para la variable de agentes libres
+		 define('AGENTE_LIBRE', 1);
+		 define('NO_AGENTE_LIBRE', 0);
+		 
+	// Define los estados para las solicitudes de los jugadores
+			define('INVITADO', 1);
+			define('SOLICITA', 2);
+			define('ACEPTADO', 3);
+			define('RECHAZADO', 4);
+		 
+	
+	function teams_help($path, $arg){
+		$output = '';
+		switch($path){
+			case 'admin/help#teams':
+				$output = '<p>'.t("Permite manejar y crear equipos para participare en los ránkings de las modalidades").'</p>';
+				break;
+			case 'admin/content/teams':
+				$output = '<p>'.t('Este módulo permite crear y administrar una serie de equipos para participar en los ránkings de las diferentes modalidades').'</p>';
+				break;
+		}
+		return $output;
+	} //end function leaguesite_help()
+	
+	/**
+	* Implementation of hook_perm()
+	* Outlines permissions for this module.
+	* @return array - An array of valid permissions for the leaguesite module
+	*/
+	function teams_perm(){
+		return array('create team', 'edit own team', 'delete own team', 'view team');
+	}//end function leaguesite_perm()
+	/**
+	 * Implementation of hook_menu()
+	 * Admin menu link for the module
+	 * @return unknown_type
+	 */
+	function teams_menu(){
+		$items [ 'inscripcion/%' ] = array (
+			'title' => 'Inscripción',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('inscripcion'),
+			'access arguments' => array ('create team'),
+		);
+	 $items [ 'inscripcion/multijugador/%' ] = array (
+			'title' => 'Inscripción',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('teams_inscripcion'),
+			'access arguments' => array ('create team'),
+			'type' => MENU_CALLBACK,
+		);
+		$items['node/%node/solicitar'] = array(
+			'title' => 'Administrar Jugadores',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('team_soliciud',),
+			'access arguments' => array ('create team'),
+			'type' => MENU_CALLBACK,
+		);
+		$items['node/%node/administrar'] = array(
+			'title' => 'Administrar Jugadores',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('team_administrar',),
+			'access callback' => 'team_admin_access',
+			'access arguments' => array(1),
+			'type' => MENU_LOCAL_TASK,
+		);
+		$items['node/%node/administrar/activos'] = array(
+			'title' => 'Administrar Jugadores',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('team_administrar_activos',),
+			'access callback' => 'team_admin_access',
+			'access arguments' => array(1),
+			'type' => MENU_DEFAULT_LOCAL_TASK,
+		);
+		$items['node/%node/administrar/solicitudes'] = array(
+			'title' => 'Administrar Jugadores',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('team_administrar_solicitudes',),
+			'access callback' => 'team_admin_access',
+			'access arguments' => array(1),
+			'type' => MENU_CALLBACK,
+		);
+		$items['node/%node/administrar/invitados'] = array(
+			'title' => 'Administrar Jugadores',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('team_administrar_invitados',),
+			'access callback' => 'team_admin_access',
+			'access arguments' => array(1),
+			'type' => MENU_CALLBACK,
+		);
+	 $items [ 'libres/%' ] = array (
+			'title' => 'Agente Libre',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => 'agente_libre',
+			'type' => MENU_CALLBACK,
+	 );
+	 $items [ 'libres/%/lista' ] = array (
+			'title' => 'Agente Libre',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => 'agente_libre_listar',
+			'type' => MENU_CALLBACK,
+	 );
+		return $items;
+	}
+	
+	/**
+	 * Implementation of hook_node_info()
+	 */
+	function teams_node_info() {
+		return array(
+			'teams' => array(
+				'name' => t('Equipo'),
+				'module' => 'teams',
+				'description' => t("Un equipo para participar en el ránking de una modalidad."),
+			)
+		);
+	} 
+	
+	/**
+	 * Implementation of hook_access()
+	 */
+	function teams_access($op, $node, $account){
+			if($op == 'view'){
+			return user_access('view team', $account);
+		}
+		
+		if ($op == 'create') {
+			// Only users with permission to do so may create this node type.
+			return user_access('create team', $account);
+		}
+	
+		// Users who create a node may edit or delete it later, assuming they have the
+		// necessary permissions.
+		if ($op == 'update' || $op == 'delete') {
+			if (user_access('edit own team', $account) && ($account->uid == $node->uid)) {
+				return TRUE;
+			}
+		}
+	} 
+	
+	/**
+	 * Implementation of hook_form()
+	 * @param $node
+	 * @param $form_state
+	 * @return unknown_type
+	 */
+	function teams_form(&$node, $form_state) {
+		
+		$form['id_Modalidad_Juego_Temporada'] = array (
+					'#type' => 'hidden',
+					'#value' => arg(3),
+			);
+		
+		$type = node_get_types('type', $node);
+		if(!isset($node->archive)){
+			$node->archive = 0;
+		}
+		
+		// We need to define form elements for the node's title and body.
+		$form['title'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Team Name'),
+			'#required' => TRUE,
+			'#default_value' => $node->title,
+			'#weight' => -6,
+		);
+		
+		$form['abreviacion'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Abreviacion'),
+			'#description' => t('Enter the short version of the team name, if required'),
+			'#required' => FALSE,	
+			//'#default_value' => $node->abreviacion,
+			'#weight' => -5,
+		);
+		// We want the body and filter elements to be adjacent. We could try doing
+		// this by setting their weights, but another module might add elements to the
+		// form with the same weights and end up between ours. By putting them into a
+		// sub-array together, we're able force them to be rendered together.
+		$form['body_filter']['body'] = array(
+			'#type' => 'textarea',
+			'#title' => check_plain( t('Description of Team') ),
+			'#default_value' => $node->body,
+			'#required' => FALSE,
+			'#description' => t('You can enter some information like the history of the team here, and the current members.'),
+		);
+		$form['body_filter']['filter'] = filter_form($node->format);
+		
+		return $form;
+	}
+	/**
+	 * Implementation of hook_insert()
+	 * @param $node - the node which is being inserted
+	 * This is for when someone creates a node, we save the abbreviation of the team.
+	 */
+	function teams_insert($node){
+		global $user;
+		db_set_active ( 'eSM' );
+		
+		db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
+		
+		db_query("INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro) VALUES ( %d, %d, %d );", $node->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ) );
+		
+		/*$jugador = db_fetch_array(db_query('SELECT {id_Jugador} FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND {uid} = %d', $node->id_Modalidad_Juego_Temporada, $user->uid));
+		db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado) VALUES ( %d, %d, %d)', $node->nid, $jugador[ 'id_Jugador' ], ACEPTADO);
+		*/
+		db_set_active ( 'default' );
+	}
+	
+	/**
+	 * Función para verificar que el usuario no esté dado de alta como jugador de otro equipo antes de crear el suyo propio.
+	 */
+	function teams_validate($node, $form) {
+			global $user;
+			
+			db_set_active('eSM');
+					$jugador = db_fetch_array(db_query('SELECT {Estado} FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND {uid} = %d', $form['id_Modalidad_Juego_Temporada'], $user->uid));
+			db_set_active('default');
+			
+			if ($jugador['Estado'] != NULL && $jugador['Estado'] != AGENTE_LIBRE) {
+					dpm ('No puedes crear un equipo para esta modalidad porque ya perteneces a otro.', 'error');
+					drupal_goto('user' . $user->uid);
+			}
+	}
+	
+	
+	/**
+	 * Implementación del hook_node_load()
+	 */
+	function teams_load($node){
+			
+		db_set_active ( 'eSM' );
+		
+			
+		$team = db_query('SELECT {Abreviacion} FROM {Equipo} WHERE {nid_Equipo} = %d', $node->nid );
+		$team_i = db_query('SELECT * FROM {Integrantes_Equipo} WHERE {nid_Equipo} = %d AND {Estado} = %d', $node->nid, ACEPTADO );
+		$team_p = db_query('SELECT * FROM {Puntuacion} WHERE {nid_Equipo} = %d', $node->nid ); 
+		$team = db_fetch_array($team);
+		
+		db_set_active ( 'default' );
+	
+	
+		$node->abreviacion = $team['Abreviacion'];
+		
+		//Cuenta cuantos integrantes tiene el equipo y lo agrega al objeto nodo
+		$integrantes = 0;
+		while ($jugador = db_fetch_object($team_i)) {
+			$integrantes++;
+		}
+		$node->Numero_Integrantes = $integrantes;
+		/* Pendiente agregar al objeto $node otros objetos que contengan el ranking del equipo y la cantidad de jugadores
+		while( $team_i = db_fetch_object($team_i) ) {
+			$jugador_result = db_query('SELECT *, FROM {Jugadores} WHERE {id_Jugador} = %d', $team_i->id_Jugador );
+			$jugador = db_fetch_object( $jugador_result );
+			
+			$node->jugador_arreglo = $jugador;
+		}
+		
+		while( $team_p = db_fetch_object($team_p) ) {
+			$jugador_result = db_query('SELECT * FROM {Jugadores} WHERE {id_Jugador} = %d', $pu );
+			$jugador = db_fetch_object( $jugador_result );
+			
+			$node->jugador_arreglo = $jugador;
+		}*/
+	
+	}
+	
+	/**
+	 * Implementación del hook_block()
+	 */
+	function teams_block( $op = 'list', $delta = 0 ){
+		
+		$tid = arg( 2 );
+		
+		
+		switch($op){
+			case 'list':
+				$block = array();
+				$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
+				return $block;
+				break;
+			case 'view':
+				
+				
+				switch( $delta ){
+					case 0:
+						$block = array( );
+						
+						if
+						(
+							(
+								is_numeric( $tid )
+									&&
+								( arg( 1 ) == 'term' )
+							)
+								&&
+							(
+								term_is_active( $tid )								
+							)
+						) {
+							
+							//dpm( variable_get( arg( 2 ) ) );
+							
+							$block[ 'subject' ] = 'Equipos';
+							$block[ 'content' ] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+						}
+						break;
+				}
+				return $block;
+				break;
+			case 'save':
+				
+				break;
+			case 'configure':
+				
+				break;
+		}
+	}
+	/**
+	 * forma de inscripción para modalidades
+	 */
+	function inscripcion( ) {
+			$tid = arg(1);
+					
+			if (!($modalidad = term_is_active($tid))) {
+				drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );				
+				
+				/*$form[ 'Estado_Temporadas' ][ 'Listar_Temporada_Activa' ][ 'editar' ] = array (
+					'#value' => l( t( 'Activar' ), 'admin/base_datos_externa/modalidades_juegos/'.$modalidad->id_Modalidad.'/editar' ),
+				);*/
+				drupal_goto ('taxonomy/term/'.$tid);
+			}
+			else{
+				if ($modalidad->Maximo_Jugadores == 1){
+					drupal_goto('node/add/team/'. $modalidad->id_Modalidad_Juego_Temporada);
+				}
+				else {
+					drupal_goto('inscripcion/multijugador/'. $modalidad->id_Modalidad_Juego_Temporada);
+				}
+			}
+			
+	}
+	
+	/**
+	 *  Función para verificar si un término tiene una modalidad activa en la temporada actual
+	 *  Regresa un objeto con la modalidad si está activa o NULL si no está activa
+	 */
+	function term_is_active( $tid ) {
+		$modalidad  = NULL;
+		
+		db_set_active ('eSM');
+		$temporada_activa = db_fetch_object( db_query('SELECT {id_Temporada} FROM {Temporada} WHERE {Estado} = %d', 1 ) );
+		db_set_active ('default');
+
+		//dpm( $temporada_activa );
+
+		db_set_active ('eSM');
+		$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {id_Modalidad_Juego_Temporada} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
+		db_set_active ('default');
+		
+		
+		while ( $result = db_fetch_object($modalidades_activas) ) {
+			
+			dpm( $result );
+			if ($result->tid == $tid) {
+					$modalidad = $result;
+					break;
+			}
+		}
+		
+		drupal_set_message( $modalidad );
+		
+		return $modalidad;
+	}
+	/**
+	 * Función para obtener los datos de una modalidad
+	 * teniendo como base el id_Modalidad_Juego_Temporada
+	 */
+	function get_modalidad( $id_Modalidad_Juego_Temporada ){
+			db_set_active('eSM');
+			$modalidad = db_fetch_object(db_query('SELECT * FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON m.{id_Modalidad_Juego} = t.{id_Modalidad_Juego} WHERE t.{id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
+			db_set_active('default');
+			return $modalidad;
+	}
+	
+	
+	/**
+	 * forma para presentar opciones de inscripción a las modalidades por equipos
+	 */
+	function teams_inscripcion () {
+			$id_Modalidad_Juego_Temporada = arg(2);
+			$modalidad = get_modalidad($id_Modalidad_Juego_Temporada);
+			
+			db_set_active('eSM');
+					$teams = db_query('SELECT * FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada);
+			db_set_active('default');
+			
+			$form[ 'equipos_disponibles' ] = array (
+					'#title' => 'Equipos disponibles',
+					'#type' => 'fieldset',
+			);
+			
+			$count = 0;
+			//Primero almacenaremos todos los equipos en nodos
+			while ($team = db_fetch_object($teams)) {
+					$team = node_load(array('nid' => $team->nid_Equipo) );
+					if ($team->Numero_Integrantes < $modalidad->Maximo_Jugadores) { //Presentaremos una forma para cada equipo disponible
+							$form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
+									'#value' => $team->title,
+							);
+							$form[ 'equipos_disponibles' ][ $team->title ][ 'link' ] = array (
+									'#value' => l( t( 'Unirme' ), 'node/'.$team->nid.'/solicitar' ),
+							);
+					}
+					$count++;
+			}
+			
+			if( $count == 0 ) {
+					dpm( "No hay equipos disponibles" );
+			}
+			
+			$form[ 'otras_opciones' ] = array(
+					'#title' => 'Otras opciones',
+					'#type' => 'fieldset',
+			);
+			
+			$form[ 'otras_opciones' ][ 'crear_equipo' ] = array (
+					'#value' => l( t( 'Crear equipo' ), 'node/add/teams/'.$id_Modalidad_Juego_Temporada ),
+			);
+			
+			$form[ 'otras_opciones' ][ 'agente_libre' ] = array (
+					'#value' => l( t( 'Ser agente libre' ), 'libres/'.$id_Modalidad_Juego_Temporada ),
+			);
+	
+			return $form;
+	}
+	
+	
+	/**
+	 * Forma para adquirir características de agente libre en la temporada
+	 */
+	function agente_libre() {
+			// Creating the date/time element starts here
+			
+			// Provide a default date in the format YYYY-MM-DD HH:MM:SS.
+			$date = '2011-12-3';
+	
+			// Provide a format using regular PHP format parts (see documentation on php.net).
+			// If you're using a date_select, the format will control the order of the date parts in the selector,
+			// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
+			$format = 'Y-m-d';
+			
+			
+			$form[ 'presentacion' ] = array (
+				'#type' => 'textarea',
+				'#title' => check_plain( t('Presentación') ),
+				'#default_value' => $node->body,
+				'#required' => TRUE,
+				'#description' => 'Presentación breve: estilo de juego, motivaciones, etc.',
+			);
+	
+			$form[ 'disponibilidad' ] = array (
+					'#title' => 'Disponibilidad',
+					'#type' => 'fieldset',
+			);
+			
+			$disponibilidad = array ( );
+			
+			
+			while ( $jugador = db_fetch_object( db_query( "SELECT { id_Jugador } FROM { Jugador } WHERE Estado = %d", !$AGENTE_LIBRE ) ) );
+			
+			$disponibilidad = convierte_de_timestamp( $disponibilidad = db_fetch_array( db_query( "Select ", AGENTE_LIBRE ) ) );
+	
+			
+			
+			$form[ 'disponibilidad' ][ '' ] = array (
+					'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+					'#disabled' => 'TRUE',
+					'#title' => 'Fecha de inicio',
+					'#default_value' => date( Y-m-d ),
+					'#date_format' => $format,
+					'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+					'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+					'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+					'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+					'#size' => 17,
+					'#maxlength' => 17,
+	
+			);
+			
+			
+		}
+		
+	/**
+	 * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
+	 */
+	function team_soliciud($form_state) {
+			//Pasando las variables necesarias para procesar después de confirmar la acción
+			$form['nid_Equipo'] = array (
+					'#type' => 'valule',
+					'#value' => arg(1),  //Agrega a la forma el nid del equipo que obtenemos de la barra de dirección
+			);
+			//Definiendo a donde se va a redirigir la forma
+			//$form['#redirect'] = 'user';
+	
+			return confirm_form($form,
+				t('Quieres solicitar inscribirte a este equipo?'), //message title
+				isset($_GET['destination']) ? $_GET['destination'] : 'user', //redirect if cancelled
+				t(''), //message description
+				t('Si'), //confirm button text
+				t('No') //cancel button text
+			);
+	}
+	
+	/**
+	* Submit handler for previus confirm form
+	*/
+	function team_solicitud_submit($form, &$form_state) {
+			//verify that the form was confirmed
+		if ($form_state['values']['confirm']) {
+			//Do something here
+			global $user;
+			
+			//Revisa si el jugador ya está registrado en la tabla de jugadores activos para esta temporada, sino lo agrega
+			$team = node_load($form_state['values']['nid_Equipo']);
+			db_set_active('eSM');
+					$jugador = db_fetch_object(db_query('SELECT * FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND uid = %d', $team->id_Modalidad_Juego_Temporada, $user->uid));
+			db_set_active('default');
+			
+			if ( is_null($jugador) ) { //El jugador no se había registrado antes, crear un id de jugador y cargarlo en el objeto jugador
+					db_set_active('eSM');
+							db_query('INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro) VALUES (%d, %d, %d)', $team->id_Modalidad_Juego_Temporada, $user->uid, convierte_a_timestamp( date( Y-m-d )) );
+							$jugador = db_fetch_object(db_query('SELECT * FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND uid = %d', $team->id_Modalidad_Juego_Temporada, $user->uid));
+					db_set_active('default');
+			}
+			
+			//Insertar el registro de solicitud en la base de datos y actualizar el estado del jugador
+			db_set_active('eSM');
+					db_query('INSERT INTO {Integrantes_Equipos} (nid_Equipo, id_Jugador, Estado) VALUES (%d, %d, %d)', $team->nid, $jugador->id_Jugador, SOLICITA);
+			db_set_active('default');
+			
+			//set a message
+			drupal_set_message('¡Tu solicitud ha sido enviada con éxito!');
+		}
+	
+	}
+	/**
+	* Validate handler for previus confirm form
+	*/
+	function team_solicitud_validate($form, &$form_state) {
+			//verify that the form was confirmed
+		if ($form_state['values']['confirm']) {
+			//Verifica que el usuario no esté activo en otro equipo
+			global $user;
+			db_set_active('eSM');
+					$equipo_jugador = db_fetch_object(db_query('SELECT * FROM {Integrantes_Equipo} AS ie INNER JOIN {Jugador} AS j ON ie.{id_Jugador} = j.{id_Jugador} WHERE j.{uid} = %d AND ie.{Estado} = %d', $user->uid, ACEPTADO));
+			db_set_active('default');
+			
+			if ( !is_null($equipo_jugador) ){
+					//El jugador ya está activo en un equipo. Salir
+					dpm('No te puedes unir a este equipo porque ya estás activo en otro euipo.', 'error');
+					drupal_goto('user');
+			}
+		}
+	}
+	
+	/**
+	 * Función para verificar si el usuario tiene permiso de administrar los jugadores de un equipo.
+	 */
+	function team_admin_access($node){
+			global $user;
+			
+			if ( node_access('edit own team', $node) && ($node->uid == $user->uid))
+					return TRUE;
+	}
+	
+	/**
+	 * Función para administrar las invitaciones y jugadores de un equipo
+	 */
+	function team_administrar_activos() {
+			$equipo = node_load(arg(1));  //carga el objeto nodo o equipo
+			
+			db_set_active('eSM');  //Carga todos los jugadores activos en el equipo.
+					$jugadores = db_query('SELECT * FROM {Jugador} AS j INNER JOIN {Integrantes_Equipo} AS ie ON j.{nid_Equipo} = ie.{nid_Equipo} WHERE ie.{nid_Equipo} = %d AND ie.{Estado} = %d', $equipo->nid, ACEPTADO);
+			db_set_active('default');
+			
+			//Despliega los jugadores 
+			while ($jugador = db_fetch_object($jugadores)) {
+					$account = user_load(array('uid' => $jugador->uid));
+					$form[$jugador->uid]['nombre'] = array (
+							'#value' => $account->name,
+					);
+					$form[$jugador->uid]['check'] = array (
+							'#type' => 'checkbox',
+					);
+			}
+			$form['submit'] = array (
+					'#type' => 'submit',
+					'#value' => t('Expulsar Jugadores Seleccionados.'),
+			);
+	}
+	/**
+	 * Submit para la la forma de jugadores activos
+	 */
+	function team_administrar_activos_submit($form, $form_state) {
+			
+	}
+	
+	/**
+	 * Función para administrar las invitaciones y jugadores de un equipo
+	 */
+	function team_administrar_solicitudes() {
+			$equipo = node_load(arg(1));  //carga el objeto nodo o equipo
+			
+			db_set_active('eSM');  //Carga todos los jugadores que solicitaron entrar en el equipo.
+					$jugadores = db_query('SELECT * FROM {Jugador} AS j INNER JOIN {Integrantes_Equipo} AS ie ON j.{nid_Equipo} = ie.{nid_Equipo} WHERE ie.{nid_Equipo} = %d AND ie.{Estado} = %d', $equipo->nid, SOLICITA);
+			db_set_active('default');
+			
+			//Despliega los jugadores 
+			while ($jugador = db_fetch_object($jugadores)) {
+					$account = user_load(array('uid' => $jugador->uid));
+					$form[$jugador->uid]['nombre'] = array (
+							'#value' => $account->name,
+					);
+					$form[$jugador->uid]['check'] = array (
+							'#type' => 'checkbox',
+					);
+			}
+			$form['submit'] = array (
+					'#type' => 'submit',
+					'#value' => t('Aceptar Jugadores Seleccionados.'),
+			);
+			
+	}
+	
+	
+	/**
+	 * Función para administrar las invitaciones y jugadores de un equipo
+	 */
+	function team_administrar_invitados() {
+			$equipo = node_load(arg(1));  //carga el objeto nodo o equipo
+			
+			db_set_active('eSM');  //Carga todos los jugadores invitados en el equipo.
+					$jugadores = db_query('SELECT * FROM {Jugador} AS j INNER JOIN {Integrantes_Equipo} AS ie ON j.{nid_Equipo} = ie.{nid_Equipo} WHERE ie.{nid_Equipo} = %d AND ie.{Estado} = %d', $equipo->nid, INVITADO);
+			db_set_active('default');
+			
+			//Despliega los jugadores 
+			while ($jugador = db_fetch_object($jugadores)) {
+					$account = user_load(array('uid' => $jugador->uid));
+					$form[$jugador->uid]['nombre'] = array (
+							'#value' => $account->name,
+					);
+					$form[$jugador->uid]['check'] = array (
+							'#type' => 'checkbox',
+					);
+			}
+	}
+	
+	
+	
+	/**
+	*	Implementación del hook_submit para la inscripción de
+	*	agentes libres
+	*/
+ 
+	function agente_libre_submit ( $form, $form_state ) {
+		
+		
+		$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
+		$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
+		
+		db_set_active( 'eSM' );
+		
+		db_query
+		( 
+			"INSERT INTO { Agente_Libre }
+			( 
+				Descripcion
+			)			
+			VALUES ( '%s' )",
+				$form_state[ 'values' ][ 'title' ]
+		);
+		
+		db_query
+		(
+			"INSERT INTO { Disponibilidad }
+			( %d, %d )
+			SELECT Disponibilidad.id_Agente_Libre, Agente_Libre.id_Agente_Libre,
+			FROM  Jugador WHERE Disponibilidad = Agente_Libre.Agente_Libre",
+				$temporada_inicio, 
+				$temporada_fin
+		);
+		
+		db_set_active( 'default' );
+		
+		drupal_set_message( "El agente fué insertada satisfactoriamente" );
+		drupal_goto( "admin/base_datos_externa/temporadas" );		
+		
+		
+		
+	}
+		
+	/**
+	 *	Función para listar a los agentes libres
+	 */
+	function agente_libre_listar ( ) {
+		
+		$disponibilidad = array ( );
+		
+		
+		db_set_active( 'eSM' );
+		
+		$jugador_consulta = db_query( "SELECT { id_Jugador } FROM { Jugador } WHERE Estado = %d", AGENTE_LIBRE );
+		
+		db_set_active( 'default' );
+		
+		/*while ( $jugador_result = db_fetch_array( $jugador_consulta ) )
+		{
+			$jugador_atributos[ $jugador_result->id_Jugador ] = $jugador_result->id_Jugador;
+		}*/
+		
+		
+		db_set_active( 'eSM' );
+		$agente_libre_consulta = db_query( "SELECT { uid, Fecha_Registro, Estado, Descripcion, Fecha_Inicio, Fecha_Fin } FROM { Jugador, Agente_Libre, Disponibilidad } WHERE {Estado} = %d AND {Agente_Libre.id_Jugador} = {Jugador.id_Jugador } AND {Agente_Libre.id_Agente_Libre} ={ Disponibilidad.id_Agente_Libre};", AGENTE_LIBRE );
+		db_set_active( 'default' );
+	
+
+		$form[ 'agente_libre_inscripcion' ] = array (
+			'#title' => 'Agentes libres',
+			'#description' => 'Bienvenido, introduce tus datos',
+			'#type' => 'fieldset',
+			'#collapsed' => 0,
+			'#colapsible' => 0,
+		);
+
+		
+		while ( $agente_libre_consulta = db_fetch_array( $agente_libre_consulta ) )
+		{
+			$agentes_libres_array[ $agente_libre_consulta->uid ] = $agente_libre_consulta->uid;
+		
+			
+			$fecha_inicio = timestamp_to_string( $agente_libre_consulta->Fecha_Inicio );
+			$fecha_fin = timestamp_to_string( $agente_libre_consulta->Fecha_Fin );
+			
+
+			$form[ 'agente_libre_inscripcion' ][ 'presentacion' ] = array (
+				'#type' => 'textarea',
+				'#title' => check_plain( t('Presentación') ),
+				'#default_value' => $agente_libre_consulta->presentacion,
+				'#required' => TRUE,
+				'#description' => 'Presentación breve: estilo de juego, motivaciones, etc.',
+			);
+	
+			$form[ 'agente_libre_inscripcion' ][ 'disponibilidad' ] = array (
+				'#title' => 'Disponibilidad',
+				'#type' => 'fieldset',
+				'#collapsed' => 0,
+				'#collapsible' => 0,
+			);
+	
+			
+			
+			$form[ 'agente_libre_inscripcion' ][ 'disponibilidad' ][ 'inicio' ] = array (
+				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+				'#disabled' => 'TRUE',
+				'#title' => 'Fecha de inicio',
+				'#default_value' => $fecha_inicio,
+				'#date_format' => $format,
+				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+				'#size' => 17,
+				'#maxlength' => 17,
+			);
+			
+			
+			$form[ 'agente_libre_inscripcion' ][ 'disponibilidad' ][ 'fin' ] = array (
+				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+				'#disabled' => 'TRUE',
+				'#title' => 'Fecha de Fin',
+				'#default_value' => $fecha_fin,
+				'#date_format' => $format,
+				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+				'#size' => 17,
+				'#maxlength' => 17,
+			);
+			
+			$form[ 'submit' ] = array (
+				'#type' => 'submit',
+				'#value' => l( t( 'teams/node/'.$user->id.'edit') ),
+			);
+
+		}
+		
+		return $form;
+	}
+	
