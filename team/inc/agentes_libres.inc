@@ -16,7 +16,7 @@ function agente_libre() {
     
     $form[ 'presentacion' ] = array (
         '#type' => 'textarea',
-        '#title' => check_plain( t('Presentación') ),
+        '#title' =>  t('Presentacion') ,
         '#required' => TRUE,
         '#description' => 'Presentacion breve: estilo de juego, motivaciones, etc.',
     );
@@ -56,7 +56,7 @@ function agente_libre() {
         '#type' => 'submit',
         '#value' => t('Declararse Agente Libre'),
     );
-    
+      
     return $form;
 }
 
@@ -70,8 +70,10 @@ function agente_libre() {
 *	4.- Insertar la disponibildad de horas en la tabla;
 */
 function agente_libre_submit ( $form, $form_state ) {
+    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
     global $user;
     $id_Modalidad_Juego_Temporada = $form_state['values']['id_Modalidad_Juego_Temporada'];
+    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
     
     //1.- Insertar un registro en la tabla de Jugador para reflejar que el usuario se inscribió a la modalidad como agente libre
     db_set_active( 'eSM' );
@@ -88,9 +90,9 @@ function agente_libre_submit ( $form, $form_state ) {
                 $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE
         );
     db_set_active( 'default' );
+    dsm('paso 1');
     
     $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
-    dms($jugador);
     
     //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
     db_set_active('eSM');
@@ -105,6 +107,7 @@ function agente_libre_submit ( $form, $form_state ) {
                 $jugador->id_Jugador, $form_state['values']['presentacion']
         );
     db_set_active( 'default' );
+    drupal_set_message('paso 2');
     
     //3.- Insertar la disponibilidad de días en la tabla;
     foreach ($form_state['values']['dias'] as $key => $element) {
@@ -133,6 +136,8 @@ function agente_libre_submit ( $form, $form_state ) {
             )",
             $jugador->id_Jugador, $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo']
         );
+    db_set_active('default');
+    drupal_set_message('paso 3');
         
     //4.- Insertar la disponibildad de horas en la tabla;
     foreach ($form_state['values']['horas'] as $key => $element) {
@@ -157,13 +162,13 @@ function agente_libre_submit ( $form, $form_state ) {
             )",
             $jugador->id_Jugador, $dias['morning'], $dias['evening'], $dias['nigth']
         );
-    
-    drupal_set_message( "Te has agregado correctamente como Agente Libre." );		
+    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
+    drupal_goto('user/'. $user->uid);
 }
 function agente_libre_validate ( $form, $form_state ) {
     global $user;
     $id_Modalidad_Juego_Temporada = $form_state['values']['id_Modalidad_Juego_Temporada'];
-    $tiene_equipo = tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
+    $tiene_equipo = tiene_equipo($user->uid, $id_Modalidad_Juego_Temporada);
     
     if ( $tiene_equipo == TIENE_EQUIPO)
         form_set_error('id_Modalidad_Juego_Temporada', '<p>No puedes declararte como agente libre porque ya perteneces a un equipo.</p><p>Abandona tu equipo actual para poder declararte como agente libre.</p>');
