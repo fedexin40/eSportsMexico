@@ -1,0 +1,400 @@
+<?php
+// $Id: leaguesite.module,v 1.21 2010/09/21 17:03:04 alun Exp $
+
+
+include ("db_functions.php");
+
+/**
+* Display help information for the module
+* @param path - which path of the site we are displaying help
+* @param arg - array that holds the current path as would be returned from arg() function
+* @return help = text for the path
+*/
+
+// Define los estados para la variable de agentes libres
+	define('TIENE_EQUIPO', 2);
+	define('AGENTE_LIBRE', 1);
+	define('NO_REGISTRADO', 0);
+	 
+// Define los estados para las solicitudes de los jugadores
+	define('INVITADO', 1);
+	define('SOLICITA', 2);
+	define('ACEPTADO', 3);
+	define('RECHAZADO', 4);
+	 
+
+function team_help($path, $arg){
+	$output = '';
+	switch($path){
+		case 'admin/help#team':
+			$output = '<p>'.t("Permite manejar y crear equipos para participare en los ránkings de las modalidades").'</p>';
+			break;
+		case 'admin/content/team':
+			$output = '<p>'.t('Este módulo permite crear y administrar una serie de equipos para participar en los ránkings de las diferentes modalidades').'</p>';
+			break;
+	}
+	return $output;
+} //end function leaguesite_help()
+
+/**
+* Implementation of hook_perm()
+* Outlines permissions for this module.
+* @return array - An array of valid permissions for the leaguesite module
+*/
+function team_perm(){
+	return array('create team', 'edit own team', 'delete own team', 'view team');
+}//end function leaguesite_perm()
+/**
+ * Implementation of hook_menu()
+ * Admin menu link for the module
+ * @return unknown_type
+ */
+function team_menu(){
+	$items [ 'inscripcion/%' ] = array (
+		'title' => 'Inscripción',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('inscripcion'),
+		'access arguments' => array ('create team'),
+		'file' => 'inc/inscripcion.inc',
+	);
+	$items [ 'inscripcion/multijugador/%' ] = array (
+		'title' => 'Inscripción',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('team_inscripcion'),
+		'access arguments' => array ('create team'),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/inscripcion.inc',
+	);
+	$items['node/%node/solicitar'] = array(
+		'title' => 'Administrar Jugadores',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('team_soliciud',),
+		'access arguments' => array ('create team'),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/team_solicitud.inc',
+	);
+	$items['node/%node/administrar'] = array(
+		'title' => 'Administrar Jugadores',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('team_administrar',),
+		'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'inc/team_administracion.inc',
+	);
+	$items['node/%node/administrar/activos'] = array(
+		'title' => 'Administrar Jugadores',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('team_administrar_activos'),
+		'access callback' => 'team_admin_access',
+		'file' => 'inc/team_administracion.inc',
+		'access arguments' => array(1),
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items['node/%node/administrar/solicitudes'] = array(
+		'title' => 'Administrar Jugadores',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('team_administrar_solicitudes'),
+		'access callback' => 'team_admin_access',
+		'file' => 'inc/team_administracion.inc',
+		'access arguments' => array(1),
+		'type' => MENU_CALLBACK,
+	);
+	$items['node/%node/administrar/invitados'] = array(
+		'title' => 'Administrar Jugadores',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('team_administrar_invitados'),
+		'file' => 'inc/team_administracion.inc',
+		'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
+		'type' => MENU_CALLBACK,
+	);
+	$items [ 'libres/%' ] = array (
+		'title' => 'Agente Libre',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('agente_libre'),
+		'access arguments' => array ('create team'),
+		'file' => 'inc/agentes_libres.inc',
+		'type' => MENU_CALLBACK,
+	);
+	$items [ 'libres/%/lista' ] = array (
+		'title' => 'Agente Libre',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('agente_libre_listar'),
+		'access arguments' => array ('create team'),
+		'file' => 'inc/agentes_libres.inc',
+		'type' => MENU_CALLBACK,
+	);
+	return $items;
+}
+	
+/**
+ * Implementation of hook_node_info()
+ */
+function team_node_info() {
+	return array(
+		'team' => array(
+			'name' => t('Equipo'),
+			'module' => 'team',
+			'description' => t("Un equipo para participar en el ránking de una modalidad."),
+		)
+	);
+} 
+
+/**
+ * Implementation of hook_access()
+ */
+function team_access($op, $node, $account){
+		if($op == 'view'){
+		return user_access('view team', $account);
+	}
+	
+	if ($op == 'create') {
+		// Only users with permission to do so may create this node type.
+		return user_access('create team', $account);
+	}
+
+	// Users who create a node may edit or delete it later, assuming they have the
+	// necessary permissions.
+	if ($op == 'update' || $op == 'delete') {
+		if (user_access('edit own team', $account) && ($account->uid == $node->uid)) {
+			return TRUE;
+		}
+	}
+} 
+
+/**
+ * Implementation of hook_form()
+ * @param $node
+ * @param $form_state
+ * @return unknown_type
+ */
+function team_form(&$node, $form_state) {
+	//Si estamos en una modalidad individual, sugiere al usuario que el nombre por defecto de su equipo sea su nombre de usuario.
+	global $user;
+	$default = '';
+	$id_Modalidad_Juego_Temporada = arg(3);
+	$modalidad = get_modalidad($id_Modalidad_Juego_Temporada);
+	if ($modalidad->Maximo_Jugadores == 1 && !isset($node->title))
+		$node->title = $user->name;
+	
+	$form['id_Modalidad_Juego_Temporada'] = array (
+				'#type' => 'hidden',
+				'#value' => arg(3),
+		);
+	
+	$type = node_get_types('type', $node);
+	if(!isset($node->archive)){
+		$node->archive = 0;
+	}
+	
+	// We need to define form elements for the node's title and body.
+	$form['title'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Team Name'),
+		'#required' => TRUE,
+		'#default_value' => $node->title,
+		'#weight' => -6,
+	);
+	
+	$form['abreviacion'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Abreviacion'),
+		'#description' => t('Ingresa el tag de tu equipo.'),
+		'#required' => FALSE,	
+		//'#default_value' => $node->abreviacion,
+		'#weight' => -5,
+	);
+	// We want the body and filter elements to be adjacent. We could try doing
+	// this by setting their weights, but another module might add elements to the
+	// form with the same weights and end up between ours. By putting them into a
+	// sub-array together, we're able force them to be rendered together.
+	$form['body_filter']['body'] = array(
+		'#type' => 'textarea',
+		'#title' => check_plain( t('Descripción del Equipo') ),
+		'#default_value' => $node->body,
+		'#required' => FALSE,
+		'#description' => t('Puedes ingresar la información que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
+	);
+	$form['body_filter']['filter'] = filter_form($node->format);
+	
+	return $form;
+}
+/**
+ * Implementation of hook_insert()
+ * @param $node - the node which is being inserted
+ * This is for when someone creates a node, we save the abbreviation of the team.
+ */
+function team_insert($node){
+	global $user;
+	db_set_active ( 'eSM' );
+	
+		db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
+	
+		db_query("INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado) VALUES ( %d, %d, %d, %d );", $node->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), TIENE_EQUIPO );
+	
+		$jugador = db_fetch_array(db_query('SELECT {id_Jugador} FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND {uid} = %d', $node->id_Modalidad_Juego_Temporada, $user->uid));
+		
+		db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado) VALUES ( %d, %d, %d)', $node->nid, $jugador[ 'id_Jugador' ], ACEPTADO);
+	
+	db_set_active ( 'default' );
+}
+
+/**
+ * Función para verificar que el usuario no esté dado de alta como jugador de otro equipo antes de crear el suyo propio.
+ */
+function team_validate($node, $form) {
+	global $user;
+	$tiene_equipo = tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada);
+	
+	//Verifica si el jugador es un agente libre o no está registrado
+	if ($tiene_equipo == TIENE_EQUIPO) {
+        form_set_error('id_Modalidad_Juego_Temporada', 'No puedes crear un equipo para esta modalidad porque ya perteneces a otro.</br>Abandona tu equipo actual para poder crear otro.');
+		dpm ('No puedes crear un equipo para esta modalidad porque ya perteneces a otro.</br>Abandona tu equipo actual para poder crear otro.', 'error');
+		drupal_goto('user/' . $user->uid);
+	}
+}
+
+
+/**
+ * Implementación del hook_node_load()
+ */
+function team_load($node){
+		
+	db_set_active ( 'eSM' );
+		
+		$team_data = db_query('SELECT {Abreviacion}, {id_Modalidad_Juego_Temporada} FROM {Equipo} WHERE {nid_Equipo} = %d', $node->nid );
+		$team_i = db_query('SELECT * FROM {Integrantes_Equipo} WHERE {nid_Equipo} = %d AND {Estado} = %d', $node->nid, ACEPTADO );
+		$team_puntuacion = db_query('SELECT * FROM {Puntuacion} WHERE {nid_Equipo} = %d', $node->nid ); 
+	
+	db_set_active ( 'default' );
+	$team = db_fetch_array($team_data);
+
+	$node->abreviacion = $team['Abreviacion'];		//Agrega la abreviación al nodo equipo
+	$node->id_Modalidad_Juego_Temporada = $team['id_Modalidad_Juego_Temporada'];	//Agrega al nodo equipo el id_Modalidad_Juego_Temporada al que pertenece el equipo
+	
+	//Cuenta cuantos integrantes tiene el equipo y lo agrega al objeto nodo
+	$integrantes = 0;
+	while ($jugador = db_fetch_object($team_i)) {
+		$integrantes++;
+	}
+	$node->Numero_Integrantes = $integrantes;
+	/* 
+	while( $team_i = db_fetch_object($team_i) ) {
+		$jugador_result = db_query('SELECT *, FROM {Jugadores} WHERE {id_Jugador} = %d', $team_i->id_Jugador );
+		$jugador = db_fetch_object( $jugador_result );
+		
+		$node->jugador_arreglo = $jugador;
+	}
+	
+	while( $team_p = db_fetch_object($team_p) ) {
+		$jugador_result = db_query('SELECT * FROM {Jugadores} WHERE {id_Jugador} = %d', $pu );
+		$jugador = db_fetch_object( $jugador_result );
+		
+		$node->jugador_arreglo = $jugador;
+	}*/
+	//drupal_set_message($node);
+
+}
+/**
+ * Implementación del hook_block()
+ */
+function team_block( $op = 'list', $delta = 0 ){
+	if (is_numeric(arg(2))) $tid = arg( 2 );
+	
+	switch($op){
+		case 'list':
+			$block = array();
+			$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
+			return $block;
+			break;
+		case 'view':
+			
+			
+			switch( $delta ){
+				case 0:
+					$block = array( );
+					
+					if
+					(
+						(
+							is_numeric( $tid )
+								&&
+							( arg( 1 ) == 'term' )
+						)
+							&&
+						(
+							term_is_active( $tid )								
+						)
+					) {
+						
+						//dpm( variable_get( arg( 2 ) ) );
+						
+						$block[ 'subject' ] = 'Equipos';
+						$block[ 'content' ] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+					}
+					break;
+			}
+			return $block;
+			break;
+		case 'save':
+			
+			break;
+		case 'configure':
+			
+			break;
+	}
+}
+/**
+ * Función para decidir si el usuario tiene acceso a las pestañas de administración del equipo
+ * dependiendo de si es el capitán del equipo y si es un equipo formado por más de una persona
+ */
+function team_admin_access($node) {
+	global $user;
+	$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+	
+	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid)){
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
+}
+/**
+ * Función que permite conocer el estado de un jugador para una modalidad
+ * Recibe el uid del jugador que se quiere revisar
+ * y el id_Modalidad_Juego_Temporada para el cual se quiere hacer la evaluación
+ * Devuelve:
+ * 0 - si el jugador no está inscrito
+ * 1 - si el jugador es agente libre
+ * 2 - si el jugador tiene equipo
+ */
+function tiene_equipo($uid, $id_Modalidad_Juego_Temporada) {
+	db_set_active('eSM');
+		$query = db_query('SELECT {Estado} FROM {Jugador} WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d', $uid, $id_Modalidad_Juego_Temporada);
+	db_set_active('default');
+	
+	$count = 0;
+	
+	while ($result = db_fetch_array($query)) {
+	       if ($result['Estado'] == AGENTE_LIBRE)
+			return AGENTE_LIBRE;
+		++$count;
+	}
+	if ($count == 0)
+		return NO_REGISTRADO;
+	else
+		return TIENE_EQUIPO;
+}
+/**
+ * Función para obtener los datos de un jugador
+ * recibe el uid del jugador y el id_Modalidad_Juego_Temporada en el que buscar
+ * devuelve un objeto con los datos del jugador o NULL si no encuentra
+ */
+function get_jugador($uid, $id_Modalidad_Juego_Temporad) {
+    db_set_active('eSM');
+        $jugador = db_fetch_object(db_query('SELECT * FROM {Jugador} WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d', $uid, $id_Modalidad_Juego_Temporad));
+    db_set_active('default');
+    
+    return $jugador;
+}

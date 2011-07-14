@@ -507,3 +507,69 @@
 		
 		return $timestamp;
 	}
+	
+/*
+ *  Función para verificar si un término pertenece al vocabulario definido para las modalidad
+ *  y si dicha modalidad está activa en la temporada actual
+ *  Regresa un objeto con la modalidad si está activa o NULL si no está activa
+ */
+function term_is_active( $tid ) {
+	$modalidad  = NULL;
+	$temporada_activa = temporada_activa();
+	
+	db_set_active ('eSM');
+	$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {id_Modalidad_Juego_Temporada} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
+	db_set_active ('default');
+	
+	while ( $result = db_fetch_object($modalidades_activas) ) {
+		
+		//dpm( $result );
+		if ($result->tid == $tid) {
+				$modalidad = $result;
+				break;
+		}
+	}
+	
+	//drupal_set_message( $modalidad );
+	
+	return $modalidad;
+}
+/*
+ * Función para obtener la temporada activa
+ * devuelve un objeto con todas las características de la temproada activa
+ * o NULL si no existe temporada activa
+ */
+function temporada_activa() {
+	$temporada_activa = NULL;
+	db_set_active ('eSM');
+		$temporada_activa = db_fetch_object( db_query('SELECT * FROM {Temporada} WHERE {Estado} = %d', 1 ) );
+	db_set_active ('default');
+	return $temporada_activa;
+}
+
+/**
+ * Función para obtener los datos de una modalidad
+ * teniendo como base el id_Modalidad_Juego_Temporada
+ * devuelve un objeto con todas las características de una modalidad
+ */
+function get_modalidad( $id_Modalidad_Juego_Temporada ){
+	db_set_active('eSM');
+		$modalidad = db_fetch_object(db_query('SELECT * FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON m.{id_Modalidad_Juego} = t.{id_Modalidad_Juego} WHERE t.{id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
+	db_set_active('default');
+	return $modalidad;
+}
+/**
+ * función para obtener los equipos inscritos
+ * en una modalidad de la temporada activa
+ * recibe el id_Modalidad_Juego_Temporada
+ * devuelve el resultado de la consulta para que
+ * se pueda procesar con db_fetch_object
+ * o db_fetch_array
+ */
+function get_teams($id_Modalidad_Juego_Temporada) {
+	db_set_active('eSM');
+		$teams = db_query('SELECT * FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada);
+	db_set_active('default');
+	
+	return $teams;
+}
