@@ -24,10 +24,12 @@ function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
     $equipos = get_equipos($id_Modalidad_Juego_Temporada);
     
     if (isset($equipos)) {
+        
         foreach ($equipos as $nid=>$equipo) {
-            $eval = node_load($nid);
-            if ($eval->uid == $uid)
-                return $eval->nid;
+            $eval = node_load($equipo['nid_Equipo']);
+            if ($eval->uid == $uid) {
+                return $eval;
+            }
         }
     }
     else

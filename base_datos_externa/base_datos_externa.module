@@ -6,20 +6,6 @@
 	 * This is an example outlining how a module can be used to display a
 	 * custom page at a given URL.
 	 */
-	
-	/**
-	 * @defgroup base_datos_externa Example: Page
-	 * @ingroup examples
-	 * @{
-	 * Create a page in a module. (drupal 6)
-	 *
-	 * This example demonstrates how a module can be used to display a
-	 * custom page at a given URL.
-	 *
-	 * This example is part of the Examples for Developers Project which you can download
-	 * and experiment with here: http://drupal.org/project/examples
-	 */
-	
 	/**
 	 * Implementation of hook_perm().
 	 *
@@ -37,9 +23,14 @@
 			'acceder a juegos',
 		);
 	}
-
-
-	
+/**
+		* Implementation of hook_menu().
+		*
+		* Since the access to our new custom pages will be granted based on
+		* special permissions, we need to define what those permissions are here.
+		* This ensures that they are available to enable on the user role
+		* administration pages.
+*/
 	function base_datos_externa_menu( ) {
 	global $user;
 	
@@ -52,7 +43,6 @@
 		'description' => t( 'Administrar base de datos externa' ),
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'base_datos_externa_admin' ),
-		//'access callback' => TRUE, //TRUE will give access to anyone
 		'access arguments'	=> array( 'administer site configuration' ),
 	);
 
@@ -68,7 +58,7 @@
   );
 
 
-	//Una página para probar los botones de la temporada
+	//Una página para insetar la temporada
   $items['admin/base_datos_externa/temporadas/insertar'] = array(
     'title' => 'Insertar',
     'page callback' => 'drupal_get_form',
@@ -79,7 +69,7 @@
   );
 	
 
-	//Una página para probar los botones de la temporada
+	//Una página para listar la temporada
   $items['admin/base_datos_externa/temporadas/listar'] = array(
     'title' => 'Listar',
     'page callback' => 'drupal_get_form',
@@ -135,7 +125,7 @@
   );
 
 
-	//Una página para probar los botones de la temporada
+	//Una página para listar la plataforma
   $items['admin/base_datos_externa/plataformas/listar'] = array(
     'title' => 'Listar',
     'page callback' => 'drupal_get_form',
@@ -155,9 +145,6 @@
 		'file' => 'inc/pages_plataformas.inc',
   );
 	
-
-
-
 	//Otra página para editar plataformas
 	$items[ 'admin/base_datos_externa/plataformas/%/editar' ] = array(
 		'title' => 'Editar plataforma',
@@ -182,7 +169,7 @@
   );
 	
 	
-	//Una página para probar los botones de los temporada
+	//Una página para plistar los mapas
   $items['admin/base_datos_externa/mapas/listar'] = array(
     'title' => 'Listar',
     'page callback' => 'drupal_get_form',
@@ -214,7 +201,6 @@
 		//'parent' => 'admin/base_datos_externa/temporadas'
 		
 	);
-
 	
 
 	/////////////////////////////////////MODALIDADES DE JUEGOS
@@ -324,127 +310,40 @@
 		
 	);
 	
-	
-		/////////////////////////////JUGADOR 
-	//Una página para listar e insertar jugadores
-	/*$items['admin/base_datos_externa/jugadores'] = array(
-    'title' => 'Jugadores',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'jugador_admin' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_jugadores.inc',
-  );	
-	
-
-
-	//Una página para probar los botones de llos jugadores
-  $items['admin/base_datos_externa/jugadores/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'jugadores_admin_listar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_jugadores.inc',
-  );
-
-	//Inserta información en la tabla jugador
-  $items['admin/base_datos_externa/jugadores/insertar'] = array(
-    'title' => 'Insertar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'jugadores_admin_insertar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_jugadores.inc',
-  );
-	
-
-
-	//Otra página para editar modalidades de juegos
-	$items[ 'admin/base_datos_externa/jugadores/%/editar' ] = array(
-		'title' => 'Editar jugador',
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'jugador_admin_editar' ),
-		'access arguments' => array( 'administrar bd' ),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_jugadores.inc',
-		
-	);
-	*/
-	
   return $items;
 }
 
-	/**
-	 *	Aquí checaremos que exista un vocabulario en drupal para poder trabajar
-	 *	con él
-	 *
-	 *
-	 *	Para que la inserción funcione, es necesario insertar en la base de datos
-	 *	de drupal el vocabulario con vid 17 llamado Modalidades de Juego,
-	 *	así como en la tabla de variables de drupal, la variable
-	 *	vocabulario_modalidades.
-	 *	vocabulario_modalidades es una variable guardada en la base de datos de
-	 *	drupal para asegurarnos de que se ligue el vocabulario con la modalidad
-	 */
-	function base_datos_externa_admin( ) {
-		
-		/*$drupal_vocabulary_result = db_query( "SELECT name FROM vocabulary" );
-		
-		while( $drupal_vocabulary = db_fetch_object( $drupal_vocabulary_result ) ){
-			if( $drupal_vocabulary->name = 'modalidad' )
-			{
-				
-			}
-		}*/
-		
-		
-		//dpm ( variable_get( 'vocabulario_modalidades', NULL ) );
-			
-		$form[ 'informacion' ] = array (
+/**
+ *	Aquí checaremos que exista un vocabulario en drupal para poder trabajar
+ *	con él vocabulario_modalidades.
+ *	vocabulario_modalidades es una variable guardada en la base de datos de
+ *	drupal para asegurrnos de que se ligue el vocabulario con la modalidad
+ */
+function base_datos_externa_admin( ) {
+	$vocabulario = variable_get('vocabulario_modalidades', NULL);
+	
+	if ($vocabulario == NULL) {
+		$form[ 'warning' ] = array (
 			'#type' => 'item',
-			'#disabled' => FALSE,
-			'#value' => 'Panel de administración de las bases de datos',
-		);		
-				
-		return $form;
-		
-		
+			'#value' => 'No se ha definido ningún vocabulario para las modalidades.',
+		);
+		if (taxonomy_get_vocabularies()) {
+				$form[ 'warning' ] = array (
+					'#type' => 'item',
+					'#value' => 'Ya tienes vocabularios definidos en tu sitio de Drupal, puedes asociar uno de ellos a las modalidades en: '. l('Panel control modalidades', 'admin/base_datos_externa/modalidades_juegos'),
+				);
+		}
 	}
-
-
-	/**
-	 * A simple page callback.
-	 *
-	 * Page callbacks are required to return the entire page. The content
-	 * is then usually output via a call to theme('page'), where the theme system
-	 * will then surround the content in the appropriate blocks, navigation, and
-	 * styling.
-	 *
-	 * If you do not want to use the theme system (for example for outputting an
-	 * image or XML), you should print the content yourself and not return anything.
-	 */
-	function base_datos_externa_temporadas( ) {
-		return '<p>' . t('Simple page: The quick brown fox jumps over the lazy dog.') . '</p>';
-	}
-
-
-	function base_datos_externa_modalidades( ) {
-		return '<p>' . t('Simple page: The quick brown fox jumps over the lazy dog.') . '</p>';
-	}
-
-
-
-	function base_datos_externa_mapas( ) {
-		return '<p>' . t('Simple page: The quick brown fox jumps over the lazy dog.') . '</p>';
-	}
-
-
-	function base_datos_externa_juegos( ) {
-	  return '<p>' . t('Simple page: The quick brown fox jumps over the lazy dog.') . '</p>';
-	}
-
-
+	$form[ 'informacion' ] = array (
+		'#type' => 'item',
+		'#disabled' => FALSE,
+		'#value' => 'Panel de administración de las bases de datos',
+	);		
+			
+	return $form;
+	
+	
+}
 
 	/**
 	 *	Convierte timestamp de y a tipo date
