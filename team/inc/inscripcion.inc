@@ -14,13 +14,14 @@
 function inscripcion( ) {
                 $tid = arg(1);  //Obtiene el tid de la modalidad de la barra de direcciones
                 global $user;
+                $tiene_equipo = tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
                 
                 if (!($modalidad = term_is_active($tid))) {
                         drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );				
                         drupal_goto ('taxonomy/term/'.$tid);    //Regresa a la vista de noticias de la modalidad
                 }
                 else{                        
-                        if (!tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada) == TIENE_EQUIPO) {
+                        if (($tiene_equipo == AGENTE_LIBRE) || ($tiene_equipo == NO_REGISTRADO)) {
                                 if ($modalidad->Maximo_Jugadores == 1){
                                                 drupal_goto('node/add/team/'. $modalidad->id_Modalidad_Juego_Temporada);
                                 }

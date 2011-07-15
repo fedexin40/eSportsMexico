@@ -5,7 +5,9 @@
 //Función que recibe un identificador de juego y temporada
 //y devuelve un arreglo con los datos de todos los equipos inscritos
 function get_equipos($id_Modalidad_Juego_Tempodada) {
-    $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Tempodada));
+    db_set_active('eSM');
+        $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Tempodada));
+    db_set_active('default');
     
     while ($equipo = db_fetch_array($result)) {
         $equipos[$equipo['nid']] = $equipo;
@@ -13,16 +15,23 @@ function get_equipos($id_Modalidad_Juego_Tempodada) {
     return $equipos;
 }
 
-//Función que devuelve el nid del equipo para los que el usuario es capitán
-//recibe el uid del usuario que se quiere verificar y el id_Modalidad_Juego_Temporada
+/**
+  * Función que devuelve el nid del equipo para los que el usuario es capitán
+  * devuelve NULL si el usuario no es capitán de ningún equipo en la modalidad evaluada
+  * recibe el uid del usuario que se quiere verificar y el id_Modalidad_Juego_Temporada
+ */
 function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
     $equipos = get_equipos($id_Modalidad_Juego_Temporada);
-
-    foreach ($equipos as $nid=>$equipo) {
-        $eval = node_load($nid);
-        if ($eval->uid == $uid)
-            return $eval->nid;
+    
+    if (isset($equipos)) {
+        foreach ($equipos as $nid=>$equipo) {
+            $eval = node_load($nid);
+            if ($eval->uid == $uid)
+                return $eval->nid;
+        }
     }
+    else
+        return NULL;
 }
 
 

@@ -118,7 +118,7 @@ function team_menu(){
 		'type' => MENU_CALLBACK,
 	);
 	$items [ 'libres/%/lista' ] = array (
-		'title' => 'Agente Libre',
+		'title' => 'Jugadores Libres',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('agente_libre_listar'),
 		'access arguments' => array ('create team'),
@@ -211,7 +211,7 @@ function team_form(&$node, $form_state) {
 	// sub-array together, we're able force them to be rendered together.
 	$form['body_filter']['body'] = array(
 		'#type' => 'textarea',
-		'#title' => check_plain( t('Descripción del Equipo') ),
+		'#title' => t('Descripción del Equipo'),
 		'#default_value' => $node->body,
 		'#required' => FALSE,
 		'#description' => t('Puedes ingresar la información que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
@@ -377,7 +377,7 @@ function tiene_equipo($uid, $id_Modalidad_Juego_Temporada) {
 	$count = 0;
 	
 	while ($result = db_fetch_array($query)) {
-	       if ($result['Estado'] == AGENTE_LIBRE)
+	    if ($result['Estado'] == AGENTE_LIBRE)
 			return AGENTE_LIBRE;
 		++$count;
 	}

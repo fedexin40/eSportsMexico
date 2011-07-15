@@ -181,97 +181,75 @@ function agente_libre_validate ( $form, $form_state ) {
 *	Función para listar a los agentes libres
 */
 function agente_libre_listar ( ) {
-       
-       $disponibilidad = array ( );
-       
-       
-       db_set_active( 'eSM' );
-       
-       $jugador_consulta = db_query( "SELECT { id_Jugador } FROM { Jugador } WHERE Estado = %d", AGENTE_LIBRE );
-       
-       db_set_active( 'default' );
-       
-       /*while ( $jugador_result = db_fetch_array( $jugador_consulta ) )
-       {
-               $jugador_atributos[ $jugador_result->id_Jugador ] = $jugador_result->id_Jugador;
-       }*/
-       
-       
-       db_set_active( 'eSM' );
-       $agente_libre_consulta = db_query( "SELECT { uid, Fecha_Registro, Estado, Descripcion, Fecha_Inicio, Fecha_Fin } FROM { Jugador, Agente_Libre, Disponibilidad } WHERE {Estado} = %d AND {Agente_Libre.id_Jugador} = {Jugador.id_Jugador } AND {Agente_Libre.id_Agente_Libre} ={ Disponibilidad.id_Agente_Libre};", AGENTE_LIBRE );
-       db_set_active( 'default' );
-
-
-       $form[ 'agente_libre_inscripcion' ] = array (
-               '#title' => 'Agentes libres',
-               '#description' => 'Bienvenido, introduce tus datos',
-               '#type' => 'fieldset',
-               '#collapsed' => 0,
-               '#colapsible' => 0,
-       );
-
-       
-       while ( $agente_libre_consulta = db_fetch_array( $agente_libre_consulta ) )
-       {
-               $agentes_libres_array[ $agente_libre_consulta->uid ] = $agente_libre_consulta->uid;
-       
-               
-               $fecha_inicio = timestamp_to_string( $agente_libre_consulta->Fecha_Inicio );
-               $fecha_fin = timestamp_to_string( $agente_libre_consulta->Fecha_Fin );
-               
-
-               $form[ 'agente_libre_inscripcion' ][ 'presentacion' ] = array (
-                       '#type' => 'textarea',
-                       '#title' => check_plain( t('Presentación') ),
-                       '#default_value' => $agente_libre_consulta->presentacion,
-                       '#required' => TRUE,
-                       '#description' => 'Presentación breve: estilo de juego, motivaciones, etc.',
-               );
-
-               $form[ 'agente_libre_inscripcion' ][ 'disponibilidad' ] = array (
-                       '#title' => 'Disponibilidad',
-                       '#type' => 'fieldset',
-                       '#collapsed' => 0,
-                       '#collapsible' => 0,
-               );
-
-               
-               
-               $form[ 'agente_libre_inscripcion' ][ 'disponibilidad' ][ 'inicio' ] = array (
-                       '#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-                       '#disabled' => 'TRUE',
-                       '#title' => 'Fecha de inicio',
-                       '#default_value' => $fecha_inicio,
-                       '#date_format' => $format,
-                       '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-                       '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-                       '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-                       '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-                       '#size' => 17,
-                       '#maxlength' => 17,
-               );
-               
-               
-               $form[ 'agente_libre_inscripcion' ][ 'disponibilidad' ][ 'fin' ] = array (
-                       '#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-                       '#disabled' => 'TRUE',
-                       '#title' => 'Fecha de Fin',
-                       '#default_value' => $fecha_fin,
-                       '#date_format' => $format,
-                       '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-                       '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-                       '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-                       '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-                       '#size' => 17,
-                       '#maxlength' => 17,
-               );
-               
-               $form[ 'submit' ] = array (
-                       '#type' => 'submit',
-                       '#value' => l( t( 'team/node/'.$user->id.'edit') ),
-               );
-
-       }
-       
-       return $form;
+    global $user;
+    $id_Modalidad_Juego_Temporada = arg(1);     //obtiene el id_Modalidad_Juego_Temporada de la barra de direcciones
+    $count = 0;
+    $is_capitan = is_capitan($user->uid, $id_Modalidad_Juego_Temporada);
+    
+    //Obtiene la lista de jugadores libres para una modalidad y temporada
+    db_set_active( 'eSM' );
+        $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
+    db_set_active( 'default' );
+    
+    $form['Jugadores_Libres'] = array (
+        '#type' => 'fieldset',
+        '#collapsible' => 'FALSE',
+    );
+    //TODO: Elaborar función theme para darle formato a esta tabla de jugadores libres.
+    while ( $jugador = db_fetch_array( $result ) ) {
+        ++ $count;
+        //Obtiene los datos del jugador
+        db_set_active('eSM');
+            $descripcion = db_fetch_array(db_query('SELECT {Descripcion} FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+            $disponibilidad_dias = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Dias} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+            $disponibilidad_horas = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Horas} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+        db_set_active('default');
+        
+        //TODO: Revisar la conveniencia de añadir al objeto user los datos del jugador para que sea más sencillo de manejar y menos consultas que realizar.
+        $jugador = user_load($jugador['uid']);
+        
+        //TODO: Agregar el campo de imágen del jugador a la lista de los agentes libres
+        $form['Jugadores_Libres'][$jugador->uid]['Nombre'] = array (
+            '#value' => l($jugador->name, 'user/'. $jugador->uid)
+        );
+        $form['Jugadores_Libres'][$jugador->uid]['Descripcion'] = array (
+            '#value' => $descripcion['Descripcion']
+        );
+        
+        foreach ($disponibilidad_dias as $dia => $valor) {
+            if ($valor == 1) {
+                $form['Jugadores_Libres'][$jugador->uid]['Dias'][$dia] = array (
+                    '#value' => $dia
+                );
+            }
+        }
+        
+        $horas = '';
+        foreach ($disponibilidad_horas as $key => $valor) {
+            if ($valor == 1)
+                $horas .= $key .' and ';
+        }
+        if ($horas == 'Morning and Evening and Night and ')
+            $horas = t('Always');
+            
+        if (substr($horas,-5) == ' and ')
+            $horas = substr($horas, 0, -5);
+    
+        $form['Jugadores_Libres'][$jugador->uid]['Horas'] = array (
+            '#value' => $horas,
+        );
+        
+        if (isset($is_capitan)) {
+            $form['Jugadores_Libres'][$jugador->uid]['link'] = array (
+                '#value' => l('Invitar', 'user/'. $is_capitan . '/invitar'),
+            );
+        }
+    }
+    
+    if ($count == 0 ) {
+        $form['Jugadores_Libres']['Lista_Vacia'] = array (
+            '#value' => 'No hay jugadores libres registrados actualmente.',
+        );
+    }
+    return $form;
 }
