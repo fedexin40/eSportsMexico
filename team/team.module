@@ -2,7 +2,7 @@
 // $Id: leaguesite.module,v 1.21 2010/09/21 17:03:04 alun Exp $
 
 
-include ("db_functions.php");
+include ( "db_functions.php" );
 
 /**
 * Display help information for the module
@@ -12,15 +12,15 @@ include ("db_functions.php");
 */
 
 // Define los estados para la variable de agentes libres
-	define('TIENE_EQUIPO', 2);
-	define('AGENTE_LIBRE', 1);
-	define('NO_REGISTRADO', 0);
+  define( 'TIENE_EQUIPO', 2 );
+  define( 'AGENTE_LIBRE', 1 );
+  define( 'NO_REGISTRADO', 0 );
 	 
 // Define los estados para las solicitudes de los jugadores
-	define('INVITADO', 1);
-	define('SOLICITA', 2);
-	define('ACEPTADO', 3);
-	define('RECHAZADO', 4);
+  define( 'INVITADO', 1 );
+  define( 'SOLICITA', 2 );
+  define( 'ACEPTADO', 3 );
+  define( 'RECHAZADO', 4 );
 	 
 
 function team_help($path, $arg){
@@ -49,81 +49,100 @@ function team_perm(){
  * Admin menu link for the module
  * @return unknown_type
  */
+
+
+//TODO Menú para solicitar unirme a un equipo
 function team_menu(){
-	$items [ 'inscripcion/%' ] = array (
-		'title' => 'Inscripción',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('inscripcion'),
-		'access arguments' => array ('create team'),
-		'file' => 'inc/inscripcion.inc',
+	$items [ 'inscripcion/%' ] = array (			
+	  'title' => 'Inscripción',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('inscripcion'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/inscripcion.inc',
 	);
 	$items [ 'inscripcion/multijugador/%' ] = array (
-		'title' => 'Inscripción',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('team_inscripcion'),
-		'access arguments' => array ('create team'),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/inscripcion.inc',
+	  'title' => 'Inscripción',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('team_inscripcion'),
+	  'access arguments' => array ('create team'),
+	  'type' => MENU_LOCAL_TASK,
+	  'file' => 'inc/inscripcion.inc',
 	);
-	$items['node/%node/solicitar'] = array(
-		'title' => 'Administrar Jugadores',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('team_soliciud',),
-		'access arguments' => array ('create team'),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/team_solicitud.inc',
+
+	$items[ 'node/%node/solicitar' ] = array(
+	  'title' => 'Unirme a este equipo',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_soliciud' ),
+	  'access arguments' => array ( 'create team' ),
+	  'type' => MENU_LOCAL_TASK,
+	  'file' => 'inc/team_solicitud.inc',
 	);
+
+	//MENÚ para administrar equipos
 	$items['node/%node/administrar'] = array(
-		'title' => 'Administrar Jugadores',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('team_administrar',),
-		'access callback' => 'team_admin_access',
-		'access arguments' => array(1),
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/team_administracion.inc',
+	  'title' => 'Administrar Jugadores',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_administrar' ),
+	  'access callback' => 'team_admin_access',
+	  'access arguments' => array( 1 ),
+	  'type' => MENU_LOCAL_TASK,
+	  'file' => 'inc/team_administracion.inc',
 	);
-	$items['node/%node/administrar/activos'] = array(
-		'title' => 'Administrar Jugadores',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('team_administrar_activos'),
-		'access callback' => 'team_admin_access',
-		'file' => 'inc/team_administracion.inc',
-		'access arguments' => array(1),
-		'type' => MENU_DEFAULT_LOCAL_TASK,
+	$items['node/%node/administrar/activos'] = array
+	(
+	  'title' => 'Jugadores activos',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_administrar_activos' ),
+	  'access callback' => 'team_admin_access',
+	  'file' => 'inc/team_administracion.inc',
+	  'access arguments' => array( 1 ),
+	  'type' => MENU_LOCAL_TASK,
 	);
 	$items['node/%node/administrar/solicitudes'] = array(
-		'title' => 'Administrar Jugadores',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('team_administrar_solicitudes'),
-		'access callback' => 'team_admin_access',
-		'file' => 'inc/team_administracion.inc',
-		'access arguments' => array(1),
-		'type' => MENU_CALLBACK,
+	  'title' => 'Solicitudes',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_administrar_solicitudes' ),
+	  'access callback' => 'team_admin_access',
+	  'file' => 'inc/team_administracion.inc',
+	  'access arguments' => array( 1 ),
+	  'type' => MENU_LOCAL_TASK,
 	);
-	$items['node/%node/administrar/invitados'] = array(
-		'title' => 'Administrar Jugadores',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('team_administrar_invitados'),
-		'file' => 'inc/team_administracion.inc',
-		'access callback' => 'team_admin_access',
-		'access arguments' => array(1),
-		'type' => MENU_CALLBACK,
+	$items['node/%node/administrar/invitados'] = array
+	(
+	  'title' => 'Invitados',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('team_administrar_invitados'),
+	  'file' => 'inc/team_administracion.inc',
+	  'access callback' => 'team_admin_access',
+	  'access arguments' => array(1),
+	  'type' => MENU_LOCAL_TASK,
 	);
+
+	//MENÚ de agentes libres
 	$items [ 'libres/%' ] = array (
-		'title' => 'Agente Libre',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('agente_libre'),
-		'access arguments' => array ('create team'),
-		'file' => 'inc/agentes_libres.inc',
-		'type' => MENU_CALLBACK,
+	  'title' => 'Agente Libre',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('agente_libre'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/agentes_libres.inc',
+	  'type' => MENU_CALLBACK,
 	);
 	$items [ 'libres/%/lista' ] = array (
+<<<<<<< HEAD
 		'title' => 'Jugadores Libres',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('agente_libre_listar'),
 		'access arguments' => array ('create team'),
 		'file' => 'inc/agentes_libres.inc',
 		'type' => MENU_CALLBACK,
+=======
+	  'title' => 'Agente Libre',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('agente_libre_listar'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/agentes_libres.inc',
+	  'type' => MENU_CALLBACK,
+>>>>>>> 7e5522653b24e0791fdb552daa41ceebd6a19942
 	);
 	return $items;
 }
@@ -170,53 +189,59 @@ function team_access($op, $node, $account){
  * @return unknown_type
  */
 function team_form(&$node, $form_state) {
+
 	//Si estamos en una modalidad individual, sugiere al usuario que el nombre por defecto de su equipo sea su nombre de usuario.
 	global $user;
 	$default = '';
-	$id_Modalidad_Juego_Temporada = arg(3);
-	$modalidad = get_modalidad($id_Modalidad_Juego_Temporada);
-	if ($modalidad->Maximo_Jugadores == 1 && !isset($node->title))
-		$node->title = $user->name;
+	$id_Modalidad_Juego_Temporada = arg( 3 );
+
+
+	$modalidad = get_modalidad( $id_Modalidad_Juego_Temporada );
+	 if ( ( $modalidad->Maximo_Jugadores == 1 ) && ( !isset( $node->title ) ) )
+	  $node->title = $user->name;
 	
-	$form['id_Modalidad_Juego_Temporada'] = array (
-				'#type' => 'hidden',
-				'#value' => arg(3),
-		);
-	
-	$type = node_get_types('type', $node);
-	if(!isset($node->archive)){
-		$node->archive = 0;
-	}
-	
-	// We need to define form elements for the node's title and body.
-	$form['title'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Team Name'),
-		'#required' => TRUE,
-		'#default_value' => $node->title,
-		'#weight' => -6,
+	$form[ 'id_Modalidad_Juego_Temporada' ] = array
+	(
+	  '#type' => 'hidden',
+	  '#value' => arg( 3 ),
 	);
 	
-	$form['abreviacion'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Abreviacion'),
-		'#description' => t('Ingresa el tag de tu equipo.'),
-		'#required' => FALSE,	
-		//'#default_value' => $node->abreviacion,
-		'#weight' => -5,
+	$type = node_get_types('type', $node);
+	if( !isset( $node->archive ) )
+	  $node->archive = 0;
+	
+	//TODO Agregar un campo de imagen con construction kit
+
+	// We need to define form elements for the node's title and body.
+	$form[ 'title' ] = array
+	(
+	  '#type' => 'textfield',
+	  '#title' => t( 'Nombre de equipo' ),
+	  '#required' => TRUE,
+	  '#default_value' => $node->title,
+	  '#weight' => -6,
+	);
+	
+	$form[ 'abreviacion' ] = array(
+	  '#type' => 'textfield',
+	  '#title' => t( 'Abreviacion' ),
+	  '#description' => t('Ingresa el tag de tu equipo.'),
+	  '#required' => FALSE,	
+	  //'#default_value' => $node->abreviacion,
+	  '#weight' => -5,
 	);
 	// We want the body and filter elements to be adjacent. We could try doing
 	// this by setting their weights, but another module might add elements to the
 	// form with the same weights and end up between ours. By putting them into a
 	// sub-array together, we're able force them to be rendered together.
 	$form['body_filter']['body'] = array(
-		'#type' => 'textarea',
-		'#title' => t('Descripción del Equipo'),
-		'#default_value' => $node->body,
-		'#required' => FALSE,
-		'#description' => t('Puedes ingresar la información que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
+	  '#type' => 'textarea',
+	  '#title' => t( 'Descripcion del Equipo' ),
+	  '#default_value' => $node->body,
+	  '#required' => FALSE,
+	  '#description' => t('Puedes ingresar la información que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
 	);
-	$form['body_filter']['filter'] = filter_form($node->format);
+	$form[ 'body_filter' ][ 'filter' ] = filter_form( $node->format );
 	
 	return $form;
 }
@@ -225,17 +250,17 @@ function team_form(&$node, $form_state) {
  * @param $node - the node which is being inserted
  * This is for when someone creates a node, we save the abbreviation of the team.
  */
-function team_insert($node){
+function team_insert( $node ){
 	global $user;
 	db_set_active ( 'eSM' );
 	
-		db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
-	
-		db_query("INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado) VALUES ( %d, %d, %d, %d );", $node->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), TIENE_EQUIPO );
-	
-		$jugador = db_fetch_array(db_query('SELECT {id_Jugador} FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND {uid} = %d', $node->id_Modalidad_Juego_Temporada, $user->uid));
-		
-		db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado) VALUES ( %d, %d, %d)', $node->nid, $jugador[ 'id_Jugador' ], ACEPTADO);
+	  db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
+  
+	  db_query("INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado) VALUES ( %d, %d, %d, %d );", $node->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), TIENE_EQUIPO );
+  
+	  $jugador = db_fetch_array(db_query('SELECT {id_Jugador} FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND {uid} = %d', $node->id_Modalidad_Juego_Temporada, $user->uid));
+	  
+	  db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado) VALUES ( %d, %d, %d)', $node->nid, $jugador[ 'id_Jugador' ], ACEPTADO);
 	
 	db_set_active ( 'default' );
 }
@@ -300,50 +325,63 @@ function team_load($node){
  * Implementación del hook_block()
  */
 function team_block( $op = 'list', $delta = 0 ){
-	if (is_numeric(arg(2))) $tid = arg( 2 );
-	
-	switch($op){
-		case 'list':
-			$block = array();
-			$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-			return $block;
-			break;
-		case 'view':
+  //TODO 
+
+  if( ( arg( 0 ) == 'taxonomy' ) &&
+		  ( arg( 1 ) == 'term' ) &&
+		  ( is_numeric( arg( 2 ) ) ) )
+  {
+	$tid = arg( 2 );	
+
+	switch( $op ){
+	  case 'list':
+		$block = array();
+		$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
+		return $block;
+		break;
+	  case 'view':
+		  
+		switch( $delta )
+		{
+		  case 0:
+			$block = array( );
 			
+			if
+			(
+			  (
+				is_numeric( $tid )
+					&&
+				( arg( 1 ) == 'term' )
+			  )
+				  &&
+			  (
+			  term_is_active( $tid )								
+			  )
+			) {
 			
-			switch( $delta ){
-				case 0:
-					$block = array( );
-					
-					if
-					(
-						(
-							is_numeric( $tid )
-								&&
-							( arg( 1 ) == 'term' )
-						)
-							&&
-						(
-							term_is_active( $tid )								
-						)
-					) {
-						
-						//dpm( variable_get( arg( 2 ) ) );
-						
-						$block[ 'subject' ] = 'Equipos';
-						$block[ 'content' ] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-					}
-					break;
-			}
-			return $block;
-			break;
-		case 'save':
-			
-			break;
-		case 'configure':
-			
-			break;
+				//dpm( variable_get( arg( 2 ) ) );
+				
+			  $block[ 'subject' ] = 'Equipos';
+			  $block[ 'content' ] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+		  }
+		  break;
+		}
+		return $block;
+		break;
+
+	  case 'save':
+		  
+		break;
+
+
+	  case 'configure':
+		  
+		break;
+
 	}
+
+  }
+
 }
 /**
  * Función para decidir si el usuario tiene acceso a las pestañas de administración del equipo

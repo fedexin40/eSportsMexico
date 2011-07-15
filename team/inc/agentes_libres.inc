@@ -93,6 +93,7 @@ function agente_libre_submit ( $form, $form_state ) {
     dsm('paso 1');
     
     $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
+    dsm($jugador);
     
     //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
     db_set_active('eSM');

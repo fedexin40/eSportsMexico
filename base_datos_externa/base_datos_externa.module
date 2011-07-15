@@ -220,13 +220,13 @@
 	/////////////////////////////////////MODALIDADES DE JUEGOS
 	//Una página para listar e insertar modalidades de juegos
 	$items['admin/base_datos_externa/modalidades_juegos'] = array(
-    'title' => 'Modalidades de los juegos',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidad_juego_admin' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_modalidades_juegos.inc',
-  );	
+	'title' => 'Modalidades de los juegos',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array( 'modalidad_juego_admin' ),
+	'access arguments' => array( 'administrar bd' ),	
+	'type' => MENU_LOCAL_TASK,
+	'file' => 'inc/pages_modalidades_juegos.inc',
+	);	
 	
 
 

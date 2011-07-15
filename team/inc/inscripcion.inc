@@ -39,48 +39,60 @@ function inscripcion( ) {
 /**
 * forma para presentar opciones de inscripción a las modalidades por equipos
 */
-function team_inscripcion () {
-                $id_Modalidad_Juego_Temporada = arg(2);  //Obtiene el id_Modalidad_Juego_Temporada que le pasa la función de inscripción como tercer argumento en la barra de direcciones
-                $modalidad = get_modalidad($id_Modalidad_Juego_Temporada);
-                
-                $teams = get_teams($id_Modalidad_Juego_Temporada);
-                
-                $form[ 'equipos_disponibles' ] = array (
-                                '#title' => 'Equipos disponibles',
-                                '#type' => 'fieldset',
-                );
-                
-                $count = 0;
-                //Primero almacenaremos todos los equipos en nodos
-                while ($team = db_fetch_object($teams)) {
-                                $team = node_load(array('nid' => $team->nid_Equipo) );
-                                if ($team->Numero_Integrantes < $modalidad->Maximo_Jugadores) { //Presentaremos una forma para cada equipo disponible
-                                                $form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
-                                                                '#value' => $team->title,
-                                                );
-                                                $form[ 'equipos_disponibles' ][ $team->title ][ 'link' ] = array (
-                                                                '#value' => l( t( 'Unirme' ), 'node/'.$team->nid.'/solicitar' ),
-                                                );
-                                }
-                                $count++;
-                }
-                
-                if( $count == 0 ) {
-                                dpm( "No hay equipos disponibles" );
-                }
-                
-                $form[ 'otras_opciones' ] = array(
-                                '#title' => 'Otras opciones',
-                                '#type' => 'fieldset',
-                );
-                
-                $form[ 'otras_opciones' ][ 'crear_equipo' ] = array (
-                                '#value' => l( t( 'Crear equipo' ), 'node/add/team/'.$id_Modalidad_Juego_Temporada ),
-                );
-                
-                $form[ 'otras_opciones' ][ 'agente_libre' ] = array (
-                                '#value' => l( t( 'Ser agente libre' ), 'libres/'.$id_Modalidad_Juego_Temporada ),
-                );
-                
-                return $form;
+function team_inscripcion( )
+{
+  $id_Modalidad_Juego_Temporada = arg( 2 );  //Obtiene el id_Modalidad_Juego_Temporada que le pasa la función de inscripción como tercer argumento en la barra de direcciones
+
+  $modalidad = get_modalidad( $id_Modalidad_Juego_Temporada );
+  
+  $teams = get_teams( $id_Modalidad_Juego_Temporada );
+  
+  $form[ 'equipos_disponibles' ] = array
+  (
+    '#title' => 'Equipos disponibles',
+    '#type' => 'fieldset',
+  );
+  
+  $count = 0;
+  //Primero almacenaremos todos los equipos en nodos
+
+  while ( $team = db_fetch_object( $teams ) )
+  {
+    $team = node_load( array( 'nid' => $team->nid_Equipo) );
+    if ( $team->Numero_Integrantes < $modalidad->Maximo_Jugadores )
+    {
+      
+      //Presentaremos una forma para cada equipo disponible
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
+        '#value' => $team->title,
+      );
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'link' ] = array (
+        '#value' => l( t( 'Unirme' ), 'node/'.$team->nid.'/solicitar' ),
+      );
+    }
+    $count++;
+  }
+  
+  if( $count == 0 )
+  {
+    $form[ 'equipos_disponibles' ] = array
+    (
+      '#value' => 'No hay equipos disponibles',
+    );
+  }
+
+  $form[ 'otras_opciones' ] = array(
+    '#title' => 'Otras opciones',
+    '#type' => 'fieldset',
+  );
+  
+  $form[ 'otras_opciones' ][ 'crear_equipo' ] = array (
+    '#value' => l( t( 'Crear equipo  ' ), 'node/add/team/'.$id_Modalidad_Juego_Temporada ),
+  );
+  
+  $form[ 'otras_opciones' ][ 'agente_libre' ] = array (
+    '#value' => l( t( '  Ser agente libre' ), 'libres/'.$id_Modalidad_Juego_Temporada ),
+  );
+  
+  return $form;
 }
