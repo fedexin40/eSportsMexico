@@ -128,21 +128,12 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
 	$items [ 'libres/%/lista' ] = array (
-<<<<<<< HEAD
 		'title' => 'Jugadores Libres',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('agente_libre_listar'),
 		'access arguments' => array ('create team'),
 		'file' => 'inc/agentes_libres.inc',
 		'type' => MENU_CALLBACK,
-=======
-	  'title' => 'Agente Libre',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('agente_libre_listar'),
-	  'access arguments' => array ('create team'),
-	  'file' => 'inc/agentes_libres.inc',
-	  'type' => MENU_CALLBACK,
->>>>>>> 7e5522653b24e0791fdb552daa41ceebd6a19942
 	);
 	return $items;
 }
