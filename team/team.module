@@ -36,6 +36,7 @@ function team_help($path, $arg){
 	return $output;
 } //end function leaguesite_help()
 
+
 /**
 * Implementation of hook_perm()
 * Outlines permissions for this module.
@@ -72,7 +73,7 @@ function team_menu(){
 	$items[ 'node/%node/solicitar' ] = array(
 	  'title' => 'Unirme a este equipo',
 	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array( 'team_soliciud' ),
+	  'page arguments' => array( 'team_solicitud' ),
 	  'access arguments' => array ( 'create team' ),
 	  'type' => MENU_LOCAL_TASK,
 	  'file' => 'inc/team_solicitud.inc',
@@ -128,21 +129,12 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
 	$items [ 'libres/%/lista' ] = array (
-<<<<<<< HEAD
-		'title' => 'Jugadores Libres',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('agente_libre_listar'),
-		'access arguments' => array ('create team'),
-		'file' => 'inc/agentes_libres.inc',
-		'type' => MENU_CALLBACK,
-=======
 	  'title' => 'Agente Libre',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array('agente_libre_listar'),
 	  'access arguments' => array ('create team'),
 	  'file' => 'inc/agentes_libres.inc',
 	  'type' => MENU_CALLBACK,
->>>>>>> 7e5522653b24e0791fdb552daa41ceebd6a19942
 	);
 	return $items;
 }

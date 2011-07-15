@@ -3,13 +3,8 @@
 /**
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
-function team_soliciud( )//&$form_state )
+function team_solicitud( )//&$form_state )
 {
-
-  dsm( "Hi" );
-
-
-  dpm( "HJAS" );
 
   //Pasando las variables necesarias para procesar después de confirmar la acción
   $form[ 'nid_Equipo' ] = array
@@ -29,8 +24,8 @@ function team_soliciud( )//&$form_state )
   (
     $form,
     t( '¿Quieres solicitar inscribirte a este equipo?' ), //message title
-    isset( $_GET[ 'destination' ] ) ? $_GET[ 'destination' ] : 'user', //redirect if cancelled
-    t( 'Debes estar seguro' ) //message description
+    ( isset( $_GET[ 'destination' ] ) ? $_GET[ 'destination' ] : 'user' )//redirect if cancelled
+    //t( 'Debes estar seguro' ) //message description
     //t(  )
     //t( 'Si' ), //confirm button text
     //t( 'No' ) //cancel button text
