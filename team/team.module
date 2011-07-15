@@ -50,8 +50,6 @@ function team_perm(){
  * @return unknown_type
  */
 
-
-//TODO Menú para solicitar unirme a un equipo
 function team_menu(){
 	$items [ 'inscripcion/%' ] = array (			
 	  'title' => 'Inscripción',
@@ -128,13 +126,23 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
 	$items [ 'libres/%/lista' ] = array (
-		'title' => 'Jugadores Libres',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('agente_libre_listar'),
-		'access arguments' => array ('create team'),
-		'file' => 'inc/agentes_libres.inc',
-		'type' => MENU_CALLBACK,
+	  'title' => 'Agente Libre',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('agente_libre_listar'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/agentes_libres.inc',
+	  'type' => MENU_CALLBACK,
 	);
+    
+    //MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
+    $items [ 'user/%/invitar/%'] = array (
+        'title' => 'Invitar Jugador',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('invitar_usuario'),
+        'access arguments' => array('create team'),
+        'file' => 'inc/invitar_jugador.inc',
+        'type' => MENU_CALLBACK,
+    );
 	return $items;
 }
 	
@@ -318,10 +326,7 @@ function team_load($node){
 function team_block( $op = 'list', $delta = 0 ){
   //TODO 
 
-  if( ( arg( 0 ) == 'taxonomy' ) &&
-		  ( arg( 1 ) == 'term' ) &&
-		  ( is_numeric( arg( 2 ) ) ) )
-  {
+  if( ( arg( 0 ) == 'taxonomy' ) && ( arg( 1 ) == 'term' ) &&  ( is_numeric( arg( 2 ) ) ) )
 	$tid = arg( 2 );	
 
 	switch( $op ){
@@ -353,7 +358,9 @@ function team_block( $op = 'list', $delta = 0 ){
 				//dpm( variable_get( arg( 2 ) ) );
 				
 			  $block[ 'subject' ] = 'Equipos';
-			  $block[ 'content' ] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+			  $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+              $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
+              $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 		  }
 		  break;
 		}
@@ -370,15 +377,13 @@ function team_block( $op = 'list', $delta = 0 ){
 		break;
 
 	}
-
-  }
-
 }
 /**
  * Función para decidir si el usuario tiene acceso a las pestañas de administración del equipo
  * dependiendo de si es el capitán del equipo y si es un equipo formado por más de una persona
  */
 function team_admin_access($node) {
+    //TODO Revisar esta función porque no está dando la respuesta correcta
 	global $user;
 	$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
 	
