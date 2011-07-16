@@ -44,7 +44,6 @@
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'base_datos_externa_admin' ),
 		'access arguments'	=> array( 'administer site configuration' ),
-		//'type' => 	MENU_LOCAL_TASK,
 	);
 
 	////////////////////TEMPORADA
@@ -54,7 +53,7 @@
     'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'temporada_admin' ),
 		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'type' => MENU_LOCAL_TASK,
 		'file' => 'inc/pages_temporadas.inc',
   );
 
@@ -205,46 +204,46 @@
 	
 	
 	
-	//////////////////////MAPAS
+	//////////////////////MODOS DE JEGO
 	$items['admin/base_datos_externa/modos_juego'] = array(
     'title' => 'Modos de juego',
     'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'modos_juego_admin' ),
 		'access arguments' => array( 'administrar bd' ),	
 		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_mapas.inc',
+		'file' => 'inc/pages_modos_juego.inc',
   );
 	
 	
-	//Una página para plistar los mapas
-  $items['admin/base_datos_externa/mapas/listar'] = array(
+	//Una página para plistar los modos de jugo
+  $items['admin/base_datos_externa/modos_juego/listar'] = array(
     'title' => 'Listar',
     'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_listar' ),
+		'page arguments' => array( 'modos_juego_admin_listar' ),
 		'access arguments' => array( 'administrar bd' ),	
 		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_mapas.inc',
+		'file' => 'inc/pages_modos_juego.inc',
   );
 
-	//Inserta información en la tabla mapa
-  $items['admin/base_datos_externa/mapas/insertar'] = array(
+	//Inserta información en la tabla Modo_Juego
+  $items['admin/base_datos_externa/modos_juego/insertar'] = array(
     'title' => 'Insertar',
     'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_insertar' ),
+		'page arguments' => array( 'modos_juego_admin_insertar' ),
 		'access arguments' => array( 'administrar bd' ),	
 		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_mapas.inc',
+		'file' => 'inc/pages_modos_juego.inc',
   );
 
 
-	//Otra página para editar mapas
-	$items[ 'admin/base_datos_externa/mapas/%/editar' ] = array(
+	//Otra página para editar modos de juego
+	$items[ 'admin/base_datos_externa/modos_juego/%/editar' ] = array(
 		'title' => 'Editar mapa',
 		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_editar' ),
+		'page arguments' => array( 'modos_juego_admin_editar' ),
 		'access arguments' => array( 'administrar bd' ),
 		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_mapas.inc',
+		'file' => 'inc/pages_modos_juego.inc',
 		//'parent' => 'admin/base_datos_externa/temporadas'
 		
 	);
