@@ -70,3 +70,18 @@ function ranking_admin() {
         '#value' => l(t('Configuracion para torneos'), 'admin/base_datos_externa/ranking/torneos'),
     );
 }
+/**
+ * Implementación del hoock theme
+ */
+function ranking_theme() {
+    return array (
+        'ranking_desafios' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/ranking_desafios.inc',
+        ),
+        'ranking_torneos' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/ranking_torneo.inc',
+        ),
+    );
+}
