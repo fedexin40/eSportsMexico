@@ -136,7 +136,6 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
     
-<<<<<<< HEAD
 	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
 	$items [ 'user/%/invitar/%' ] = array (
 		'title' => 'Invitar Jugador',
@@ -146,8 +145,6 @@ function team_menu(){
 		'file' => 'inc/invitar_jugador.inc',
 		'type' => MENU_CALLBACK,
 	);
-	return $items;
-
 	//MENÚ que aparece en la ficha de jugador para aceptar y rechazar solicitudes recibidas
 	$items [ 'user/%/invitaciones' ] = array (
 		'title' => 'Invitaciones del Jugador',
@@ -157,16 +154,6 @@ function team_menu(){
 		'file' => 'inc/invitaciones_jugador.inc',
 		'type' => MENU_LOCAL_TASK,
 	);
-=======
-    //MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
-    $items [ 'user/%/invitar/%'] = array (
-        'title' => 'Invitar Jugador',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('invitar_usuario'),
-        'access arguments' => array('create team'),
-        'file' => 'inc/invitar_jugador.inc',
-        'type' => MENU_CALLBACK,
-    );
     
     //MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
     $items [ 'user/%/myteams'] = array (
@@ -177,7 +164,7 @@ function team_menu(){
         'file' => 'inc/equipos_usuario.inc',
         'type' => MENU_CALLBACK,
     );
->>>>>>> c464be6cfa093a29996a4ebd90b23516c400c761
+
 	return $items;
 }
 	
