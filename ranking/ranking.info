@@ -1,0 +1,7 @@
+; $Id$
+
+dependencies[ ] = base_datos_externa
+name = Ranking
+description = "Permite manejar y controlar el ránking de las modalidades."
+core = 6.x
+package = eSM

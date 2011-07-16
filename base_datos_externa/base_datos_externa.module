@@ -44,6 +44,7 @@
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'base_datos_externa_admin' ),
 		'access arguments'	=> array( 'administer site configuration' ),
+		//'type' => 	MENU_LOCAL_TASK,
 	);
 
 	////////////////////TEMPORADA
@@ -53,7 +54,7 @@
     'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'temporada_admin' ),
 		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
+		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'file' => 'inc/pages_temporadas.inc',
   );
 
