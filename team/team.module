@@ -134,7 +134,6 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
     
-//<<<<<<< HEAD
 	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
 	$items [ 'user/%/invitar/%' ] = array (
 		'title' => 'Invitar Jugador',
@@ -144,8 +143,6 @@ function team_menu(){
 		'file' => 'inc/invitar_jugador.inc',
 		'type' => MENU_CALLBACK,
 	);
-	return $items;
-
 
 	//TODO Menú para desligarse de un equipo
 	//MENÚ para darse de baja de un equipo
@@ -179,27 +176,27 @@ function team_menu(){
 		'type' => MENU_CALLBACK,
 	);
 	
-//=======
-    //MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
-    $items [ 'user/%/invitar/%'] = array (
-        'title' => 'Invitar Jugador',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('invitar_usuario'),
-        'access arguments' => array('create team'),
-        'file' => 'inc/invitar_jugador.inc',
-        'type' => MENU_CALLBACK,
-    );
+
+	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
+	$items [ 'user/%/invitar/%'] = array (
+			'title' => 'Invitar Jugador',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('invitar_usuario'),
+			'access arguments' => array('create team'),
+			'file' => 'inc/invitar_jugador.inc',
+			'type' => MENU_CALLBACK,
+	);
     
-    //MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
-    $items [ 'user/%/myteams'] = array (
-        'title' => 'Mis Equipos',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('equipos_usuario'),
-        'access arguments' => array('view team'),
-        'file' => 'inc/equipos_usuario.inc',
-        'type' => MENU_CALLBACK,
-    );
-//>>>>>>> c464be6cfa093a29996a4ebd90b23516c400c761
+	//MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
+	$items [ 'user/%/myteams'] = array (
+			'title' => 'Mis Equipos',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('equipos_usuario'),
+			'access arguments' => array('view team'),
+			'file' => 'inc/equipos_usuario.inc',
+			'type' => MENU_CALLBACK,
+	);
+
 	return $items;
 }
 	
