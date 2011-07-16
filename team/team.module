@@ -50,8 +50,6 @@ function team_perm(){
  * Admin menu link for the module
  * @return unknown_type
  */
-
-
 function team_menu(){
 	$items [ 'inscripcion/%' ] = array (			
 	  'title' => 'Inscripción',
@@ -136,7 +134,7 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
     
-<<<<<<< HEAD
+//<<<<<<< HEAD
 	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
 	$items [ 'user/%/invitar/%' ] = array (
 		'title' => 'Invitar Jugador',
@@ -148,6 +146,30 @@ function team_menu(){
 	);
 	return $items;
 
+
+	//TODO Menú para desligarse de un equipo
+	//MENÚ para darse de baja de un equipo
+	/*$items [ 'user/%/baja_equipo' ] = array (
+		'title' => 'Invitaciones del Jugador',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'administrar_invitaciones' ),
+		'access arguments' => array( 'view team' ),
+		'file' => 'inc/invitaciones_jugador.inc',
+		'type' => MENU_LOCAL_TASK,
+	);*/
+	
+	
+	//MENÚ para rechazar invitaciones
+	$items [ 'user/%/rechazar_invitacion' ] = array (
+		'title' => 'Invitaciones del Jugador',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'rechaza_invitacion' ),
+		'access arguments' => array( 'view team' ),
+		'file' => 'inc/invitaciones_jugador.inc',
+		'type' => MENU_CALLBACK,
+	);
+	
+	
 	//MENÚ que aparece en la ficha de jugador para aceptar y rechazar solicitudes recibidas
 	$items [ 'user/%/invitaciones' ] = array (
 		'title' => 'Invitaciones del Jugador',
@@ -156,8 +178,8 @@ function team_menu(){
 		'access arguments' => array( 'view team' ),
 		'file' => 'inc/invitaciones_jugador.inc',
 		'type' => MENU_LOCAL_TASK,
-	);
-=======
+	);	
+//=======
     //MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
     $items [ 'user/%/invitar/%'] = array (
         'title' => 'Invitar Jugador',
@@ -177,7 +199,7 @@ function team_menu(){
         'file' => 'inc/equipos_usuario.inc',
         'type' => MENU_CALLBACK,
     );
->>>>>>> c464be6cfa093a29996a4ebd90b23516c400c761
+//>>>>>>> c464be6cfa093a29996a4ebd90b23516c400c761
 	return $items;
 }
 	
@@ -289,6 +311,8 @@ function team_insert( $node ){
 	db_set_active ( 'eSM' );
 	
 	  db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
+		
+		db_query("INSERT INTO { Puntuacion }  ( nid_Equipo ) VALUES ( %d );", $node->nid );
   
 	  db_query("INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado) VALUES ( %d, %d, %d, %d );", $node->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), TIENE_EQUIPO );
     
