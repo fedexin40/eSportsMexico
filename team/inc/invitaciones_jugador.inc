@@ -16,17 +16,12 @@
     global $user;
 
     $usuario_administrador = user_load( arg( 1 ) );  //El primer argumento en la ruta define el uid del jugador al que le pertenecen las invitaciones
-
-		$equipo = node_load(arg(3)); 
-
-    $jugador = get_jugador( $usuario_administrador->uid, $equipo->id_Modalidad_Juego_Temporada );
-
-
 		
 		db_set_active( 'eSM' );
-
+		
 			$result_set_Jugador = db_query( "SELECT * FROM { Jugador }" );
-
+			$result_set_Equipo = db_query( "SELECT * FROM { Equipo }" );
+			
 		db_set_active( 'default' );
 
 
@@ -39,6 +34,8 @@
 				break;
 			}
 		}
+		
+		$Jugador = db_fetch_object( $result_set_Jugador );
 
 		$form[ 'invitaciones' ] = array (
 			'#title' => t( 'Invitaciones.' ),
@@ -77,10 +74,10 @@
 				AND
 					j.{ id_Jugador } = %d',
 			INVITADO,
-			$jugador->id_Jugador
+			$Jugador->id_Jugador
 		);
 
-
+		db_set_active(  'default' );
 		
 		
 		if( $Tiene_Equipo == 1 )
@@ -111,9 +108,9 @@
 				'#value' => t( 'Aceptar' ),
 			);
 	
-			$form[ 'invitaciones' ][ 'id_Jugador' ] = array (
+			$form[ 'invitaciones' ][ 'uid' ] = array (
 				'#type' => 'hidden',
-				'#value' => $jugador
+				'#value' => $Jugador
 			);
 	
 	
@@ -151,7 +148,7 @@
             form_set_error('invitado', 'No puedes invitar a esta jugador porque ya pertenece a un equipo.');
         }
         else {
-            db_set_active('eSM');
+            3('eSM');
                 $relaciones = db_query('SELECT * FROM {Integrantes_Equipo} WHERE id_Jugador = %d AND nid_Equipo = %d', $jugador->id_Jugador, $equipo->nid);
             db_set_active('default');
             while ($relacion = db_fetch_array($relaciones)) {
