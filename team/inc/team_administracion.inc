@@ -94,6 +94,8 @@ function team_administrar_activos_submit( $form, $form_state )
   $nid_Equipo = $form_state[ 'nid_equipo' ];
   $Equipo = node_load( $nid_Equipo );
 
+
+  db_set_active('eSM');
   $Jugadores = db_query
   (
     'SELECT
@@ -133,7 +135,8 @@ function team_administrar_activos_submit( $form, $form_state )
         RECHAZADO
     );
   }
-
+  db_set_active('default');  
+  
   dsm( "Jugadores expulsados satisfactoriamente" );
   drupal_goto( 'node/'.$nid_Equipo );
   
@@ -214,6 +217,7 @@ function team_administrar_solicitudes_submit( $form, $form_state )
   $nid_Equipo = $form_state[ 'nid_equipo' ];
   $Equipo = node_load( $nid_Equipo );
 
+  db_set_active('eSM');
   $Jugadores = db_query
   (
     'SELECT
@@ -253,6 +257,8 @@ function team_administrar_solicitudes_submit( $form, $form_state )
         ACEPTADO
     );
   }
+
+  db_set_active('default');
 
   dsm( "Jugadores aceptados satisfactoriamente" );
   drupal_goto( 'node/'.$nid_Equipo );
