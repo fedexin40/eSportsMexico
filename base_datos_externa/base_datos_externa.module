@@ -458,17 +458,33 @@ function get_modalidad( $id_Modalidad_Juego_Temporada ){
 	return $modalidad;
 }
 /**
- * función para obtener los equipos inscritos
- * en una modalidad de la temporada activa
- * recibe el id_Modalidad_Juego_Temporada
- * devuelve el resultado de la consulta para que
- * se pueda procesar con db_fetch_object
- * o db_fetch_array
+ * Función para obtener todas las modalidades activas
+ * en la temporada activa.
+ * Devuelve NULL si no hay temporada activa
+ * o si no hay ninguna modalidad activa.
+ * o devuelve un arreglo de objetos conteniendo
+ * todas las modalidades activas.
  */
-function get_teams($id_Modalidad_Juego_Temporada) {
-	db_set_active('eSM');
-		$teams = db_query('SELECT * FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada);
-	db_set_active('default');
-	
-	return $teams;
+function get_modalidades_activas (){
+    $temporada = temporada_activa();   //Obtiene la temporada activa actual
+    
+    if (isset($temporada)) {
+        db_set_active('eSM');
+            $result = db_query('SELECT * FROM {Modalidad_Juego_Temporada} WHERE id_Temporada = %d', $temporada->id_Temporada);
+        db_set_active('default');
+        $count = 0;
+        while ($modalidad_activa = db_fetch_object($result)) {
+            ++$count;
+            $modalidad = get_modalidad($modalidad_activa->id_Modalidad_Juego_Temporada);
+            if (isset($modalidad))
+                $modalidades[] = $modalidad;
+        }
+        if ($count == 0)
+            return NULL;
+        else
+            return $modalidades;
+    }
+    else {
+        return NULL;
+    }
 }

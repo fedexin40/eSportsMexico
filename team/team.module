@@ -144,6 +144,16 @@ function team_menu(){
         'file' => 'inc/invitar_jugador.inc',
         'type' => MENU_CALLBACK,
     );
+    
+    //MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
+    $items [ 'user/%/myteams'] = array (
+        'title' => 'Mis Equipos',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('equipos_usuario'),
+        'access arguments' => array('view team'),
+        'file' => 'inc/equipos_usuario.inc',
+        'type' => MENU_CALLBACK,
+    );
 	return $items;
 }
 	
@@ -257,6 +267,10 @@ function team_insert( $node ){
 	  db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
   
 	  db_query("INSERT INTO {Jugador} (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado) VALUES ( %d, %d, %d, %d );", $node->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), TIENE_EQUIPO );
+    
+    db_set_active ('default');
+    
+    db_set_active ('eSM');
   
 	  $jugador = db_fetch_array(db_query('SELECT {id_Jugador} FROM {Jugador} WHERE {id_Modalidad_Juego_Temporada} = %d AND {uid} = %d', $node->id_Modalidad_Juego_Temporada, $user->uid));
 	  
@@ -299,11 +313,13 @@ function team_load($node){
 	$node->id_Modalidad_Juego_Temporada = $team['id_Modalidad_Juego_Temporada'];	//Agrega al nodo equipo el id_Modalidad_Juego_Temporada al que pertenece el equipo
 	
 	//Cuenta cuantos integrantes tiene el equipo y lo agrega al objeto nodo
-	$integrantes = 0;
+	$no_integrantes = 0;
 	while ($jugador = db_fetch_object($team_i)) {
-		$integrantes++;
+        $integrantes[] = $jugador;
+		$no_integrantes++;
 	}
-	$node->Numero_Integrantes = $integrantes;
+	$node->Numero_Integrantes = $no_integrantes;
+    $node->Integrantes = $integrantes;
 	/* 
 	while( $team_i = db_fetch_object($team_i) ) {
 		$jugador_result = db_query('SELECT *, FROM {Jugadores} WHERE {id_Jugador} = %d', $team_i->id_Jugador );
@@ -432,4 +448,19 @@ function get_jugador($uid, $id_Modalidad_Juego_Temporad) {
     db_set_active('default');
     
     return $jugador;
+}
+/**
+ * función para obtener los equipos inscritos
+ * en una modalidad de la temporada activa
+ * recibe el id_Modalidad_Juego_Temporada
+ * devuelve el resultado de la consulta para que
+ * se pueda procesar con db_fetch_object
+ * o db_fetch_array
+ */
+function get_teams($id_Modalidad_Juego_Temporada) {
+	db_set_active('eSM');
+		$teams = db_query('SELECT * FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada);
+	db_set_active('default');
+	
+	return $teams;
 }
