@@ -15,3 +15,7 @@
     NO_INSCRITO: 0
  9. Añadida fucnión tiene_equipo($uid, $id_Modalidad_Juego_Temporada) en team.module para saber si el jugador pertenece a un equipo, es agente libre o no está inscrito.
  10. Añadida la función get_jugdor($uid, $id_Modalidad_Juego_Temporada) en team. module para obtener los datos de un jugador
+ 
+15 de julio 2011 - Agustín Cruz Lozano
+    1. Ahora el team_load agrega un arreglo integrantes con los objetos de todos los integrantes al nodo
+    2. Definida la ruta /user/%/myteams como una vista informativa de los equipos a los que pertenece el usuario

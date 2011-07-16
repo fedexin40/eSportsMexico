@@ -31,7 +31,7 @@ function invitar_usuario() {
         );
         $form['Submit'] = array (
             '#type' => 'submit',
-            '#value' => t('Invitar'),
+            '#value' => t( 'Invitar' ),
         );
         return $form;
     }
@@ -43,37 +43,40 @@ function invitar_usuario() {
 /**
  * Función para crear la forma de invitación
  */
-function invitar_usuario_validate($form, $form_state) {
+function invitar_usuario_validate($form, $form_state)
+{
     $equipo = node_load($form_state['values']['nid_Equipo']);
 
-    if (is_null($form_state['values']['id_Jugador'])) {
+    if (is_null($form_state['values']['id_Jugador']))
+    {
         form_set_error('invitado', 'El jugador no está registrado en esta modalidad.');
     }
-    else {
-        $jugador = get_jugador($form_state['values']['uid_invitado'], $equipo->id_Modalidad_Juegos_Temporadas);
-        if ($jugador->Estado == TIENE_EQUIPO) {
-            form_set_error('invitado', 'No puedes invitar a esta jugador porque ya pertenece a un equipo.');
-        }
-        else {
-            db_set_active('eSM');
-                $relaciones = db_query('SELECT * FROM {Integrantes_Equipo} WHERE id_Jugador = %d AND nid_Equipo = %d', $jugador->id_Jugador, $equipo->nid);
-            db_set_active('default');
-            while ($relacion = db_fetch_array($relaciones)) {
-                switch ($relacion['Estado']) {
-                    case 1:
-                        form_set_error('invitado', t('Ya has invitado a este jugador. Espera a que acepte tu invitación.'));
-                        break;
-                    case 2:
-                        form_set_error('invitado', 'Este jugador ya ha solicitado ser parte del equipo.');
-                        break;
-                    case 3:
-                        form_set_error('invitado', 'Este jugador ya forma parte de tu equipo.');
-                        break;
-                    default :
-                        break;
-                }
-            }
-        }
+    else
+    {
+      $jugador = get_jugador($form_state['values']['uid_invitado'], $equipo->id_Modalidad_Juegos_Temporadas);
+      if ($jugador->Estado == TIENE_EQUIPO) {
+          form_set_error('invitado', 'No puedes invitar a esta jugador porque ya pertenece a un equipo.');
+      }
+      else {
+          db_set_active('eSM');
+              $relaciones = db_query('SELECT * FROM {Integrantes_Equipo} WHERE id_Jugador = %d AND nid_Equipo = %d', $jugador->id_Jugador, $equipo->nid);
+          db_set_active('default');
+          while ($relacion = db_fetch_array($relaciones)) {
+              switch ($relacion['Estado']) {
+                  case 1:
+                      form_set_error('invitado', t('Ya has invitado a este jugador. Espera a que acepte tu invitación.'));
+                      break;
+                  case 2:
+                      form_set_error('invitado', 'Este jugador ya ha solicitado ser parte del equipo.');
+                      break;
+                  case 3:
+                      form_set_error('invitado', 'Este jugador ya forma parte de tu equipo.');
+                      break;
+                  default :
+                      break;
+              }
+          }
+      }
     }
 }
 /**
@@ -88,6 +91,9 @@ function invitar_usuario_submit ($form, $form_state) {
     db_set_active('default');
     
     dsm(t('Tu invitacion se ha enviado correctamente.'));
-    $modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
+      $modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
     drupal_goto('/libres/'. $modalidad->tid .'/lista');
+
+
+
 }
