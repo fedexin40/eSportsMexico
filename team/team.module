@@ -156,35 +156,35 @@ function team_menu(){
 	);*/
 	
 	
-	//MENÚ para rechazar invitaciones
-	$items [ 'user/%/rechazar_invitacion' ] = array (
-		'title' => 'Invitaciones del Jugador',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'rechaza_invitacion' ),
-		'access arguments' => array( 'view team' ),
-		'file' => 'inc/invitaciones_jugador.inc',
-		'type' => MENU_CALLBACK,
-	);
-	
 	//MENÚ que aparece en la ficha de jugador para aceptar y rechazar solicitudes recibidas
 	$items [ 'user/%/invitaciones' ] = array (
 		'title' => 'Invitaciones del Jugador',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'administrar_invitaciones' ),
-		'access arguments' => array( 'view team' ),
+		'access arguments' => array( 'create team' ),
 		'file' => 'inc/invitaciones_jugador.inc',
 		'type' => MENU_LOCAL_TASK,
+	);	
+	
+	//Página para rechazar invitaciones
+	$items [ 'user/%/rechazar_invitacion' ] = array (
+		'title' => 'Rechazar invitación',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'rechaza_invitacion' ),
+		'access arguments' => array( 'create team' ),
+		'file' => 'inc/invitaciones_jugador.inc',
+		'type' => MENU_CALLBACK,
 	);
     
-    //MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
-    $items [ 'user/%/myteams'] = array (
-        'title' => 'Mis Equipos',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('equipos_usuario'),
-        'access arguments' => array('view team'),
-        'file' => 'inc/equipos_usuario.inc',
-        'type' => MENU_CALLBACK,
-    );
+	//MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
+	$items [ 'user/%/myteams'] = array (
+			'title' => 'Mis Equipos',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('equipos_usuario'),
+			'access arguments' => array('view team'),
+			'file' => 'inc/equipos_usuario.inc',
+			'type' => MENU_CALLBACK,
+	);
 
 	return $items;
 }
@@ -348,12 +348,14 @@ function team_load($node){
 	
 	//Cuenta cuantos integrantes tiene el equipo y lo agrega al objeto nodo
 	$no_integrantes = 0;
+	$integrantes = array( );
+	
 	while ($jugador = db_fetch_object($team_i)) {
-        $integrantes[] = $jugador;
+    $integrantes[ $jugador->id_Jugador ] = $jugador;
 		$no_integrantes++;
 	}
 	$node->Numero_Integrantes = $no_integrantes;
-    $node->Integrantes = $integrantes;
+  $node->Integrantes = $integrantes;
 	/* 
 	while( $team_i = db_fetch_object($team_i) ) {
 		$jugador_result = db_query('SELECT *, FROM {Jugadores} WHERE {id_Jugador} = %d', $team_i->id_Jugador );
