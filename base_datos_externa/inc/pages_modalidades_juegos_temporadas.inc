@@ -270,7 +270,7 @@
 		db_set_active( 'default' );
 		
 		
-		//Primero pondremos un listado de modalidads disponibles
+		//Primero pondremos un listado de modalidades disponibles
 		while( $Modalidad_Juego_Temporada = db_fetch_object( $result_set_Modalidad_Juego_Temporada ) ) {
 
 			db_set_active( 'eSM' );
