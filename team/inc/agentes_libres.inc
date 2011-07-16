@@ -183,15 +183,13 @@ function agente_libre_validate ( $form, $form_state ) {
 */
 function agente_libre_listar ( ) {
     global $user;
-    $tid = arg(1);     //obtiene el tid de la barra de direcciones
-    $modalidad = term_is_active($tid);  //Obtiene los datos de la modalidad con base en el término enviado en tid
-    
+    $id_Modalidad_Juego_Temporada = arg(1);     //obtiene el id_Modalidad_Juego_Temporada de la barra de direcciones
     $count = 0;
-    $is_capitan = is_capitan($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
+    $is_capitan = is_capitan($user->uid, $id_Modalidad_Juego_Temporada);
     
     //Obtiene la lista de jugadores libres para una modalidad y temporada
     db_set_active( 'eSM' );
-        $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $modalidad->id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
+        $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
     db_set_active( 'default' );
     
     $form['Jugadores_Libres'] = array (
@@ -242,9 +240,9 @@ function agente_libre_listar ( ) {
             '#value' => $horas,
         );
         
-        if (isset($is_capitan)) {       //Si el jugador es capitán de un equipo escribe un link para redirigir al formulario de invitación.
+        if (isset($is_capitan)) {
             $form['Jugadores_Libres'][$jugador->uid]['link'] = array (
-                '#value' => l('Invitar', 'user/'. $jugador->uid . '/invitar/'. $is_capitan->nid),
+                '#value' => l('Invitar', 'user/'. $is_capitan . '/invitar'),
             );
         }
     }

@@ -20,7 +20,7 @@ function modalidad_juego_admin(  ) {
 	);
 	
 	if( variable_get( 'vocabulario_modalidades', NULL ) == NULL ) {
-		if ($vocabularios = taxonomy_get_vocabularies()) {
+		if ( $vocabularios = taxonomy_get_vocabularies( ) ) {
 			foreach($vocabularios as $indice => $vocabulario) {
 				$options[$vocabulario->vid] = $vocabulario->name;
 			}

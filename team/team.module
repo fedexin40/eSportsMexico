@@ -51,6 +51,7 @@ function team_perm(){
  * @return unknown_type
  */
 
+
 function team_menu(){
 	$items [ 'inscripcion/%' ] = array (			
 	  'title' => 'Inscripción',
@@ -135,6 +136,28 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
     
+<<<<<<< HEAD
+	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
+	$items [ 'user/%/invitar/%' ] = array (
+		'title' => 'Invitar Jugador',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('invitar_usuario'),
+		'access arguments' => array('create team'),
+		'file' => 'inc/invitar_jugador.inc',
+		'type' => MENU_CALLBACK,
+	);
+	return $items;
+
+	//MENÚ que aparece en la ficha de jugador para aceptar y rechazar solicitudes recibidas
+	$items [ 'user/%/invitaciones' ] = array (
+		'title' => 'Invitaciones del Jugador',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'administrar_invitaciones' ),
+		'access arguments' => array( 'view team' ),
+		'file' => 'inc/invitaciones_jugador.inc',
+		'type' => MENU_LOCAL_TASK,
+	);
+=======
     //MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
     $items [ 'user/%/invitar/%'] = array (
         'title' => 'Invitar Jugador',
@@ -154,6 +177,7 @@ function team_menu(){
         'file' => 'inc/equipos_usuario.inc',
         'type' => MENU_CALLBACK,
     );
+>>>>>>> c464be6cfa093a29996a4ebd90b23516c400c761
 	return $items;
 }
 	
@@ -342,58 +366,62 @@ function team_load($node){
  */
 function team_block( $op = 'list', $delta = 0 ){
   //TODO 
-
-  if( ( arg( 0 ) == 'taxonomy' ) && ( arg( 1 ) == 'term' ) &&  ( is_numeric( arg( 2 ) ) ) )
 	$tid = arg( 2 );	
 
-	switch( $op ){
-	  case 'list':
-		$block = array();
-		$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-		return $block;
-		break;
-	  case 'view':
-		  
-		switch( $delta )
-		{
-		  case 0:
-			$block = array( );
-			
-			if
-			(
-			  (
-				is_numeric( $tid )
-					&&
-				( arg( 1 ) == 'term' )
-			  )
-				  &&
-			  (
-			  term_is_active( $tid )								
-			  )
-			) {
-			
-				//dpm( variable_get( arg( 2 ) ) );
+  if( ( arg( 0 ) == 'taxonomy' ) && ( arg( 1 ) == 'term' ) &&  ( is_numeric( arg( 2 ) ) ) )
+	{	
+
+		switch( $op ){
+			case 'list':
+			$block = array();
+			$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
+			return $block;
+			break;
+			case 'view':
 				
-			  $block[ 'subject' ] = 'Equipos';
-			  $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-              $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
-              $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
-		  }
-		  break;
+			switch( $delta )
+			{
+				case 0:
+				$block = array( );
+				
+				if
+				(
+					(
+					is_numeric( $tid )
+						&&
+					( arg( 1 ) == 'term' )
+					)
+						&&
+					(
+					term_is_active( $tid )								
+					)
+				) {
+				
+					//dpm( variable_get( arg( 2 ) ) );
+					
+					$block[ 'subject' ] = 'Equipos';
+					$content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+								$content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
+								$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
+				}
+				break;
+			}
+			return $block;
+			break;
+	
+			case 'save':
+				
+			break;
+	
+	
+			case 'configure':
+				
+			break;
+	
 		}
-		return $block;
-		break;
-
-	  case 'save':
-		  
-		break;
-
-
-	  case 'configure':
-		  
-		break;
 
 	}
+
 }
 /**
  * Función para decidir si el usuario tiene acceso a las pestañas de administración del equipo
