@@ -1,0 +1,7 @@
+15 julio 2011
+    1. Pestaña de configuración para la tabla de puntuación para torneos y desafíos en la pestaña de Administración base de datos externa
+    2. Insertar equipos en el ranking
+    3. Añadir vista del ránking como una pestaña dentro de /taxonomy/term/%
+    4. Actualiza ránking
+    5. Calculo ránking desafío
+    6. Calculo ránking torneo
