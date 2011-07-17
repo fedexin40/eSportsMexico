@@ -380,57 +380,45 @@ function team_block( $op = 'list', $delta = 0 ){
   //TODO 
 	$tid = arg( 2 );	
 
-  if( ( arg( 0 ) == 'taxonomy' ) && ( arg( 1 ) == 'term' ) &&  ( is_numeric( arg( 2 ) ) ) )
-	{	
-
-		switch( $op ){
-			case 'list':
-			$block = array();
-			$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-			return $block;
-			break;
-			case 'view':
-				
-			switch( $delta )
+	switch( $op ){
+		case 'list':
+		$block = array();
+		$block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
+		return $block;
+		break;
+		case 'view':
+			
+		switch( $delta )
+		{
+			case 0:
+			$block = array( );
+			
+			if
+					(	(	is_numeric( $tid ) && ( arg( 1 ) == 'term' ) )
+				&& 	( term_is_active( $tid )	) )
 			{
-				case 0:
-				$block = array( );
+			
+				//dpm( variable_get( arg( 2 ) ) );
 				
-				if
-				(
-					(
-					is_numeric( $tid )
-						&&
-					( arg( 1 ) == 'term' )
-					)
-						&&
-					(
-					term_is_active( $tid )								
-					)
-				) {
-				
-					//dpm( variable_get( arg( 2 ) ) );
-					
-					$block[ 'subject' ] = 'Equipos';
-					$content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-								$content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
-								$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
-				}
-				break;
+				$block[ 'subject' ] = 'Equipos';
+				$content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+				$content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
+				$content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
+				$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 			}
-			return $block;
 			break;
-	
-			case 'save':
-				
-			break;
-	
-	
-			case 'configure':
-				
-			break;
-	
 		}
+		return $block;
+		break;
+
+		case 'save':
+			
+		break;
+
+
+		case 'configure':
+			
+		break;
 
 	}
 
