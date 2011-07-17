@@ -71,16 +71,32 @@ function ranking_menu(){
  * configuración de cada tipo de ránking.
  */
 function ranking_admin() {
-	$form['leyenda'] = array (
-			'#value' => '<p>Bienvenido a la seccion de administracion de ranking.</p>.<p>Para configurar dirígete a:</p>'
-	);
-	$form['desafios'] = array (
-			'#value' => l(t('Configuracion para desafios'), 'admin/base_datos_externa/ranking/desafios'),
-	);
-	$form['torneos'] = array (
-			'#value' => l(t('Configuracion para torneos'), 'admin/base_datos_externa/ranking/torneos'),
-	);
+    $form['leyenda'] = array (
+        '#value' => '<p>Bienvenido a la seccion de administracion de ranking.</p>.<p>Para configurar dirígete a:</p>'
+    );
+    $form['desafios'] = array (
+        '#value' => l(t('Configuracion para desafios'), 'admin/base_datos_externa/ranking/desafios'),
+    );
+    $form['torneos'] = array (
+        '#value' => l(t('Configuracion para torneos'), 'admin/base_datos_externa/ranking/torneos'),
+    );
 }
+/**
+ * Implementación del hoock theme
+ */
+function ranking_theme() {
+    return array (
+        'ranking_desafios' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/ranking_desafios.inc',
+        ),
+        'ranking_torneos' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/ranking_torneo.inc',
+        ),
+    );
+}
+<<<<<<< HEAD
 
 
 	/**
@@ -94,6 +110,36 @@ function ranking_admin() {
 	 *	
 	 */
 	function calcula_ranking_desafio( $Desafio )
+=======
+/**
+ *	Función para mostrar la puntuación de una modalidad
+ */
+function mostrar_puntuacion(  )
+{
+	
+	dsm( "Hola" );
+	
+	$id_Modalidad_Juego_Temporada = arg( 2 );
+	
+	
+	$form[ 'puntuacion' ] = array
+	(
+		'#title' => t( 'Puntuacion.' ),
+		'#type' => 'fieldset',
+		//'#default_value' => $Equipos->Nombre,
+		//'#options' => $options,
+		'#collapsible' => 0,
+	);
+	
+	db_set_active( 'eSM' );
+	
+		$Puntuacion_result = db_query( "SELECT { * } FROM { Puntuacion } AS { p } INNER JOIN { Equipo } AS { e } ON { p.nid_Equipo } = { e.nid_Equipo } INNER JOIN { Modalidad_Juego_Temporada } AS { m } ON { e.id_Modalidad_Juego_Temporada } = { m.id_Modalidad_Juego_Temporada } WHERE { p.nid_Equipo } = %d ", arg( 2 ) );
+		
+	db_set_active( 'default' );	
+	
+	//Primero mostraremos todos los equipos
+	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) )
+>>>>>>> 86bcdc92461e9f620e0097d9238671413bbffb6e
 	{
 		
 		$nid_EquipoLocal = $Desafio->nid_EquipoLocal;

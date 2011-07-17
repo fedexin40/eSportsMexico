@@ -202,8 +202,6 @@
 		
 	);
 	
-	
-	
 	//////////////////////MODOS DE JEGO
 	$items['admin/base_datos_externa/modos_juego'] = array(
     'title' => 'Modos de juego',
@@ -354,10 +352,6 @@
 		'file' => 'inc/pages_modalidades_juegos_temporadas.inc',
 		
 	);
-	
-	//Otra página para editar modalidades de juegos
-	
-	
 	
   return $items;
 }
