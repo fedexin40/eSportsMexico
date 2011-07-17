@@ -53,13 +53,13 @@ function ranking_menu(){
 	
 	
 	//MENÚ para mostrar el ranking
-	$items[ 'taxonomy/term/%/ranking' ] = array (
-		'title' => t( 'Puntuacion' ),
+  $items[ 'taxonomy/term/%/ranking' ] = array (
+	'title' => t( 'Puntuacion' ),
     'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'mostrar_puntuacion' ),
-		'access arguments' => array( 'view ranking' ),
+	'page arguments' => array( 'mostrar_puntuacion' ),
+	'access arguments' => array( 'view ranking' ),
     //'file' => 'inc/ranking_torneos.inc',
-		'type' => MENU_LOCAL_TASK,
+	'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -92,7 +92,7 @@ function ranking_theme() {
         ),
         'ranking_torneos' => array (
             'arguments' => array ('form' => NULL),
-            'file' => '/theme/ranking_torneo.inc',
+            'file' => '/theme/ranking_torneos.inc',
         ),
     );
 }
@@ -184,4 +184,58 @@ function mostrar_puntuacion(  )
 	}
 	
 	return $form;
+}
+/**
+ * Función para actualizar el ranking de un equipo
+ * Recibe el nind_Equipo, Puntación a sumar, Win (1) /Loss (0)
+ * La variable torneo indica si la actualización es por torneo y el valor es 0 por defecto (No es torneo)
+ * La variable win indica si ganó o perdió el desafío y el valor por defecto es 0 (Perdió el desafío)
+ */
+function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
+    db_set_active('eSM');
+        $puntuacion = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
+    db_set_active('default');
+    
+    $puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
+    
+    if ($torneo == 0) {         //El partido es un desafío, hace la actualización de puntos y partidos jugados
+        ++$puntuacion->PJ;      //Suma otro partido a los partidos jugados por el equipo
+        
+        if($puntuacion->Puntuacion < 0)     //Asegura que la puntuación nunca vaya a bajar de cero.
+            $puntuacion->Puntuacion = 0;
+        
+        if ($win == 0) {        //El equipo perdió el partido
+            if ($puntuacion >= 0) {
+                watchdog('ranking', 'Ha ocurrido un error al calcular los puntos del partido : '. $nid_Equipo, NULL, WATCHDOG_ERROR);
+                return;
+            }
+            
+            if($puntuacion->Racha > 0)
+                $puntuacion->Racha == 0;        //Resetea la racha a cero
+        }
+        else {
+            if ($puntuacion <= 0) {
+                watchdog('ranking', 'Ha ocurrido un error al calcular los puntos del partido : '. $nid_Equipo, NULL, WATCHDOG_ERROR);
+                return;
+            }
+            
+            ++$puntuacion->PG;      //Incrementa el número de partidos ganados
+            ++$puntuacion->Racha;   //Incrementa la racha del jugador
+        }
+    }
+    else {
+        if ($puntos < 0 ) {
+            watchdog('ranking', 'Ha ocurrido un error al calcular los puntos del partido : '. $nid_Equipo, NULL, WATCHDOG_ERROR);
+            return;
+        }
+        ++$puntuacion->TJ;
+        if ($win == 1)
+            ++$puntuacion->TG;
+    }
+    
+    db_set_active('eSM');
+        db_query('UPDATE {Puntuacion} SET Puntuacion = %d, PJ = %d, PG = %d, Racha = %d, TJ = %d, TG = %d WHERE nid_Equipo = %d', $puntuacion->Puntuacion, $puntuacion->PJ, $puntuacion->PG, $puntuacion->Racha, $puntuacion->TJ, $puntuacion->TG, $nid_Equipo);
+    db_set_active('default');
+    
+    return;
 }
