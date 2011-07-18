@@ -409,8 +409,9 @@ function team_block( $op = 'list', $delta = 0 ){
                         
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-                                    $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
-                                    $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
+                        $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
+						$content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
+                        $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
                     }
                     break;
                 }
@@ -421,11 +422,9 @@ function team_block( $op = 'list', $delta = 0 ){
                 
                 break;
 
-
         case 'configure':
             
             break;
-
     }
 
 }

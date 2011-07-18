@@ -53,13 +53,13 @@ function ranking_menu(){
 	
 	
 	//MENÚ para mostrar el ranking
-  $items[ 'taxonomy/term/%/ranking' ] = array (
-	'title' => t( 'Puntuacion' ),
-    'page callback' => 'drupal_get_form',
-	'page arguments' => array( 'mostrar_puntuacion' ),
-	'access arguments' => array( 'view ranking' ),
-    //'file' => 'inc/ranking_torneos.inc',
-	'type' => MENU_LOCAL_TASK,
+	$items[ 'puntuacion/%' ] = array (
+		'title' => t( 'Puntuacion' ),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'mostrar_puntuacion' ),
+		'access arguments' => array( 'view ranking' ),
+		'file' => 'inc/ranking_modalidades.inc',
+		'type' => MENU_CALLBACK,
   );
 
   return $items;
@@ -96,13 +96,12 @@ function ranking_theme() {
         ),
     );
 }
+
 /**
  *	Función para mostrar la puntuación de una modalidad
  */
 function mostrar_puntuacion(  )
 {
-	
-	dsm( "Hola" );
 	
 	$id_Modalidad_Juego_Temporada = arg( 2 );
 	
@@ -126,63 +125,379 @@ function mostrar_puntuacion(  )
 	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) )
 	{
 		
+		$nid_EquipoLocal = $Desafio->nid_EquipoLocal;
+		$nid_EquipoVisitante = $Desafio->nid_EquipoVisitante;
 		
-		$form[ 'puntuacion' ][ 'equipos' ] = array
-		(
-			'#title' => t( 'Equipos' ),
-			'#type' => 'fieldset',
-			'collapsible' => 1,
-		);
+		$ganador = $Desafio->ganador;
 		
-		db_set_active( 'eSM' );
+		$diferenciaPuntuacion = $Desafio->Puntuacion_Local - $Desafio->Puntuacion_Visitante;
 		
-			$Equipo_result = db_query( "SELECT { * } FROM Equipo WHERE { Equipo.nid_Equipo } = %d", $Puntuacion->nid_Equipo );
-		
-		db_set_active( 'default' );
-		
-		
-		$Equipo = db_fetch_object( $Equipo_result );
-		
-		$form[ 'puntuacion' ][ 'equipos' ][ 'Abreviacion' ] = array (
-			'#title' => 'Abreviacion',
-			'#type' => 'item',
-			'#value' => $Equipo->Abreviacion
-			
-		);
-		
-		$form[ 'puntuacion' ][ 'equipos' ][ 'Puntuacion' ] = array (
-			'#title' => 'Puntuacion',
-			'#type' => 'item',
-			'#value' => $Puntuacion->Puntuacion
-			
-		);
-		
+		if( $diferenciaPuntuacion < 0 )
+			$diferenciaPuntuacion *= -1;
 
-		$form[ 'puntuacion' ][ 'equipos' ][ 'PJ' ] = array (
-			'#title' => 'Desafios Jugados',
-			'#type' => 'item',
-			'#value' => $Puntuacion->PJ
+		if( $ganador == $Desafio->nid_EquipoLocal )
+		{
 			
-		);
+			if ( $diferenciaPuntuacion == 0 )
+			{		
+					$puntuacion_ganador +=100;
+					$puntuacio_perdedor -=100;
+			}
+			else if ( $diferenciaPuntuacion < 99 )
+			{
+					$puntuacion_ganador += 90;
+					$perdedor_puntuacion -= 90;
 
-		$form[ 'puntuacion' ][ 'equipos' ][ 'PG' ] = array (
-			'#title' => 'Desafíos Ganados',
-			'#type' => 'item',
-			'#value' => $Puntuacion->PG
-			
-		);
+			}
+			else if ( $diferenciaPuntuacion < 199 )
+			{
+					$puntuacion_ganador += 80;
+					$perdedor_puntuacion -= 80;
 
-		$form[ 'puntuacion' ][ 'equipos' ][ 'Racha' ] = array (
-			'#title' => 'Desafíos Ganados',
-			'#type' => 'item',
-			'#value' => $Puntuacion->Racha
+			}		
+			else if ( $diferenciaPuntuacion < 399 )
+			{
+					$puntuacion_ganador += 70;
+					$perdedor_puntuacion -= 70;
+
+			}		
+			else if ( $diferenciaPuntuacion < 599 )
+			{
+					$puntuacion_ganador += 60;
+					$perdedor_puntuacion -= 60;
+
+			}		
+			else if ( $diferenciaPuntuacion < 899 )
+			{
+					$puntuacion_ganador += 50;
+					$perdedor_puntuacion -= 50;
+
+			}
 			
-		);
+			else if ( $diferenciaPuntuacion < 1199 )
+			{
+					$puntuacion_ganador += 40;
+					$perdedor_puntuacion -= 40;
+
+			}		
+			else if ( $diferenciaPuntuacion < 1599 )
+			{
+					$puntuacion_ganador += 30;
+					$perdedor_puntuacion -= 30;
+
+			}		
+			else if ( $diferenciaPuntuacion < 1999 )
+			{
+					$puntuacion_ganador += 20;
+					$perdedor_puntuacion -= 20;
+
+			}
+			else if ( $diferenciaPuntuacion < 2499 )
+			{
+					$puntuacion_ganador += 10;
+					$perdedor_puntuacion -= 10;
+
+			}
+			
+			else if ( $diferenciaPuntuacion >= 2500 )
+			{
+				
+				$puntuacion_ganador += 1;
+				$perdedor_puntuacion -= 1;
+				
+			}
+			
+			actualizar_ranking( $nid_EquipoLocal, $puntuacion_ganador, 1, 1 );
+			actualizar_ranking( $nid_EquipoVisitante, $puntuacion_perdedor,1 );
+
+		}
+		
+		else
+		{
+			
+			if ( $diferenciaPuntuacion == 0 )
+			{		
+					$puntuacion_ganador -=100;
+					$perdedor_puntuacion +=100;
+			}
+			else if ( $diferenciaPuntuacion < 99 )
+			{
+					$puntuacion_ganador += 90;
+					$perdedor_puntuacion += 90;
+
+			}
+			else if ( $diferenciaPuntuacion < 199 )
+			{
+					$puntuacion_ganador -= 80;
+					$perdedor_puntuacion += 80;
+
+			}		
+			else if ( $diferenciaPuntuacion < 399 )
+			{
+					$puntuacion_ganador -= 70;
+					$perdedor_puntuacion += 70;
+
+			}		
+			else if ( $diferenciaPuntuacion < 599 )
+			{
+					$puntuacion_ganador -= 60;
+					$perdedor_puntuacion += 60;
+
+			}		
+			else if ( $diferenciaPuntuacion < 899 )
+			{
+					$puntuacion_ganador -= 50;
+					$perdedor_puntuacion += 50;
+
+			}
+			
+			else if ( $diferenciaPuntuacion < 1199 )
+			{
+					$puntuacion_ganador -= 40;
+					$perdedor_puntuacion += 40;
+
+			}		
+			else if ( $diferenciaPuntuacion < 1599 )
+			{
+					$puntuacion_ganador -= 30;
+					$perdedor_puntuacion += 30;
+
+			}		
+			else if ( $diferenciaPuntuacion < 1999 )
+			{
+					$puntuacion_ganador -= 20;
+					$perdedor_puntuacion += 20;
+
+			}
+			else if ( $diferenciaPuntuacion < 2499 )
+			{
+					$puntuacion_ganador -= 10;
+					$perdedor_puntuacion += 10;
+
+			}
+			
+			else if ( $diferenciaPuntuacion >= 2500 )
+			{
+				
+				$puntuacion_ganador -= 1;
+				$perdedor_puntuacion += 1;
+				
+			}
+	
+	
+			actualizar_ranking( $nid_EquipoVisitante, $puntuacion_ganador,1, 1 );
+			actualizar_ranking( $nid_EquipoLocal, $puntuacion_perdedor, 1 );
+			
+		}
+		
 		
 		
 		
 	}
 	
+	
+	
+	
+	/**
+	 *	Función para calcular el ranking luego de un desafío
+	 *	@Param 
+	 *	$equipos -- Arreglo con los equipos integrantes del torneo
+	 *		que contiene:
+	 *	equipos[ $Lugar ] = nid_Equipo donde:
+	 *	$Lugar es la posición que ocupa el equipo dentro del torneo
+	 *	$nid_Equipo es el nid del Equipo
+	 */
+	function calcula_ranking_torneo( $equipos )
+	{
+		
+		
+		$numero_Equipos = sizeof( $equipos );
+		
+		if( $numero_Equipos < 64 )
+		{
+			for( $i = 1; $i < $numero_Equipos; $i++ )
+			{
+					
+				if ( i == 1 )
+					actualizar_ranking( $equipos[ i ], 1600, 0, 1 );
+					
+				else if ( i < 2 )
+					actualizar_ranking( $equipos[ i ], 1100, 0, 0 );
+
+				else if ( i < 4 )
+					actualizar_ranking( $equipos[ i ], 700, 0, 0 );
+
+				else if ( i < 8 )
+					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
+
+				else if ( i < 16 )
+					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
+				
+				else if ( i < 32 )
+					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
+				
+				else if ( i < 64 )
+					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+				
+
+			}
+			
+		}
+
+		else if( $numero_Equipos < 128 )
+		{
+			for( $i = 1; $i < $numero_Equipos; $i++ )
+			{
+					
+				if ( i == 1 )
+					actualizar_ranking( $equipos[ i ], 1900, 0, 1 );
+					
+				else if ( i < 2 )
+					actualizar_ranking( $equipos[ i ], 1400, 0, 0 );
+
+				else if ( i < 4 )
+					actualizar_ranking( $equipos[ i ], 1100, 0, 0 );
+
+				else if ( i < 8 )
+					actualizar_ranking( $equipos[ i ], 700, 0, 0 );
+
+				else if ( i < 16 )
+					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
+				
+				else if ( i < 32 )
+					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
+				
+				else if ( i < 64 )
+					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
+
+				else if ( i < 128 )
+					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+
+			}
+			
+		}
+
+
+		else if( $numero_Equipos < 256 )
+		{
+			for( $i = 1; $i < $numero_Equipos; $i++ )
+			{
+					
+				if ( i == 1 )
+					actualizar_ranking( $equipos[ i ], 2200, 0, 1 );
+					
+				else if ( i < 2 )
+					actualizar_ranking( $equipos[ i ], 1700, 0, 0 );
+
+				else if ( i < 4 )
+					actualizar_ranking( $equipos[ i ], 1400, 0, 0 );
+
+				else if ( i < 8 )
+					actualizar_ranking( $equipos[ i ], 1100, 0, 0 );
+
+				else if ( i < 16 )
+					actualizar_ranking( $equipos[ i ], 500, 0, 0 );
+				
+				else if ( i < 32 )
+					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
+				
+				else if ( i < 64 )
+					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
+
+				else if ( i < 128 )
+					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
+				
+				else if ( i < 256 )
+					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+	
+
+			}
+			
+		}
+
+		else if( $numero_Equipos < 512 )
+		{
+			for( $i = 1; $i < $numero_Equipos; $i++ )
+			{
+					
+				if ( i == 1 )
+					actualizar_ranking( $equipos[ i ], 2500, 0, 1 );
+					
+				else if ( i < 2 )
+					actualizar_ranking( $equipos[ i ], 2000, 0, 0 );
+
+				else if ( i < 4 )
+					actualizar_ranking( $equipos[ i ], 1700, 0, 0 );
+
+				else if ( i < 8 )
+					actualizar_ranking( $equipos[ i ], 1400, 0, 0 );
+
+				else if ( i < 16 )
+					actualizar_ranking( $equipos[ i ], 600, 0, 0 );
+				
+				else if ( i < 32 )
+					actualizar_ranking( $equipos[ i ], 500, 0, 0 );
+				
+				else if ( i < 64 )
+					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
+
+				else if ( i < 128 )
+					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
+				
+				else if ( i < 256 )
+					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
+	
+				else if ( i < 512 )
+					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+	
+
+			}
+			
+		}
+		
+		else if( $numero_Equipos < 1024 )
+		{
+			for( $i = 1; $i < $numero_Equipos; $i++ )
+			{
+					
+				if ( i == 1 )
+					actualizar_ranking( $equipos[ i ], 2800, 0, 1 );
+					
+				else if ( i < 2 )
+					actualizar_ranking( $equipos[ i ], 2300, 0, 0 );
+
+				else if ( i < 4 )
+					actualizar_ranking( $equipos[ i ], 2000, 0, 0 );
+
+				else if ( i < 8 )
+					actualizar_ranking( $equipos[ i ], 1700, 0, 0 );
+
+				else if ( i < 16 )
+					actualizar_ranking( $equipos[ i ], 700, 0, 0 );
+				
+				else if ( i < 32 )
+					actualizar_ranking( $equipos[ i ], 600, 0, 0 );
+				
+				else if ( i < 64 )
+					actualizar_ranking( $equipos[ i ], 500, 0, 0 );
+
+				else if ( i < 128 )
+					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
+				
+				else if ( i < 256 )
+					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
+	
+				else if ( i < 512 )
+					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
+	
+				else if ( i < 1024 )
+					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+					
+			}
+			
+		}		
+		
+	}	
 	return $form;
 }
 /**
