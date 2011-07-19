@@ -47,11 +47,6 @@ function team_inscripcion( )
   
   $teams = get_teams( $id_Modalidad_Juego_Temporada );
   
-  $form[ 'equipos_disponibles' ] = array
-  (
-    '#title' => 'Equipos disponibles',
-    '#type' => 'fieldset',
-  );
   
   $count = 0;
   //Primero almacenaremos todos los equipos en nodos
@@ -61,13 +56,24 @@ function team_inscripcion( )
     $team = node_load( array( 'nid' => $team->nid_Equipo) );
     if ( $team->Numero_Integrantes < $modalidad->Maximo_Jugadores )
     {
-      
       //Presentaremos una forma para cada equipo disponible
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'imagen' ] = array (
+        '#value' => $team->imagen,
+      );
       $form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
         '#value' => $team->title,
       );
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'tag' ] = array (
+        '#value' => $team->abreviacion,
+      );
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'capitan' ] = array (
+        '#value' => $team->uid,
+      );
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'plazas' ] = array (
+        '#value' => $modalidad->Maximo_Jugadores - $team->Numero_Integrantes,
+      );
       $form[ 'equipos_disponibles' ][ $team->title ][ 'link' ] = array (
-        '#value' => l( t( 'Unirme' ), 'node/'.$team->nid.'/solicitar' ),
+        '#value' => l( t( 'Solicitar Unirme' ), 'node/'.$team->nid.'/solicitar' ),
       );
     }
     $count++;
@@ -81,18 +87,17 @@ function team_inscripcion( )
     );
   }
 
-  $form[ 'otras_opciones' ] = array(
-    '#title' => 'Otras opciones',
-    '#type' => 'fieldset',
+
+  
+  $form[ 'crear_equipo' ] = array (
+    '#value' => '<div id="crear">'. l( t( 'Crear equipo  ' ), 'node/add/team/'.$id_Modalidad_Juego_Temporada ) .'</div>',
   );
   
-  $form[ 'otras_opciones' ][ 'crear_equipo' ] = array (
-    '#value' => l( t( 'Crear equipo  ' ), 'node/add/team/'.$id_Modalidad_Juego_Temporada ),
+  $form[ 'agente_libre' ] = array (
+    '#value' => '<div id = "agente_libre">'. l( t( '  Ser agente libre' ), 'libres/'.$id_Modalidad_Juego_Temporada ) .'</div>',
   );
   
-  $form[ 'otras_opciones' ][ 'agente_libre' ] = array (
-    '#value' => l( t( '  Ser agente libre' ), 'libres/'.$id_Modalidad_Juego_Temporada ),
-  );
+  $form['#theme'] = 'team_inscripcion';
   
   return $form;
 }

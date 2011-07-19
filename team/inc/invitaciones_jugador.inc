@@ -6,50 +6,18 @@
  */
 
 
-	/**
-	 *	Función para administrar las invitaciones a un jugador
-	 *	Si no tiene equipo, podrá unirse
-	 *	Si tiene equipo, no podrá unirse, podrá editar sus equipos
-	 */
-	function administrar_invitaciones( )
-	{
-    global $user;
+/**
+ *	Función para administrar las invitaciones a un jugador
+ *	Si no tiene equipo, podrá unirse
+ *	Si tiene equipo, no podrá unirse, podrá editar sus equipos
+ */
+function administrar_invitaciones( ) {
+	global $user;
+	
+	db_set_active(  'eSM' );
 
-    $usuario_administrador = user_load( arg( 1 ) );  //El primer argumento en la ruta define el uid del jugador al que le pertenecen las invitaciones
-		
-		db_set_active( 'eSM' );
-		
-			$result_set_Jugador = db_query( "SELECT * FROM { Jugador }" );
-			$result_set_Equipo = db_query( "SELECT * FROM { Equipo }" );
-			
-		db_set_active( 'default' );
-
-
-		$Tiene_Equipo = 0;
-
-		while( $Jugador = db_fetch_object( $result_set_Jugador ) ) {
-			
-			if( $Jugador->Estado == TIENE_EQUIPO ) {
-				$Tiene_Equipo = 1;
-				break;
-			}
-		}
-		
-		$Jugador = db_fetch_object( $result_set_Jugador );
-
-		$form[ 'invitaciones' ] = array (
-			'#title' => t( 'Invitaciones.' ),
-			'#type' => 'fieldset',
-			//'#default_value' => $Equipos->Nombre,
-			//'#options' => $options,
-			'#collapsible' => 0,
-		);
-
-
-		db_set_active(  'eSM' );
-
-		//Consulta para obtener todos los equipos donde tiene invitación
-		$Equipo_result = db_query
+	//Consulta para obtener todos los equipos donde tiene invitación
+		$invitaciones_result = db_query
 		(
 			'SELECT
 					*
@@ -72,57 +40,72 @@
 			WHERE		
 					ie.{ Estado }	= %d
 				AND
-					j.{ id_Jugador } = %d',
+					j.{ uid } = %d',
 			INVITADO,
-			$Jugador->id_Jugador
+			$user->uid
 		);
 
-		db_set_active(  'default' );
-		
-		
-		if( $Tiene_Equipo == 1 )
-		{
-
-			while( $Equipos = db_fetch_object( $Equipo_result ) )
-			{
-				
-				$form[ 'invitaciones' ][ 'abreviacion' ] = array (
-					'#type' => 'item',
-					'#value' => $Equipos->abreviacion,
-				);
+	db_set_active(  'default' );
 	
-			}
-
-		}
-		else
-		{	
+	$count = 0;			//Contador de invitaciones
+	$options = array ();
+	
+	while( $invitacion = db_fetch_object( $invitaciones_result ) ) {
+		$team = node_load ($invitacion->nid_Equipo);
+		$modalidad = get_modalidad($team->id_Modalidad_Juego_Temporada);
+		
+		$options[$team->nid] = '';
+		
+		$form['equipos_disponibles'][ $team->nid ][ 'imagen' ] = array (
+		  '#value' => $team->imagen,
+		);
+		$form['equipos_disponibles'][ $team->nid ][ 'nombre' ] = array (
+		  '#value' => l($team->title, '/node/'. $team->nid)
+		);
+		$form['equipos_disponibles'][ $team->nid ][ 'tag' ] = array (
+		  '#value' => $team->abreviacion,
+		);
+		$form['equipos_disponibles'][ $team->nid ][ 'capitan' ] = array (
+		  '#value' => $team->uid,
+		);
+		$form['equipos_disponibles'][ $team->nid ][ 'plazas' ] = array (
+		  '#value' => ($modalidad->Maximo_Jugadores - $team->Numero_Integrantes),
+		);
+		
+		$form['Id_Jugador_'. $team->nid] = array (
+			'#type' => 'hidden',
+			'#value' => $invitacion->id_Jugador,
+		);
+		
 			
-			$form[ 'invitaciones' ][ 'nid_Equipo' ] = array (
-				'#type' => 'checkbox',
-				'#title' => t( 'Invitaciones.' ),
-				'#options' => $Invitaciones_Equipos,
-			);
-	
-			$form[ 'invitaciones' ][ 'submit' ] = array (
-				'#type' => 'submit',
-				'#value' => t( 'Aceptar' ),
-			);
-	
-			$form[ 'invitaciones' ][ 'uid' ] = array (
-				'#type' => 'hidden',
-				'#value' => $Jugador
-			);
-	
-	
-			$form[ 'invitaciones' ][ 'rechazar' ] = array (
-				'#value' => l( t( 'Rechazar' ), 'user/'.arg( 1 ).'rechazar_invitacion' ),
-			);
-	
+		++$count;
 
+	}
+	
+	if ($count > 0) {
 
-		}
+		$form['options'] = array (
+		  '#type' => 'radios',
+		  '#options' => $options, 
+		);
 
-		return $form;
+		$form[ 'submit' ] = array (
+			'#type' => 'submit',
+			'#value' => t( 'Aceptar Invitacion Seleccionada' ),
+		);
+		
+	}
+	else {	
+
+		$form[ 'mensaje' ] = array (
+			'#value' => t( 'No tienes ninguna invitacion en este momento.' ),
+		);
+
+	}
+	
+	$form['#theme'] = 'user_invitaciones';
+
+	return $form;
 
 }
 
@@ -177,52 +160,64 @@
  *	a la invitación seleccionada
  */
 function administrar_invitaciones_submit ( $form, $form_state ) {
-
-
-    $nid_Equipo = $form_state['values'][ 'nid_Equipo' ];
-
-    $id_Jugador = $form_state['values']['id_Jugador'];
-    
-    db_set_active('eSM');
-        db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado, Mensaje) VALUES (%d, %d, %d, "%s")', $nid_Equipo, $id_Jugador, ACEPTADO, 'Acepada la invitación' );
-    db_set_active('default');
-    
-    dsm( t( 'Tu unión se ha enviado correctamente.') );
-			$modalidad = get_modalidad( $equipo->id_Modalidad_Juego_Temporada );
-    drupal_goto( '/libres/'.$modalidad->tid.'/lista' );
+	global $user;
+	
+	if ($form_state['values']['options'] != 0 ) {		//Cambia el estado del jugador a ACEPTADO en la tabla de Integrantes Equipo
+		db_set_active('eSM');
+			db_query('UPDATE {Integrantes_Equipo} SET Estado = %d WHERE nid_Equipo = %d AND id_Jugador = %d', ACEPTADO, $form_state['values']['options'], $form_state['values']['Id_Jugador_'. $form_state['values']['options']]);
+		db_set_active('default');
+		
+		/**
+		 * Rechaza de manera automática todas las demás invitaciones que haya para la misma modalidad
+		 */
+		$equipo = node_load($form_state['values']['options']);	//Obtiene los datos del equipo para saber en que modalidad está inscrito
+		
+		db_set_active('eSM');
+			$result = db_query('SELECT * FROM {Integrantes_Equipo} AS ie INNER JOIN {Equipo} AS e ON ie.nid_Equipo = e.nid_Equipo WHERE e.id_Modalidad_Juego_Temporada = %d AND ie.id_Jugador = %d', $equipo->id_Modalidad_Juego_Temporada, $form_state['values']['Id_Jugador_'. $form_state['values']['options']);
+		db_set_active('default');
+		
+		while ($invitacion = db_fetch_object($result)) {
+			db_set_active('eSM');
+				db_query('UPDATE {Integrantes_Equipo} SET Estado = %d WHERE nid_Equipo = %d AND id_Jugador = %d', RECHAZADO, $invitacion->nid_Equipo, $invitacion->id_Jugador);
+			db_set_active('default');
+		}
+		
+		dsm( t( 'Te has unido al equipo.') );
+		drupal_goto( '/node/'.$form_state['values']['options'] );
+	}
 }
 
 
 
-	/**
-	 *	Función para que el usuario rechace invitaciones
-	 *	Sólo es una confirmación con
-	 *
-	 */
-	function rechazar_invitacion(  )
-	{
-			//Pasando las variables necesarias para procesar después de confirmar la acción
-		$form[ 'nid_Equipo' ] = array
-		(
-			'#type' => 'value',
-			'#value' => arg( 1 ),  //Agrega a la forma el nid del equipo que obtenemos de la barra de dirección
-		);
-		//Definiendo a donde se va a redirigir la forma
-		//$form['#redirect'] = 'user';
+		/**
+		 *	Función para que el usuario rechace invitaciones
+		 *	Sólo es una confirmación con
+		 *
+		 */
+		function rechazar_invitacion(  )
+		{
+				//Pasando las variables necesarias para procesar después de confirmar la acción
+			$form[ 'nid_Equipo' ] = array
+			(
+				'#type' => 'value',
+				'#value' => arg( 1 ),  //Agrega a la forma el nid del equipo que obtenemos de la barra de dirección
+			);
+			//Definiendo a donde se va a redirigir la forma
+			//$form['#redirect'] = 'user';
+			
 		
-	
-		return confirm_form
-		(
-			$form,
-			t( '¿Quieres rechazar la solicitud del equipo?' ), //message title
-			( isset( $_GET[ 'destination' ] ) ? $_GET[ 'destination' ] : 'user' ),//redirect if cancelled
-			//t( '' ), //message description
-			t( '¿Estás seguro?' ),
-			t( 'Si' ), //confirm button text
-			t( 'No' ) //cancel button text
-		);
-		
-	}
+			return confirm_form
+			(
+				$form,
+				t( '¿Quieres rechazar la solicitud del equipo?' ), //message title
+				( isset( $_GET[ 'destination' ] ) ? $_GET[ 'destination' ] : 'user' ),//redirect if cancelled
+				//t( '' ), //message description
+				t( '¿Estás seguro?' ),
+				t( 'Si' ), //confirm button text
+				t( 'No' ) //cancel button text
+			);
+			
+		}
 	
 	/**
 	* Submit handler for previus confirm form

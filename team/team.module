@@ -66,14 +66,14 @@ function team_menu(){
 	  'type' => MENU_LOCAL_TASK,
 	  'file' => 'inc/inscripcion.inc',
 	);
-
-	$items[ 'node/%node/solicitar' ] = array(
-	  'title' => 'Unirme a este equipo',
+	//MENÚ para administrar equipos
+	$items['node/%node/plantilla'] = array(
+	  'title' => 'Plantilla de Jugadores',
 	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array( 'team_solicitud' ),
-	  'access arguments' => array ( 'create team' ),
+	  'page arguments' => array( 'team_plantilla' ),
+	  'access arguments' => array( 'view team' ),
 	  'type' => MENU_LOCAL_TASK,
-	  'file' => 'inc/team_solicitud.inc',
+	  'file' => 'inc/team_plantilla.inc',
 	);
 
 	//MENÚ para administrar equipos
@@ -118,7 +118,7 @@ function team_menu(){
 
 	//MENÚ de agentes libres
 	$items [ 'libres/%' ] = array (
-	  'title' => 'Agente Libre',
+	  'title' => 'Agentes Libres',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array('agente_libre'),
 	  'access arguments' => array ('create team'),
@@ -142,6 +142,16 @@ function team_menu(){
 		'access arguments' => array('create team'),
 		'file' => 'inc/invitar_jugador.inc',
 		'type' => MENU_CALLBACK,
+	);
+    
+	$items[ 'node/%node/solicitar' ] = array(
+	  'title' => 'Unirme a este equipo',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_solicitud' ),
+	  'access callback' => 'unirme_equipo_access',
+      'access arguments' => array ( 1 ),
+	  'type' => MENU_LOCAL_TASK,
+	  'file' => 'inc/team_solicitud.inc',
 	);
 
 	//TODO Menú para desligarse de un equipo
@@ -410,7 +420,8 @@ function team_block( $op = 'list', $delta = 0 ){
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
                         $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
-						$content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
+                        if (module_exists('ranking'))
+                            $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
                         $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
                     }
                     break;
@@ -433,7 +444,6 @@ function team_block( $op = 'list', $delta = 0 ){
  * dependiendo de si es el capitán del equipo y si es un equipo formado por más de una persona
  */
 function team_admin_access($node) {
-    //TODO Revisar esta función porque no está dando la respuesta correcta
 	global $user;
 	$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
 	
@@ -443,6 +453,28 @@ function team_admin_access($node) {
 	else {
 		return FALSE;
 	}
+}
+/**
+ * Función para decidir si el usuario tiene acceso a la pestaña de "Unirme a este Equipo"
+ * Revisamos que la modalidad sea para un equipo de varios integrantes y que el usuario no sea el capitán
+ * Revisa si el usario está registrado en esta modalidad y si tiene equipo o es agente libre
+ */
+function unirme_equipo_access($node) {
+    global $user;
+    $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+
+    $tiene_equipo = tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada);
+    
+	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid != $user->uid)){
+        
+        if (($tiene_equipo == AGENTE_LIBRE) || ($tiene_equipo == NO_REGISTRADO))
+            return TRUE;
+        else
+            return FALSE;
+	}
+    else {
+        return FALSE;
+    }
 }
 /**
  * Función que permite conocer el estado de un jugador para una modalidad
@@ -457,18 +489,21 @@ function tiene_equipo($uid, $id_Modalidad_Juego_Temporada) {
 	db_set_active('eSM');
 		$query = db_query('SELECT {Estado} FROM {Jugador} WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d', $uid, $id_Modalidad_Juego_Temporada);
 	db_set_active('default');
-	
+    
 	$count = 0;
 	
 	while ($result = db_fetch_array($query)) {
-	    if ($result['Estado'] == AGENTE_LIBRE)
+	    if ($result['Estado'] == AGENTE_LIBRE) {
+            ++$count;
 			return AGENTE_LIBRE;
-		++$count;
+	    }
 	}
-	if ($count == 0)
+	if ($count == 0) {
 		return NO_REGISTRADO;
-	else
+	}
+	else {
 		return TIENE_EQUIPO;
+	}
 }
 /**
  * Función para obtener los datos de un jugador
@@ -496,4 +531,27 @@ function get_teams($id_Modalidad_Juego_Temporada) {
 	db_set_active('default');
 	
 	return $teams;
+}
+/**
+ * Implementación del hoock theme
+ */
+function team_theme() {
+    return array (
+        'lista_agentes_libres' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/lista_agentes_libres.inc',
+        ),
+        'team_inscripcion' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/team_inscripcion.inc',
+        ),
+        'team_plantilla' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/team_plantilla.inc',
+        ),
+        'user_invitaciones' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/user_invitaciones.inc',
+        ),
+    );
 }

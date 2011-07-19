@@ -51,16 +51,15 @@ function ranking_menu(){
 	'type' => MENU_LOCAL_TASK,
   );
 	
-	
-	//MENÚ para mostrar el ranking
-	$items[ 'puntuacion/%' ] = array (
-		'title' => t( 'Puntuacion' ),
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'mostrar_puntuacion' ),
-		'access arguments' => array( 'view ranking' ),
-		'file' => 'inc/ranking_modalidades.inc',
-		'type' => MENU_CALLBACK,
-  );
+    //MENÚ para mostrar el ranking
+    $items[ 'puntuacion/%' ] = array (
+        'title' => t( 'Puntuacion' ),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array( 'mostrar_puntuacion' ),
+        'access arguments' => array( 'view ranking' ),
+        'file' => 'inc/ranking_modalidades.inc',
+        'type' => MENU_CALLBACK,
+    );
 
   return $items;
 }
@@ -94,35 +93,17 @@ function ranking_theme() {
             'arguments' => array ('form' => NULL),
             'file' => '/theme/ranking_torneos.inc',
         ),
+        'ranking_puntuacion' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/ranking_puntuacion.inc',
+        ),
     );
 }
 
 /**
  *	Función para mostrar la puntuación de una modalidad
  */
-function mostrar_puntuacion(  )
-{
-	
-	$id_Modalidad_Juego_Temporada = arg( 2 );
-	
-	
-	$form[ 'puntuacion' ] = array
-	(
-		'#title' => t( 'Puntuacion.' ),
-		'#type' => 'fieldset',
-		//'#default_value' => $Equipos->Nombre,
-		//'#options' => $options,
-		'#collapsible' => 0,
-	);
-	
-	db_set_active( 'eSM' );
-	
-		$Puntuacion_result = db_query( "SELECT { * } FROM { Puntuacion } AS { p } INNER JOIN { Equipo } AS { e } ON { p.nid_Equipo } = { e.nid_Equipo } INNER JOIN { Modalidad_Juego_Temporada } AS { m } ON { e.id_Modalidad_Juego_Temporada } = { m.id_Modalidad_Juego_Temporada } WHERE { p.nid_Equipo } = %d ", arg( 2 ) );
-		
-	db_set_active( 'default' );	
-	
-	//Primero mostraremos todos los equipos
-	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) )
+function calcula_ranking_desafio ($Desafio) 
 	{
 		
 		$nid_EquipoLocal = $Desafio->nid_EquipoLocal;
@@ -496,10 +477,8 @@ function mostrar_puntuacion(  )
 			}
 			
 		}		
-		
+		return $form;
 	}	
-	return $form;
-}
 /**
  * Función para actualizar el ranking de un equipo
  * Recibe el nind_Equipo, Puntación a sumar, Win (1) /Loss (0)

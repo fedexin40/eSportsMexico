@@ -183,74 +183,81 @@ function agente_libre_validate ( $form, $form_state ) {
 */
 function agente_libre_listar ( ) {
     global $user;
-    $id_Modalidad_Juego_Temporada = arg(1);     //obtiene el id_Modalidad_Juego_Temporada de la barra de direcciones
-    $count = 0;
-    $is_capitan = is_capitan($user->uid, $id_Modalidad_Juego_Temporada);
+    $tid = arg(1);     //obtiene el tid de la barra de direcciones
+
+    if ($modalidad = term_is_active($tid)) {
+        $count = 0;
+        $is_capitan = is_capitan($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
     
-    //Obtiene la lista de jugadores libres para una modalidad y temporada
-    db_set_active( 'eSM' );
-        $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
-    db_set_active( 'default' );
-    
-    $form['Jugadores_Libres'] = array (
-        '#type' => 'fieldset',
-        '#collapsible' => 'FALSE',
-    );
-    //TODO: Elaborar función theme para darle formato a esta tabla de jugadores libres.
-    while ( $jugador = db_fetch_array( $result ) ) {
-        ++ $count;
-        //Obtiene los datos del jugador
-        db_set_active('eSM');
-            $descripcion = db_fetch_array(db_query('SELECT {Descripcion} FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador['id_Jugador']));
-            $disponibilidad_dias = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Dias} WHERE id_Jugador = %d', $jugador['id_Jugador']));
-            $disponibilidad_horas = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Horas} WHERE id_Jugador = %d', $jugador['id_Jugador']));
-        db_set_active('default');
+        //Obtiene la lista de jugadores libres para una modalidad y temporada
+        db_set_active( 'eSM' );
+            $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $modalidad->id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
+        db_set_active( 'default' );
         
-        //TODO: Revisar la conveniencia de añadir al objeto user los datos del jugador para que sea más sencillo de manejar y menos consultas que realizar.
-        $jugador = user_load($jugador['uid']);
+        //TODO: Elaborar función theme para darle formato a esta tabla de jugadores libres.
+        while ( $jugador = db_fetch_array( $result ) ) {
+            ++ $count;
+            //Obtiene los datos del jugador
+            db_set_active('eSM');
+                $descripcion = db_fetch_array(db_query('SELECT {Descripcion} FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+                $disponibilidad_dias = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Dias} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+                $disponibilidad_horas = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Horas} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+            db_set_active('default');
+            
+            //TODO: Revisar la conveniencia de añadir al objeto user los datos del jugador para que sea más sencillo de manejar y menos consultas que realizar.
+            $jugador = user_load($jugador['uid']);
+            
+            //TODO: Agregar el campo de imágen del jugador a la lista de los agentes libres
+            $form['Jugadores_Libres'][$jugador->uid]['Nombre'] = array (
+                '#value' => l($jugador->name, 'user/'. $jugador->uid)
+            );
+            $form['Jugadores_Libres'][$jugador->uid]['Descripcion'] = array (
+                '#value' => $descripcion['Descripcion']
+            );
+            
+            foreach ($disponibilidad_dias as $dia => $valor) {
+                if ($valor == 1) {
+                    $form['Jugadores_Libres'][$jugador->uid]['Dias'][$dia] = array (
+                        '#value' => $dia
+                    );
+                }
+            }
+            
+            $horas = '';
+            foreach ($disponibilidad_horas as $key => $valor) {
+                if ($valor == 1)
+                    $horas .= $key .' and ';
+            }
+            if ($horas == 'Morning and Evening and Night and ')
+                $horas = t('Always');
+                
+            if (substr($horas,-5) == ' and ')
+                $horas = substr($horas, 0, -5);
         
-        //TODO: Agregar el campo de imágen del jugador a la lista de los agentes libres
-        $form['Jugadores_Libres'][$jugador->uid]['Nombre'] = array (
-            '#value' => l($jugador->name, 'user/'. $jugador->uid)
-        );
-        $form['Jugadores_Libres'][$jugador->uid]['Descripcion'] = array (
-            '#value' => $descripcion['Descripcion']
-        );
-        
-        foreach ($disponibilidad_dias as $dia => $valor) {
-            if ($valor == 1) {
-                $form['Jugadores_Libres'][$jugador->uid]['Dias'][$dia] = array (
-                    '#value' => $dia
+            $form['Jugadores_Libres'][$jugador->uid]['Horas'] = array (
+                '#value' => $horas,
+            );
+            
+            if (isset($is_capitan)) {
+                $form['Jugadores_Libres'][$jugador->uid]['link'] = array (
+                    '#value' => l('Invitar', 'user/'. $jugador->uid . '/invitar/'. $is_capitan->nid),
                 );
             }
         }
         
-        $horas = '';
-        foreach ($disponibilidad_horas as $key => $valor) {
-            if ($valor == 1)
-                $horas .= $key .' and ';
-        }
-        if ($horas == 'Morning and Evening and Night and ')
-            $horas = t('Always');
-            
-        if (substr($horas,-5) == ' and ')
-            $horas = substr($horas, 0, -5);
-    
-        $form['Jugadores_Libres'][$jugador->uid]['Horas'] = array (
-            '#value' => $horas,
-        );
-        
-        if (isset($is_capitan)) {
-            $form['Jugadores_Libres'][$jugador->uid]['link'] = array (
-                '#value' => l('Invitar', 'user/'. $is_capitan . '/invitar'),
+        if ($count == 0 ) {
+            $form['Jugadores_Libres']['Lista_Vacia'] = array (
+                '#value' => 'No hay jugadores libres registrados actualmente.',
             );
         }
     }
-    
-    if ($count == 0 ) {
-        $form['Jugadores_Libres']['Lista_Vacia'] = array (
-            '#value' => 'No hay jugadores libres registrados actualmente.',
+    else {
+        $form['Jugadores_Libres']['Temporada_Inactiva'] = array (
+            '#value' => t('Esta modalidad no esta activa en esta temporada.'),
         );
     }
+    
+    $form['#theme'] = 'lista_agentes_libres';
+    
     return $form;
 }

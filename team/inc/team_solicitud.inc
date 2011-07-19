@@ -12,10 +12,18 @@ function team_solicitud( )//&$form_state )
     '#type' => 'value',
     '#value' => arg( 1 ),  //Agrega a la forma el nid del equipo que obtenemos de la barra de dirección
   );
-  //Definiendo a donde se va a redirigir la forma
-  //$form['#redirect'] = 'user';
   
-
+    $form['Mensaje'] = array (
+      '#type' => 'textarea',
+      '#title' => t('Escribe el texto de tu solicitud para unirte este equipo.'),
+  );
+  $form['Submit'] = array (
+      '#type' => 'submit',
+      '#value' => t( 'Unirme' ),
+  );
+  return $form;
+  
+  /*
   return confirm_form
   (
     $form,
@@ -25,7 +33,7 @@ function team_solicitud( )//&$form_state )
     t( '¿Estás seguro?' ),
     t( 'Si' ), //confirm button text
     t( 'No' ) //cancel button text
-  );
+  );*/
 
 
 }
@@ -37,9 +45,6 @@ function team_solicitud( )//&$form_state )
 function team_solicitud_validate( $form, &$form_state )
 {
 
-  //verify that the form was confirmed
-  if ( $form_state['values']['confirm'] )
-  {
     //Verifica que el usuario no esté activo en otro equipo
     global $user;
 
@@ -91,7 +96,6 @@ function team_solicitud_validate( $form, &$form_state )
 
     }
 
-  }
 
 }
 
@@ -101,12 +105,6 @@ function team_solicitud_validate( $form, &$form_state )
 */
 function team_solicitud_submit( $form, &$form_state )
 { 
-
-  //verify that the form was confirmed
-  if ( $form_state[ 'values' ][ 'confirm' ] )
-  {
-
-    //Do something here
     global $user;
     
     //Revisa si el jugador ya está registrado en la tabla de jugadores activos para esta temporada, sino lo agrega
@@ -174,16 +172,15 @@ function team_solicitud_submit( $form, &$form_state )
       (
         'INSERT INTO
             { Integrantes_Equipo }
-            ( nid_Equipo, id_Jugador, Estado )
-          VALUES ( %d, %d, %d )',
+            ( nid_Equipo, id_Jugador, Estado, Mensaje )
+          VALUES ( %d, %d, %d, "%s" )',
         $team->nid,
         $jugador->id_Jugador,
-        SOLICITA
+        SOLICITA,
+        $form_state['values']['mensaje']
       );
     db_set_active('default');
     
-  
-  }
   
   //set a message
   drupal_set_message( '¡Tu solicitud ha sido enviada con éxito!' );
