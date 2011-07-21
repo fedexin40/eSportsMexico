@@ -90,10 +90,8 @@ function agente_libre_submit ( $form, $form_state ) {
                 $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE
         );
     db_set_active( 'default' );
-    dsm('paso 1');
     
     $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
-    dsm($jugador);
     
     //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
     db_set_active('eSM');
@@ -108,7 +106,6 @@ function agente_libre_submit ( $form, $form_state ) {
                 $jugador->id_Jugador, $form_state['values']['presentacion']
         );
     db_set_active( 'default' );
-    drupal_set_message('paso 2');
     
     //3.- Insertar la disponibilidad de días en la tabla;
     foreach ($form_state['values']['dias'] as $key => $element) {
@@ -138,7 +135,6 @@ function agente_libre_submit ( $form, $form_state ) {
             $jugador->id_Jugador, $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo']
         );
     db_set_active('default');
-    drupal_set_message('paso 3');
         
     //4.- Insertar la disponibildad de horas en la tabla;
     foreach ($form_state['values']['horas'] as $key => $element) {

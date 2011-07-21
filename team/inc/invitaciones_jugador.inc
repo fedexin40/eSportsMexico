@@ -173,7 +173,7 @@ function administrar_invitaciones_submit ( $form, $form_state ) {
 		$equipo = node_load($form_state['values']['options']);	//Obtiene los datos del equipo para saber en que modalidad está inscrito
 		
 		db_set_active('eSM');
-			$result = db_query('SELECT * FROM {Integrantes_Equipo} AS ie INNER JOIN {Equipo} AS e ON ie.nid_Equipo = e.nid_Equipo WHERE e.id_Modalidad_Juego_Temporada = %d AND ie.id_Jugador = %d', $equipo->id_Modalidad_Juego_Temporada, $form_state['values']['Id_Jugador_'. $form_state['values']['options']);
+			$result = db_query('SELECT * FROM {Integrantes_Equipo} AS ie INNER JOIN {Equipo} AS e ON ie.nid_Equipo = e.nid_Equipo WHERE e.id_Modalidad_Juego_Temporada = %d AND ie.id_Jugador = %d', $equipo->id_Modalidad_Juego_Temporada, $form_state['values']['Id_Jugador_'. $form_state['values']['options']]);
 		db_set_active('default');
 		
 		while ($invitacion = db_fetch_object($result)) {

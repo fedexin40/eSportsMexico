@@ -131,6 +131,7 @@ function team_solicitud_submit( $form, &$form_state )
       );
 
     db_set_active( 'default' );
+  
     
     if( is_null( $jugador ) )
     {
@@ -168,17 +169,7 @@ function team_solicitud_submit( $form, &$form_state )
     
     //Insertar el registro de solicitud en la base de datos y actualizar el estado del jugador
     db_set_active( 'eSM' );
-      db_query
-      (
-        'INSERT INTO
-            { Integrantes_Equipo }
-            ( nid_Equipo, id_Jugador, Estado, Mensaje )
-          VALUES ( %d, %d, %d, "%s" )',
-        $team->nid,
-        $jugador->id_Jugador,
-        SOLICITA,
-        $form_state['values']['mensaje']
-      );
+      db_query ('INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $team->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['mensaje']);
     db_set_active('default');
     
   

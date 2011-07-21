@@ -388,35 +388,21 @@ function team_load($node){
  */
 function team_block( $op = 'list', $delta = 0 ){
   //TODO 
-	$tid = arg( 2 );	
-    switch( $op ){
+	$tid = arg( 2 );
+	
+    switch( $op ) {
         case 'list':
             $block = array();
             $block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-            return $block;
             break;
-        
+		
         case 'view':
             
             switch( $delta ) {
                 case 0:
                     $block = array( );
                     
-                    if
-                    (
-                        (
-                        is_numeric( $tid )
-                            &&
-                        ( arg( 1 ) == 'term' )
-                        )
-                            &&
-                        (
-                        term_is_active( $tid )								
-                        )
-                    ) {
-                    
-                        //dpm( variable_get( arg( 2 ) ) );
-                        
+                    if ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( term_is_active( $tid ) ) ) {
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
                         $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
@@ -426,10 +412,9 @@ function team_block( $op = 'list', $delta = 0 ){
                     }
                     break;
                 }
-                return $block;
-            break;
+			break;
     
-            case 'save':
+        case 'save':
                 
                 break;
 
@@ -437,6 +422,7 @@ function team_block( $op = 'list', $delta = 0 ){
             
             break;
     }
+	return $block;
 
 }
 /**

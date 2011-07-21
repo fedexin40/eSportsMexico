@@ -5,7 +5,7 @@
 * Implementation of hook_perm()
 * Outlines permissions for this module.
 * @return array - An array of valid permissions for the match module
-*/
+*
 function match_perm(){
   return array('administer matches', 'create match', 'edit own match', 'delete own match', 'enter own match results');
 }//end function match_perm()
@@ -13,7 +13,7 @@ function match_perm(){
 /**
  * Implementation of hook_menu()
  * Sets up the admin menu system for the matches.
- */
+ *
 function match_menu(){
   $items['matchadmin'] = array(
     'title' => 'Match Admin',
@@ -52,7 +52,7 @@ function match_menu(){
 /**
  * Implementation of hook_node_info()
  * Declare the content type match
- */
+ *
  
 function match_node_info() {
   return array(
@@ -89,7 +89,7 @@ function match_report_access($node) {
 
 /**
  * Implementation of hook_access()
- */
+ *
 function match_access($op, $node, $account){
   //users who can administer matches can do anything.
   if (user_access('adminster matches', $account))
@@ -109,7 +109,7 @@ function match_access($op, $node, $account){
       if(user_access('enter results', $account) && ($account->uid == $row['uid'])){
         return TRUE;
       }
-    }*/
+    }*
   }
   
   if ($op == 'delete') {
@@ -121,7 +121,7 @@ function match_access($op, $node, $account){
       if(user_access('delete own match', $account) && ($account->uid == $row['uid'])){
         return TRUE;
       }
-    }*/
+    }*
   }
   
   if ($op == 'view') {
@@ -137,7 +137,7 @@ function match_access($op, $node, $account){
  * Sets up the form to add a match as a content type
  * @param unknown_type $node
  * @return unknown_type
- */
+ *
 function match_form(&$node, $form_state) {
   //Esta función recibe sus argumentos de la barra de dirección,
   //el primer argumento numérico corresponde al taxonomy id indicándonos la modalidad a la que pertenece este match
@@ -272,7 +272,7 @@ function match_form(&$node, $form_state) {
 
 /*
  * Implementation of hook_load()
- */
+ *
 function match_load($node){
   //get the additional match information and attach to the node
   $teams = db_fetch_array(db_query("SELECT {match}.home_team, {match}.away_team, {match}.home_score, {match}.away_score, {match}.match_time, {match}.is_result, {match}.relation_id FROM {match} WHERE {match}.nid = %d;", intval($node->nid)));
@@ -300,7 +300,7 @@ function match_load($node){
 
 /**
  * Implementation of hook_insert()
- */
+ *
 function match_insert($node){
   //add the extra details
   if($node->home_score != '' && $node->away_score != '' && variable_get('match_update_table_insert', '') == TRUE) {
@@ -318,7 +318,7 @@ function match_insert($node){
 /**
  * Implementation of hook_update()
  * @param Object $node
- */
+ *
 function match_update($node){
   //update the extra details
   $is_result = 0;
@@ -354,7 +354,7 @@ function match_update($node){
 /**
  * Implementation of hook_delete()
  * @param Object $node
- */
+ *
 function match_delete($node){
   //delete the extra details
   $match = db_fetch_array(db_query("SELECT * FROM {match} WHERE nid = %d", intval($node->nid)));
@@ -374,7 +374,7 @@ function match_delete($node){
  * @param
  * $home_team: Home team id
  * $away_team: Away team id
- */
+ *
 function _match_update_table($home_team, $away_team, $home_score, $away_score, $relation_id, $op = "insert"){
   $event_settings = db_fetch_array(db_query("SELECT type FROM {event_manager_settings} WHERE nid = %d", $relation_id));
 
@@ -440,7 +440,7 @@ function _match_update_table($home_team, $away_team, $home_score, $away_score, $
  * Validates the match type before submission to ensure that the setup is correct
  * @param Object $node
  * @param Array $form
- */
+ *
 function match_validate($node, $form){
   //Check that both results are entered if any are entered
 
@@ -460,7 +460,7 @@ function match_validate($node, $form){
 /**
  * Implementation of hook_form_FORM_ID_alter
  * This sets the default team correctly on the dropdown boxes on the generated form
- */
+ *
 function match_form_match_node_form_alter(&$form, $form_state){
   if(is_numeric($form['nid']['#value'])){
     if(!variable_get('match_change_teams', '')){
@@ -476,7 +476,7 @@ function match_form_match_node_form_alter(&$form, $form_state){
  * Implementation of hook_submit
  * Alters the title of the node before submission - otherwise it would be blank
  * @param Object $node
- */
+ *
 function match_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
   if($op == 'presave' && $node->type == 'match'){
   //get the title. query the database to get the title of the teams.
@@ -533,7 +533,7 @@ function match_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
  * @param $teaser
  * @param $page
  * @return unknown_type
- */
+ *
 function match_view($node, $teaser = FALSE, $page = FALSE){  
   $content = theme('match_content', $node);
     
@@ -549,7 +549,7 @@ function match_view($node, $teaser = FALSE, $page = FALSE){
 /**
  * Implementation of hook_theme()
  * 
- */
+ *
 function match_theme($existing, $type, $theme, $path) {
   return array(
     'match_list' => array(
@@ -584,7 +584,7 @@ function match_theme($existing, $type, $theme, $path) {
 
 /**
  * Implementation of hook_views_api()
- */
+ *
 function match_views_api() {
   return array(
     'api' => 2.0,
@@ -595,7 +595,7 @@ function match_views_api() {
 /**
  * Implementation of hook_block()
  * @return unknown_type
- */
+ *
 function match_block($op = 'list', $delta = 0, $edit = array()){
   switch($op){
     case 'list':
@@ -642,7 +642,7 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
  *   confirmation was aborted for some reason (node not configured to send it,
  *   user doesn't have a valid e-mail address, etc).
  *  
- */
+ *
 function _match_send_notification_mail($node) {
 
   $params = array(
@@ -684,7 +684,7 @@ function _match_send_notification_mail($node) {
  * @see _signup_cron_send_reminders()
  * @see signup_sign_up_user()
  * @see signup_broadcast_form_submit()
- */
+ *
 function match_mail($key, &$message, $params) {
   if (empty($params['ignore_tokens'])) {
     $tokens = _signup_get_email_tokens($params['node'], $params['signup']);
@@ -697,4 +697,4 @@ function match_mail($key, &$message, $params) {
   }
   $message['subject'] .= str_replace(array("\r", "\n"), '', $subject);
   $message['body'][] = $body;
-}
+}*/

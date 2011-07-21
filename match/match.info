@@ -1,11 +1,6 @@
-; $Id: leaguesite_match.info,v 1.9 2010/04/15 18:35:03 alun Exp $
-name = Event Manager Matches
-description = Adds a content type which handles the ability to document individual matches within the league.
-core = 6.x
+name = Match
+description = "Habilita la creación de partidos deportivos entre dos equipos"
 package = Event Manager
-dependencies[] = event_manager
-
-; Information added by drupal.org packaging script on 2010-04-15
-version = "6.x-1.0-alpha3"
-core = "6.x"
-datestamp = "1271356807"
+dependencies[] = team
+package = eSM
+core = 6.x

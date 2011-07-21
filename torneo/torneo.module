@@ -1,0 +1,116 @@
+<?php
+// $Id: leaguesite.module,v 1.21 2010/09/21 17:03:04 alun Exp $
+
+/**
+* Display help information for the module
+* @param path - which path of the site we are displaying help
+* @param arg - array that holds the current path as would be returned from arg() function
+* @return help = text for the path
+*/ 
+
+function torneo_help($path, $arg){
+	$output = '';
+	switch($path){
+		case 'admin/help#torneo':
+			$output = '<p>'.t("Permite crear y manejar torneos entre equipos isncritos en un ranking").'</p>';
+			break;
+		case 'admin/content/torneo':
+			$output = '<p>'.t('Este módulo permite crear y administrar torneos').'</p>';
+			break;
+	}
+	return $output;
+} //end function leaguesite_help()
+
+
+/**
+* Implementation of hook_perm()
+* Outlines permissions for this module.
+* @return array - An array of valid permissions for the leaguesite module
+*/
+function torneo_perm(){
+	return array('create torneo', 'edit own torneo', 'delete own torneo', 'view torneo');
+}//end function leaguesite_perm()
+/**
+ * Implementation of hook_menu()
+ * Admin menu link for the module
+ * @return unknown_type
+ */
+function torneo_menu(){
+/*	$items [ 'user/%/mytorneos'] = array (
+			'title' => 'Mis Equipos',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('equipos_usuario'),
+			'access arguments' => array('view torneo'),
+			'file' => 'inc/equipos_usuario.inc',
+			'type' => MENU_CALLBACK,
+	);*/
+
+	return $items;
+}
+	
+/**
+ * Implementation of hook_node_info()
+ */
+function torneo_node_info() {
+	return array(
+		'torneo' => array(
+			'name' => t('Torneo'),
+			'module' => 'torneo',
+			'description' => t("Crea un torneo."),
+		)
+	);
+} 
+
+/**
+ * Implementation of hook_access()
+ */
+function torneo_access($op, $node, $account){
+		if($op == 'view'){
+		return user_access('view torneo', $account);
+	}
+	
+	if ($op == 'create') {
+		// Only users with permission to do so may create this node type.
+		return user_access('create torneo', $account);
+	}
+
+	// Users who create a node may edit or delete it later, assuming they have the
+	// necessary permissions.
+	if ($op == 'update' || $op == 'delete') {
+		if (user_access('edit own torneo', $account) && ($account->uid == $node->uid)) {
+			return TRUE;
+		}
+	}
+} 
+
+/**
+ * Implementation of hook_form()
+ * @param $node
+ * @param $form_state
+ * @return unknown_type
+ */
+function torneo_form(&$node, $form_state) {
+	// We need to define form elements for the node's title and body.
+	$form[ 'title' ] = array
+	(
+	  '#type' => 'textfield',
+	  '#title' => t( 'Nombre de equipo' ),
+	  '#required' => TRUE,
+	  '#default_value' => $node->title,
+	  '#weight' => -6,
+	);
+	// We want the body and filter elements to be adjacent. We could try doing
+	// this by setting their weights, but another module might add elements to the
+	// form with the same weights and end up between ours. By putting them into a
+	// sub-array together, we're able force them to be rendered together.
+	$form['body_filter']['body'] = array(
+	  '#type' => 'textarea',
+	  '#title' => t( 'Descripcion del Equipo' ),
+	  '#default_value' => $node->body,
+	  '#required' => FALSE,
+	  '#description' => t('Puedes ingresar la información que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
+	);
+	$form[ 'body_filter' ][ 'filter' ] = filter_form( $node->format );
+	
+	return $form;
+}
