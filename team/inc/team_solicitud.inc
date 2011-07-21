@@ -132,21 +132,21 @@ function team_solicitud_submit( $form, &$form_state )
 
     db_set_active( 'default' );
   
-    
-    if( is_null( $jugador ) )
+    if( $jugador->uid == 0 )
     {
       //El jugador no se había registrado antes, crear un id de jugador y cargarlo en el objeto jugador
       db_set_active('eSM');
         db_query
-        (
-          'INSERT INTO
-              { Jugador }
-              ( id_Modalidad_Juego_Temporada, uid, Fecha_Registro )
-            VALUES
-              ( %d, %d, %d )',
-          $team->id_Modalidad_Juego_Temporada,
-          $user->uid,
-          convierte_a_timestamp( date( Y-m-d ) )
+        ( 
+            "INSERT INTO { Jugador }
+            ( 
+                id_Modalidad_Juego_Temporada,
+                uid,
+                Fecha_Registro,
+                Estado
+            )			
+            VALUES ( %d, %d, %d, %d )",
+                $team->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE
         );
 
         $jugador = db_fetch_object
