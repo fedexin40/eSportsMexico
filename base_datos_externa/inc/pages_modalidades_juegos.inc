@@ -175,7 +175,7 @@ function modalidad_juego_admin_editar( ) {
 	
 	$form[ 'submit' ] = array(
 		'#type' => 'submit',
-		'#value' => t( 'Insertar' ),
+		'#value' => t( 'Guardar' ),
 	);
 			
 			
@@ -234,12 +234,14 @@ function modalidad_juego_admin_editar_submit( $form, $form_state ) {
 	
 }
 	
+	
+	
+//TODO Integrar la validación con la forma insertar, puesto que en tal forma, no existe el campo id_Modalidad_Juego
 /**
  * Función para validar:
  * 
  */
 function modalidades_juegos_admin_insertar_validate( $form, $form_state ) {
-	
 	
 	$form_state[ 'values' ][ 'title' ] = check_plain( $form_state[ 'values' ][ 'title' ] );
 	$form_state[ 'values' ][ 'nombre_juego' ] = check_plain( $form_state[ 'values' ][ 'nombre_juego' ] );
@@ -258,13 +260,14 @@ function modalidades_juegos_admin_insertar_validate( $form, $form_state ) {
 		form_set_error( 'maximo_jugadores', t( 'El número de jugadores máximo debe ser mayor al mínimo.' ) );
 	}
 	
+	
 	if (( $form_state['values']['id_Modalidad_Juego'] == 0) && ($form_state['values']['tid'] <> 0 )) {
 		db_set_active('eSM');
 			$result = db_fetch_object(db_query('SELECT {id_Modalidad_Juego} FROM {Modalidad_Juego} WHERE tid = %d', $form_state['values']['tid']));
 		db_set_active('default');
 		
 		if($result->id_Modalidad_Juego <> 0)
-			form_set_error('vocabulario', t('No puedes asiganar a dos modaliades la misma categoría'));
+			form_set_error('vocabulario', t('No puedes asignar a dos modaliades la misma categoría'));
 	}
 	
 	if (($form_state['values']['id_Modalidad_Juego'] <> 0) && ($form_state['values'] ['tid'] <> 0)) {

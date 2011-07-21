@@ -387,7 +387,7 @@ function team_load($node){
  * Implementación del hook_block()
  */
 function team_block( $op = 'list', $delta = 0 ){
-  //TODO 
+  //TODO Ocultar el bloque cuando no esté iniciada la sesión
 	$tid = arg( 2 );	
     switch( $op ){
         case 'list':

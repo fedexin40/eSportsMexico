@@ -135,7 +135,7 @@ function match_access($op, $node, $account){
 /**
  * Implementation of hook_form()
  * Sets up the form to add a match as a content type
- * @param unknown_type $node
+ * @param $node is a challenge
  * @return unknown_type
  */
 function match_form(&$node, $form_state) {
@@ -144,11 +144,14 @@ function match_form(&$node, $form_state) {
   //el segundo si es que exite corresponde al nid_Equipo del equipo al que se está retando.
   global $user;
   $error = FALSE;
-  $modalidad = arg(3);
+  $Modalidad_Juego = arg(3);
   $away_team = arg(4);
   
-  //Verifica que exita el modulo datepopup que es necesario para el correcto funcionamiento de este módulo.
+  // Creating the date/time element
+  $date = '2011-12-31';
+  $format = 'Y-m-d';
   
+  //Verifica que exita el modulo datepopup que es necesario para el correcto funcionamiento de este módulo.
   if(!module_exists('date_popup')){
     $datepopup = false;
     drupal_set_message('Es necesario isntalar el módulo date popup para que este módulo funcione correctamente!', 'error');
@@ -162,30 +165,35 @@ function match_form(&$node, $form_state) {
   $temporada_activa = get_temporada_activa();
   
   //Checamos que exista una temporada activa, en caso de que no haya mostramos un mensaje al usuario indicando que tiene que haber una temporada activa
-  if( is_null( $temporada_activa)){ 
+  if( is_null( $temporada_activa) ){ 
     drupal_set_message('No puedes crear partidos si no hay temporadas activas.', 'error');
     $error = TRUE;
   }
   
   //Revisa que la modalidad esté activa en esta temporada
-  $id_Modalidad_Juego_Temporada = get_id_modalidad_juego_temporada($modalidad, $temporada_activa->id_Temporada);
+  $id_Modalidad_Juego_Temporada = get_id_modalidad_juego_temporada( $modalidad, $temporada_activa->id_Temporada );
   
   //para la primera vez que se crea un match, 
   //si no tiene temporada asignada, le asigna la temporada activa
-  if(isset($node->temporada)){
+  if( isset( $node->temporada ) ){
     $default_value = $node->temporada;
   }else{
     $default_value = $temporada_activa->id_Temporada;
   }
   
   //Revisa que el jugador sea capitán de un equipo inscrito en la modalidad durante la temporada activa
-  if !($nid_Equipo = is_capitan($user->uid, $id_Modalidad_Juego_Temporada) > 0) {
+  $nid_Equipo = is_capitan( $user->uid, $id_Modalidad_Juego_Temporada );
+  if ( $nid_Equipo == NULL ) {
      drupal_set_message('No perteneces a ningún equipo o no eres el capitán de tu equipo. Sólo los capitanes pueden crear partidas.', 'error');
      $error = TRUE;
   }
   
   
-  if is_null($away_team) { //Si no se estableció en la forma el nid_Equipo del retador,
+  db_set_active( 'eSM' );
+    $Seasons_result_set = db_query( "SELECT { * } from { Temporada }" );
+  db_set_active( 'default' );
+  
+  /*if (  is_null($away_team) ) { //Si no se estableció en la forma el nid_Equipo del retador,
     while($season = db_fetch_array($seasons)){
       $season_list[$season['relation_id']] = $season['event_name'];
       if ($season['min_pp'] > 1) 
@@ -197,7 +205,17 @@ function match_form(&$node, $form_state) {
         $teams[$team['team_id']] = $team['title'];
       }
     }
-  }
+  }*/
+
+
+  while( $Seasons = db_fetch_array( $Seasons_result_set ) )
+  {
+    $Seasons_list[ $Seasons[ 'id_Temporada' ] ] = $Seasons[ 'Nombre' ];
+  } 
+  
+  $Teams = get_equipos( $id_Modalidad_Juego_Temporada  );
+  
+  
   $hours = array();
   for($count = 0; $count < 24; ++$count){
     $hours[$count] = sprintf("%02d",$count); ;
@@ -206,33 +224,49 @@ function match_form(&$node, $form_state) {
     $mins[$count] = sprintf("%02d",$count);
   }
   
-  $form['season_league'] = array(
+  /*$form[ 'season_league' ] = array(
     '#type' => 'select',
     '#title' => 'League and season',
     '#required' => TRUE,
-    '#options' => $season_list,
+    '#options' => $Seasons_list,
     '#weight' => -9,
     '#default_value' => $node->season_league,
-  );
+  );*/
   
   // We need to define form elements for the node's title and body.
-  $form['home_team'] = array(
-    '#type' => 'select',
-    '#title' => t('Home Team'),
-    '#required' => TRUE,
-    '#options' => $teams,
-    '#weight' => -8,
-    '#default_value' => $node->home_team,
+  
+  $form[ 'Define_challenge' ] = array(
+    '#type' => 'fieldset',
+    '#title' => t( 'Define el desafío' ),
+    //'#collapsible' => 'TRUE',
+    '#collapsed' => 'FALSE',
+  
   );
-  $form['away_team'] = array(
+  
+  if ( isnull( $away_team ) )
+  {
+  
+    $form[ 'Define_Challenge' ]['home_team'] = array(
+      '#type' => 'select',
+      '#title' => t( 'Equipo local' ),
+      '#required' => TRUE,
+      '#options' => $Teams,
+      '#weight' => -8,
+      '#default_value' => $node->home_team,
+    );
+  }
+  
+  
+  $form[ 'Define_Challenge' ]['away_team'] = array(
     '#type' => 'select',
-    '#title' => t('Away Team'),
+    '#title' => t('Equipo visitante'),
     '#required' => TRUE,
-    '#options' => $teams,
+    '#options' => $Teams,
     '#weight' => -7,
     '#default_value' => $node->away_team,
   );
-  $form['date'] = array(
+  
+  /*$form['date'] = array(
     '#type' => 'fieldset',
     '#title' => t('The date and start time for the match'),
     '#weight' => -6,
@@ -257,25 +291,82 @@ function match_form(&$node, $form_state) {
     '#required' => TRUE,
     '#options' => $mins,
     '#default_value' => $start_minute,
+  );*/
+  
+  $form[ 'Define_Challenge' ][ 'Fecha_Uno' ] = array
+  (
+    '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+    '#title' => 'Posible fecha 1',
+    '#default_value' => date( 'Y-m-d' ), 
+    '#date_format' => $format,
+    '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+    '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+    '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+    '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
-  $form['body_filter']['body'] = array(
+  
+  $form[ 'Define_Challenge' ][ 'Fecha_Dos' ] = array
+  (
+    '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+    '#title' => 'Posible fecha 2',
+    '#default_value' => date( 'Y-m-d' ), 
+    '#date_format' => $format,
+    '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+    '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+    '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+    '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+  );
+
+
+  $form[ 'Define_Challenge' ][ 'Fecha_Tres' ] = array
+  (
+    '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+    '#title' => 'Posible fecha 3',
+    '#default_value' => date( 'Y-m-d' ), 
+    '#date_format' => $format,
+    '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+    '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+    '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+    '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+  );
+
+
+  
+  $form['Define_Challenge']['Mensaje'] = array
+  (
     '#type' => 'textarea',
     '#title' => t('Match Notes'),
     '#default_value' => $node->body,
     '#required' => FALSE,
-    '#description' => t('Use this to enter some pre-match comments for the game, or post a match report after the game.'),
+    '#description' => t('Usa este espacio para introducir algunos comentarios previos al desafío o para definir un reporte de desafío después del juego.'),
     '#weight' => -5,
   );
-  $form['body_filter']['filter'] = filter_form($node->format);
+  
+  
+  $form['Define_Challenge']['filter'] = filter_form( $node->format );
+  
+  
   return $form;
 }
 
 /*
  * Implementation of hook_load()
  */
-function match_load($node){
+function match_load( $node ){
   //get the additional match information and attach to the node
-  $teams = db_fetch_array(db_query("SELECT {match}.home_team, {match}.away_team, {match}.home_score, {match}.away_score, {match}.match_time, {match}.is_result, {match}.relation_id FROM {match} WHERE {match}.nid = %d;", intval($node->nid)));
+  //$teams = db_fetch_array(db_query("SELECT {match}.home_team, {match}.away_team, {match}.home_score, {match}.away_score, {match}.match_time, {match}.is_result, {match}.relation_id FROM {match} WHERE {match}.nid = %d;", intval($node->nid)));
+  //$Teams = get_equipos( $id_Modalidad_Juego_Temporada  );
+  
+  
+  db_set_active( 'eSM' );
+    $Challenge_Teams_result_set = db_query( "SELECT { * } FROM { Reto }" );
+  db_set_active( 'default' );
+  
+  $Challenge_Teams = db_fetch_object( $Challenge_Teams_result_set );
+  
+  
+  $node->status = $Challenge_Teams[ 'Estado' ];
+  
   $node->is_result = $teams['is_result'];
   $node->home_team = $teams['home_team'];
   $node->away_team = $teams['away_team'];
@@ -283,6 +374,8 @@ function match_load($node){
   $node->match_time = array('year' => date('Y', $teams['match_time']),  'month' => date("n", $teams['match_time']), 'day' => date("j", $teams['match_time']));
   $node->match_hour = date('G', $teams['match_time']);
   $node->match_minute = date('i', $teams['match_time']);
+  
+  
   //check if the score has not been entered yet
   if($teams['is_result'] == 0){
     $node->home_score = '';
@@ -293,7 +386,7 @@ function match_load($node){
   }
   
   //load additional match data using hook_match_load
-  module_invoke_all('match_load', $node);
+  //module_invoke_all('match_load', $node);
   
   return $node;
 }
