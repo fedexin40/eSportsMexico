@@ -137,7 +137,7 @@ function team_administrar_activos_submit( $form, $form_state )
   }
   db_set_active('default');  
   
-  dsm( "Jugadores expulsados satisfactoriamente" );
+  drupal_set_message( "Jugadores expulsados satisfactoriamente" );
   drupal_goto( 'node/'.$Equipo->nid_Equipo );
   
 }
@@ -243,7 +243,7 @@ function team_administrar_solicitudes_submit( $form, $form_state )
     if ($form_state['values']['checkboxes'][$jugador] != 0) {
       ++$count;
       db_set_active('eSM');
-        db_query
+        db_query                                //Actualiza el estado del jugador en la tabla de los integrantes del equipo
         (
           'UPDATE
               { Integrantes_Equipo }
@@ -255,16 +255,27 @@ function team_administrar_solicitudes_submit( $form, $form_state )
             $nid_Equipo,
             $jugador
         );
+        
+        db_query (
+            'UPDATE
+                { Jugador }
+            SET
+                Estado = %d
+            WHERE
+                id_Jugador = %d',
+            TIENE_EQUIPO,
+            $jugador
+        );
       db_set_active('default');
     }
   }
 
   if ($count > 0) {
-    dsm( "Has aprobado ". $count ." solicitudes." );
+    drupal_set_message( "Has aprobado ". $count ." solicitudes." );
     drupal_goto( 'node/'. $nid_Equipo .'/administrar/activos');
   }
   else {
-    dsm('No has seleccionado ninguna solicitud para aprovar.', 'error');
+    drupal_set_message('No has seleccionado ninguna solicitud para aprovar.', 'error');
     //drupal_goto( 'node/'. $nid_Equipo .'/administrar/activos');
   }
 }

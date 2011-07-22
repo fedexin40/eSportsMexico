@@ -145,7 +145,7 @@ function team_solicitud_submit( $form, &$form_state )
                 Estado
             )			
             VALUES ( %d, %d, %d, %d )",
-                $team->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE
+                $team->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), PENDIENTE
         );
 
         $jugador = db_fetch_object

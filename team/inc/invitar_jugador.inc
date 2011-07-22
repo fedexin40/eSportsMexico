@@ -36,7 +36,7 @@ function invitar_usuario() {
         return $form;
     }
     else {
-        dsm('No eres el capitán de este equipo equipo y no puedes invitar a nadie.', 'error');
+        drupal_set_message('No eres el capitán de este equipo equipo y no puedes invitar a nadie.', 'error');
         
     }
 }
@@ -90,7 +90,7 @@ function invitar_usuario_submit ($form, $form_state) {
         db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado, Mensaje) VALUES (%d, %d, %d, "%s")', $equipo, $id_Jugador, INVITADO, $form_state['values']['Mensaje']);
     db_set_active('default');
     
-    dsm(t('Tu invitacion se ha enviado correctamente.'));
+    drupal_set_message(t('Tu invitacion se ha enviado correctamente.'));
       $modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
     drupal_goto('/libres/'. $modalidad->tid .'/lista');
 

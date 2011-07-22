@@ -12,6 +12,7 @@ include ( "db_functions.php" );
 */
 
 // Define los estados para la variable de agentes libres
+  define( 'PENDIENTE', 3 );
   define( 'TIENE_EQUIPO', 2 );
   define( 'AGENTE_LIBRE', 1 );
   define( 'NO_REGISTRADO', 0 );
@@ -391,13 +392,13 @@ function team_load($node){
  * Implementación del hook_block()
  */
 function team_block( $op = 'list', $delta = 0 ){
-  //TODO 
 	$tid = arg( 2 );
 	
     switch( $op ) {
         case 'list':
             $block = array();
             $block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
+            $block[ 1 ][ 'info' ] = t('Muestra los equipos a los que el jugador pertenece.');
             break;
 		
         case 'view':
@@ -405,14 +406,26 @@ function team_block( $op = 'list', $delta = 0 ){
             switch( $delta ) {
                 case 0:
                     $block = array( );
-                    
-                    if ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( term_is_active( $tid ) ) ) {
+                    if ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( $modalidad = term_is_active( $tid ) ) ) {
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-                        $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
+                        if (module_exists('match')) {
+                            $content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
+                            $content[] = l( t( 'Proximos Partidos' ), 'libres/'. $tid . '/lista' );
+                            $content[] = l( t( 'Ultimos Resultados' ), 'libres/'. $tid . '/lista' );
+                        }
+                        if ($modalidad->Maximo_Jugadores > 1)
+                            $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
                         if (module_exists('ranking'))
                             $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
                         $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
+                    }
+                    break;
+                
+                case 1:
+                    if ($equipos = get_user_teams(arg(1))) {
+                        $block['subject'] = t('Juegos en los que participa');
+                        $block['content'] = $equipos;
                     }
                     break;
                 }
@@ -517,7 +530,7 @@ function get_jugador($uid, $id_Modalidad_Juego_Temporad) {
  */
 function get_teams($id_Modalidad_Juego_Temporada) {
 	db_set_active('eSM');
-		$teams = db_query('SELECT * FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada);
+		$teams = db_query('SELECT * FROM {Equipo} AS e INNER JOIN {Puntuacion} AS p ON e.nid_Equipo = p.nid_Equipo WHERE {id_Modalidad_Juego_Temporada} = %d ORDER BY Puntuacion DESC', $id_Modalidad_Juego_Temporada);
 	db_set_active('default');
 	
 	return $teams;
@@ -544,4 +557,55 @@ function team_theme() {
             'file' => '/theme/user_invitaciones.inc',
         ),
     );
+}
+/**
+ * Función que devuelve en un arreglo todos los equipos a los que pertenece un usuario
+ * recibe el uid del usuario que se quiere evaluar
+ */
+function get_user_teams($uid) {
+    $usuario = user_load(array(uid => $uid));
+    
+    $modalidades_activas = get_modalidades_activas();   //Obtiene todas las modalidades activas en una temporada
+    $output = '';
+    
+    foreach($modalidades_activas as $indice => $modalidad) {
+        db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
+            $result = db_query('SELECT {nid_Equipo} FROM {Equipo} WHERE id_Modalidad_Juego_Temporada = %d', $modalidad->id_Modalidad_Juego_Temporada);
+        db_set_active('default');
+        
+        while ($equipo = db_fetch_object($result)) {
+            $equipo = node_load($equipo->nid_Equipo);       //Carga el nodo equipo para obtener los jugadores inscritos en el equipo.
+
+            foreach($equipo->Integrantes as $indice => $jugador) {
+                if ($jugador->uid == $usuario->uid) {          //Revisa cada uno de los integrantes para saber si el jugador pertenece
+                    
+                    $lista_equipos = get_teams($equipo->id_Modalidad_Juego_Temporada);     //Calcula el ránking del equipo en la tabla
+                    $ranking = 1;
+                    
+                    while ($posicion = db_fetch_object($lista_equipos)) {
+
+                        if ($equipo->nid == $posicion->nid_Equipo)
+                            break;
+                        else
+                            ++$ranking;
+                    }
+                    
+                    $output .= '<div class = "fondo_juegos">
+                                    <div class = "left_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
+                                    <div class = "datos_equipo">
+                                        <ul>
+                                            <li>'. $modalidad->Nombre .'</li>
+                                            <li>'. $equipo->title .'</li>
+                                            <li>'. $ranking .'</li>
+                                            <li>'. $division .'</li>
+                                        </ul>
+                                    </div>
+                                    <div class = "right_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
+                                </div>';
+                }
+            }
+            
+        }
+    }
+    return $output;
 }

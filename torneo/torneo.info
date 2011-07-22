@@ -1,7 +1,0 @@
-; $Id$
-
-dependencies[ ] = match
-name = Torneos
-description = "Habilita la creación y adminstración de torneos dentro de una liga"
-core = 6.x
-package = eSM
