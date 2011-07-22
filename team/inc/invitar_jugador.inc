@@ -53,7 +53,7 @@ function invitar_usuario_validate($form, $form_state)
     }
     else
     {
-      $jugador = get_jugador($form_state['values']['uid_invitado'], $equipo->id_Modalidad_Juegos_Temporadas);
+      $jugador = get_jugador($form_state['values']['uid_invitado'], $equipo->id_Modalidad_Juego_Temporada);
       if ($jugador->Estado == TIENE_EQUIPO) {
           form_set_error('invitado', 'No puedes invitar a esta jugador porque ya pertenece a un equipo.');
       }

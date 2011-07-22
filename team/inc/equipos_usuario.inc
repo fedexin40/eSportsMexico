@@ -8,6 +8,7 @@ function equipos_usuario() {
     $usuario = user_load($usuario);
     
     $modalidades_activas = get_modalidades_activas();   //Obtiene todas las modalidades activas en una temporada
+    $count = 0;
     
     foreach($modalidades_activas as $indice => $modalidad) {
         db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
@@ -17,7 +18,7 @@ function equipos_usuario() {
         while ($equipo = db_fetch_object($result)) {
             $equipo = node_load($equipo->nid_Equipo);       //Carga el nodo equipo para obtener los jugadores inscritos en el equipo.
             foreach($equipo->Integrantes as $indice => $jugador) {
-                if ($jugador->uid == $user->uid) {          //Revisa cada uno de los integrantes para saber si el jugador pertenece
+                if ($jugador->uid == $usuario->uid) {          //Revisa cada uno de los integrantes para saber si el jugador pertenece
                     $form[$equipo->nid][$modalidad->id_Modalidad_Juego_Temporada] = array (
                         '#value' =>   l($modalidad->Nombre, 'taxonomy/term/'. $modalidad->tid),
                     );
@@ -26,7 +27,14 @@ function equipos_usuario() {
                     );
                 }
             }
+            ++$count;
         }
+    }
+    
+    if ($count == 0) {
+        $form['mensaje'] = array (
+            '#value' => t('No perteneces todavia a ningun equipo activo en esta temporada.'),
+        );
     }
     
     return $form;

@@ -304,8 +304,8 @@ function team_form(&$node, $form_state) {
  */
 function team_insert( $node ){
 	global $user;
+    
 	db_set_active ( 'eSM' );
-	
 	  db_query("INSERT INTO {Equipo} (nid_Equipo, id_Modalidad_Juego_Temporada, Abreviacion) VALUES (%d, %d, '%s');", $node->nid, $node->id_Modalidad_Juego_Temporada, $node->abreviacion);
 		
 		db_query("INSERT INTO { Puntuacion }  ( nid_Equipo ) VALUES ( %d );", $node->nid );
@@ -349,8 +349,8 @@ function team_load($node){
 		$team_data = db_query('SELECT {Abreviacion}, {id_Modalidad_Juego_Temporada} FROM {Equipo} WHERE {nid_Equipo} = %d', $node->nid );
 		$team_i = db_query('SELECT * FROM {Integrantes_Equipo} WHERE {nid_Equipo} = %d AND {Estado} = %d', $node->nid, ACEPTADO );
 		$team_puntuacion = db_query('SELECT * FROM {Puntuacion} WHERE {nid_Equipo} = %d', $node->nid ); 
-	
 	db_set_active ( 'default' );
+    
 	$team = db_fetch_array($team_data);
 
 	$node->abreviacion = $team['Abreviacion'];		//Agrega la abreviación al nodo equipo
@@ -361,11 +361,15 @@ function team_load($node){
 	$integrantes = array( );
 	
 	while ($jugador = db_fetch_object($team_i)) {
-    $integrantes[ $jugador->id_Jugador ] = $jugador;
+        db_set_active('eSM');
+            $jugador = db_fetch_object(db_query('SELECT * FROM {Jugador} WHERE id_Jugador = %d', $jugador->id_Jugador));
+        db_set_active('default');
+        
+        $integrantes[ $jugador->id_Jugador ] = $jugador;
 		$no_integrantes++;
 	}
 	$node->Numero_Integrantes = $no_integrantes;
-  $node->Integrantes = $integrantes;
+    $node->Integrantes = $integrantes;
 	/* 
 	while( $team_i = db_fetch_object($team_i) ) {
 		$jugador_result = db_query('SELECT *, FROM {Jugadores} WHERE {id_Jugador} = %d', $team_i->id_Jugador );

@@ -161,28 +161,29 @@ function administrar_invitaciones( ) {
  */
 function administrar_invitaciones_submit ( $form, $form_state ) {
 	global $user;
+	$equipo = node_load($form_state['values']['options']);	//Obtiene los datos del equipo para saber en que modalidad está inscrito
 	
 	if ($form_state['values']['options'] != 0 ) {		//Cambia el estado del jugador a ACEPTADO en la tabla de Integrantes Equipo
 		db_set_active('eSM');
 			db_query('UPDATE {Integrantes_Equipo} SET Estado = %d WHERE nid_Equipo = %d AND id_Jugador = %d', ACEPTADO, $form_state['values']['options'], $form_state['values']['Id_Jugador_'. $form_state['values']['options']]);
+														//Cambia el estado del jugador en la tabla de Jugadores
+			db_query('UPDATE {Jugador} SET Estado = %d WHERE id_Jugador = %d AND id_Modalidad_Juego_Temporada = %d', TIENE_EQUIPO, $form_state['values']['Id_Jugador_'. $form_state['values']['options']], $equipo->id_Modalidad_Juego_Temporada);
 		db_set_active('default');
 		
 		/**
 		 * Rechaza de manera automática todas las demás invitaciones que haya para la misma modalidad
 		 */
-		$equipo = node_load($form_state['values']['options']);	//Obtiene los datos del equipo para saber en que modalidad está inscrito
-		
 		db_set_active('eSM');
-			$result = db_query('SELECT * FROM {Integrantes_Equipo} AS ie INNER JOIN {Equipo} AS e ON ie.nid_Equipo = e.nid_Equipo WHERE e.id_Modalidad_Juego_Temporada = %d AND ie.id_Jugador = %d', $equipo->id_Modalidad_Juego_Temporada, $form_state['values']['Id_Jugador_'. $form_state['values']['options']]);
+			$result = db_query('SELECT * FROM {Integrantes_Equipo} AS ie INNER JOIN {Equipo} AS e ON ie.nid_Equipo = e.nid_Equipo WHERE e.id_Modalidad_Juego_Temporada = %d AND ie.id_Jugador = %d AND Estado = %d', $equipo->id_Modalidad_Juego_Temporada, $form_state['values']['Id_Jugador_'. $form_state['values']['options']]);
 		db_set_active('default');
 		
 		while ($invitacion = db_fetch_object($result)) {
 			db_set_active('eSM');
-				db_query('UPDATE {Integrantes_Equipo} SET Estado = %d WHERE nid_Equipo = %d AND id_Jugador = %d', RECHAZADO, $invitacion->nid_Equipo, $invitacion->id_Jugador);
+				db_query('UPDATE {Integrantes_Equipo} SET Estado = %d WHERE Estado = %d AND nid_Equipo = %d AND id_Jugador = %d', RECHAZADO, $invitacion->nid_Equipo, $invitacion->id_Jugador, INVITADO);
 			db_set_active('default');
 		}
 		
-		dsm( t( 'Te has unido al equipo.') );
+		drupal_set_message( t( 'Te has unido al equipo.') );
 		drupal_goto( '/node/'.$form_state['values']['options'] );
 	}
 }
@@ -233,7 +234,7 @@ function administrar_invitaciones_submit ( $form, $form_state ) {
         db_query( 'INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $nid_Equipo, $id_Jugador, RECHAZADO, 'Rechazada la invitación' );
     db_set_active( 'default' );
     
-    dsm( t( 'Tu unión se ha enviado correctamente.' ) );
+    drupal_set_message( t( 'Tu unión se ha enviado correctamente.' ) );
 			$modalidad = get_modalidad( $equipo->id_Modalidad_Juego_Temporada );
     drupal_goto( '/libres/'.$modalidad->tid.'/lista' );
 

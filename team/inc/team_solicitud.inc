@@ -75,12 +75,9 @@ function team_solicitud_validate( $form, &$form_state )
          WHERE
             j.{ uid } = %d
           AND
-            ie.{ Estado } = %d
-          OR
             ie.{ Estado } = %d',
         $user->uid,
-        ACEPTADO,
-        SOLICITA
+        ACEPTADO
       )
     );
     
@@ -109,6 +106,7 @@ function team_solicitud_submit( $form, &$form_state )
     
     //Revisa si el jugador ya está registrado en la tabla de jugadores activos para esta temporada, sino lo agrega
     $team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );
+    print_r($team);
     
     $modalidad = get_modalidad( $team->id_Modalidad_Juego_Temporada ); //Obtiene los datos de la modalidad para poder redireccionar la forma
 
@@ -131,6 +129,8 @@ function team_solicitud_submit( $form, &$form_state )
       );
 
     db_set_active( 'default' );
+    
+    print_r($jugador);
   
     if( $jugador->uid == 0 )
     {
