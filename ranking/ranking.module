@@ -106,17 +106,17 @@ function ranking_theme() {
 function calcula_ranking_desafio ($Desafio) 
 	{
 		
-		$nid_EquipoLocal = $Desafio->nid_EquipoLocal;
-		$nid_EquipoVisitante = $Desafio->nid_EquipoVisitante;
+		$nid_Equipo_Local = $Desafio->nid_Equipo_Local;
+		$nid_Equipo_Visitante = $Desafio->nid_Equipo_Visitante;
 		
 		$ganador = $Desafio->ganador;
 		
-		$diferenciaPuntuacion = $Desafio->Puntuacion_Local - $Desafio->Puntuacion_Visitante;
+		$diferenciaPuntuacion = $Desafio->Puntuacion_Equipo_Local - $Desafio->Puntuacion_Equipo_Visitante;
 		
 		if( $diferenciaPuntuacion < 0 )
 			$diferenciaPuntuacion *= -1;
 
-		if( $ganador == $Desafio->nid_EquipoLocal )
+		if( $ganador == $Desafio->nid_Equipo_Local )
 		{
 			
 			if ( $diferenciaPuntuacion == 0 )
@@ -188,8 +188,8 @@ function calcula_ranking_desafio ($Desafio)
 				
 			}
 			
-			actualizar_ranking( $nid_EquipoLocal, $puntuacion_ganador, 1, 1 );
-			actualizar_ranking( $nid_EquipoVisitante, $puntuacion_perdedor,1 );
+			actualizar_ranking( $nid_Equipo_Local, $puntuacion_ganador, 1, 1 );
+			actualizar_ranking( $nid_Equipo_Visitante, $puntuacion_perdedor,1 );
 
 		}
 		
@@ -266,8 +266,8 @@ function calcula_ranking_desafio ($Desafio)
 			}
 	
 	
-			actualizar_ranking( $nid_EquipoVisitante, $puntuacion_ganador,1, 1 );
-			actualizar_ranking( $nid_EquipoLocal, $puntuacion_perdedor, 1 );
+			actualizar_ranking( $nid_Equipo_Visitante, $puntuacion_ganador,1, 1 );
+			actualizar_ranking( $nid_Equipo_Local, $puntuacion_perdedor, 1 );
 			
 		}
 		
