@@ -12,6 +12,8 @@
  * despliega las opciones de acuerdo al máximo de jugadores para los equipos.
  */
 function inscripcion( ) {
+  
+  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
                 $tid = arg(1);  //Obtiene el tid de la modalidad de la barra de direcciones
                 global $user;
                 $tiene_equipo = tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
@@ -41,9 +43,12 @@ function inscripcion( ) {
 */
 function team_inscripcion( )
 {
+
+  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+                
   $id_Modalidad_Juego_Temporada = arg( 2 );  //Obtiene el id_Modalidad_Juego_Temporada que le pasa la función de inscripción como tercer argumento en la barra de direcciones
 
-  $modalidad = get_modalidad( $id_Modalidad_Juego_Temporada );
+  $modalidad = get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada );
   
   $teams = get_teams( $id_Modalidad_Juego_Temporada );
   

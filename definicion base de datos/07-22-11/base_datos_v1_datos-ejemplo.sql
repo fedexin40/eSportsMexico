@@ -80,13 +80,6 @@ INSERT INTO `Equipo` (`nid_Equipo`, `id_Modalidad_Juego_Temporada`, `Abreviacion
 (111, 2, 'EG'),
 (112, 1, 'RK');
 
---
--- Dumping data for table `Integrantes_Equipo`
---
-
-INSERT INTO `Integrantes_Equipo` (`nid_Equipo`, `id_Jugador`, `Estado`, `Mensaje`) VALUES
-(111, 1, 3, NULL),
-(112, 3, 3, NULL);
 
 --
 -- Dumping data for table `Jugador`
@@ -99,7 +92,13 @@ INSERT INTO `Jugador` (`id_Jugador`, `id_Modalidad_Juego_Temporada`, `uid`, `Fec
 (4, 1, 11, 1311224400, 1),
 (5, 2, 5, 1311224400, 1);
 
+--
+-- Dumping data for table `Integrantes_Equipo`
+--
 
+INSERT INTO `Integrantes_Equipo` (`nid_Equipo`, `id_Jugador`, `Estado`, `Mensaje`) VALUES
+(111, 1, 3, NULL),
+(112, 3, 3, NULL);
 
 --
 -- Dumping data for table `Modo_Juego`

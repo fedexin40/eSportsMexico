@@ -12,6 +12,9 @@
  *	Si tiene equipo, no podrá unirse, podrá editar sus equipos
  */
 function administrar_invitaciones( ) {
+	
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
 	global $user;
 	
 	db_set_active(  'eSM' );
@@ -52,7 +55,7 @@ function administrar_invitaciones( ) {
 	
 	while( $invitacion = db_fetch_object( $invitaciones_result ) ) {
 		$team = node_load ($invitacion->nid_Equipo);
-		$modalidad = get_modalidad($team->id_Modalidad_Juego_Temporada);
+		$modalidad = get_modalidad_juego_temporada($team->id_Modalidad_Juego_Temporada);
 		
 		$options[$team->nid] = '';
 		
@@ -225,6 +228,8 @@ function administrar_invitaciones_submit ( $form, $form_state ) {
 	*/
 	function rechazar_invitacion_submit( $form, &$form_state )
 	{ 
+		module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+		
 	
     $nid_Equipo = $form_state[ 'values' ][ 'nid_Equipo' ];
 
@@ -235,7 +240,7 @@ function administrar_invitaciones_submit ( $form, $form_state ) {
     db_set_active( 'default' );
     
     drupal_set_message( t( 'Tu unión se ha enviado correctamente.' ) );
-			$modalidad = get_modalidad( $equipo->id_Modalidad_Juego_Temporada );
+			$modalidad = get_modalidad_juego_temporada( $equipo->id_Modalidad_Juego_Temporada );
     drupal_goto( '/libres/'.$modalidad->tid.'/lista' );
 
 	

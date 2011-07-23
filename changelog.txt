@@ -3,7 +3,7 @@
  2. Módulo team dividido en archivos .inc y en subcarpetas inc y theme para hacer más fácil su manejo
   2.2 Añadido archivo inscripcion.inc para controlar la forma de inscripción
   
- 3. Función term_is_active($tid) movida a módulo base_datos_externa.module para concentrar aquí todas las funciones relacionadas con modalidades que se puedan necesitar
+ 3. Función term_is_active( $tid ) movida a módulo base_datos_externa.module para concentrar aquí todas las funciones relacionadas con modalidades que se puedan necesitar
     La idea es que el módulo se convierta en el core donde residan todas las funciones básicas para el resto de los módulos que tengamos que crear.
  4. Creada la función temporada_activa($) en base_datos_externa.module para devolver un objeto con todas las características de la temporada activa.
  5. Función get_modalidad($id_Modalidad_Juego_Temporada) movida al base_datos_externa.module
@@ -15,3 +15,10 @@
     NO_INSCRITO: 0
  9. Añadida fucnión tiene_equipo($uid, $id_Modalidad_Juego_Temporada) en team.module para saber si el jugador pertenece a un equipo, es agente libre o no está inscrito.
  10. Añadida la función get_jugdor($uid, $id_Modalidad_Juego_Temporada) en team. module para obtener los datos de un jugador
+
+ 11. Creado archivo db_functions con las funciones ordenadas para el acceso a la base de datos que contiene:
+    get_modalidad
+    get_modalidades_activas
+    term_is_active
+    temporada_activa
+    

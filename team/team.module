@@ -242,13 +242,15 @@ function team_access($op, $node, $account){
  */
 function team_form(&$node, $form_state) {
 
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+
 	//Si estamos en una modalidad individual, sugiere al usuario que el nombre por defecto de su equipo sea su nombre de usuario.
 	global $user;
 	$default = '';
 	$id_Modalidad_Juego_Temporada = arg( 3 );
 
 
-	$modalidad = get_modalidad( $id_Modalidad_Juego_Temporada );
+	$modalidad = get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada );
 	 if ( ( $modalidad->Maximo_Jugadores == 1 ) && ( !isset( $node->title ) ) )
 	  $node->title = $user->name;
 	
@@ -406,6 +408,8 @@ function team_block( $op = 'list', $delta = 0 ){
                 case 0:
                     $block = array( );
                     
+										module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+										
                     if ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( term_is_active( $tid ) ) ) {
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
@@ -434,8 +438,10 @@ function team_block( $op = 'list', $delta = 0 ){
  * dependiendo de si es el capitán del equipo y si es un equipo formado por más de una persona
  */
 function team_admin_access($node) {
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
 	global $user;
-	$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+	$modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
 	
 	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid)){
 		return TRUE;
@@ -450,8 +456,10 @@ function team_admin_access($node) {
  * Revisa si el usario está registrado en esta modalidad y si tiene equipo o es agente libre
  */
 function unirme_equipo_access($node) {
+		module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
     global $user;
-    $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+    $modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
 
     $tiene_equipo = tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada);
     

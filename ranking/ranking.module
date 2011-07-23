@@ -5,7 +5,7 @@
  */
 function ranking_help() {
 	$output = '';
-	switch($path){
+	switch( $path ){
 		case 'admin/help#ranking':
 			$output = '<p>'.t("Permite manejar y controlar el ránking de las modalidades.").'</p>';
 			break;

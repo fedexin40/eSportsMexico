@@ -1,7 +1,6 @@
 <?php
 // $Id: match.module,v 1.19 2010/04/15 18:35:03 alun Exp $
 
-
 // Define los estados del desafío
 	define( 'CREADO', 0 );
   define( 'PROGRAMADO', 1 );	
@@ -13,9 +12,10 @@
 * Outlines permissions for this module.
 * @return array - An array of valid permissions for the match module
 */
-function match_perm(){
-  return array('administer matches', 'create match', 'edit own match', 'delete own match', 'enter own match results');
+function match_perm( ){
+  return array( 'administer matches', 'create match', 'edit own match', 'delete own match', 'enter own match results', 'matches viewing' );
 }//end function match_perm()
+
 
 /**
  * Implementation of hook_menu()
@@ -53,8 +53,157 @@ function match_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/match.admin.inc',
   );
+	
+  $items[ 'taxonomy/term/%/challenges' ] = array
+	(
+    'title' => 'Tablero de desafíos',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'challenges_binnacle' ),
+    //'access callback' => 'matches_viewing',
+    'access arguments' => array( 'matches_viewing' ),
+    'type' => MENU_CALLBACK,
+    //'file' => 'inc/match.admin.inc',
+  );
+	
+  $items[ 'taxonomy/term/%/challenges/create' ] = array
+	(
+    'title' => 'Crear un desafío',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'match_form' ),
+    'access callback' => 'match_report_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_CALLBACK,
+    //'file' => 'inc/match.admin.inc',
+  );
+	
   return $items;
 }
+
+
+/**
+ *	Función que se encargará de mostrar la bitácora de desafíos creados para las modalidades
+ *	y temporadas activas al momento
+ */
+function challenges_binnacle( )
+{
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
+	$date = '2011-12-31';
+	$format = 'Y-m-d\TH:i';
+	
+	$id_Modalidad_Juego = arg( 2 );
+	$Temporada_Activa = temporada_activa(  );
+
+	
+	db_set_active( 'eSM' );
+		$Challenges_result_set = db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { r.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_Temporada } INNER JOIN { Temporada } AS { t } ON { mjt.id_Temporada = t.id_Temporada } INNER JOIN { Modalidad_Juego } AS { mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego } WHERE { mj.tid = %d } AND { t.id_Temporada = %d } AND { r.Estado = %d }', $id_Modalidad_Juego, $Temporada_Activa->id_Temporada, CREADO );
+	db_set_active( 'default' );
+
+	$Challenges = array( );
+	
+	$form[ 'Challenges_List' ] = array
+	(
+	
+		'#type' => 'fieldset',
+		'#title' => 'Lista de desafíos'
+	 
+	);
+	
+	while( $Challenge = db_fetch_object( $Challenges_result_set ) )
+	{
+		//$Challenges[ $Challenge[ 'id_Reto' ] ] = $Challenge;
+		
+		
+		dsm( $Challenge );
+		
+		$Fecha_Inicio = timestamp_to_string( $Challenge->Fecha_Inicio );
+		$Fecha_Fin = timestamp_to_string( $Challenge->Fecha_Fin );
+
+		
+		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array
+		(
+			'#type' => 'item',
+			//'label' => t( 'Nombre' ),
+			//'#disabled' => 'TRUE',
+			//'size' => 17,
+			//'maxlength' => 17,
+			'#title' => t( 'Número de reto' ),
+			//'#required' => TRUE,
+			'#weight' => -8,
+			'#value' => $Challenge->id_Reto,
+		);
+		
+		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array (
+			'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+			'#disabled' => 'TRUE',
+			'#title' => 'Fecha de inicio',
+			'#default_value' => $Fecha_Inicio,
+			'#date_format' => $format,
+			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+			'#size' => 17,
+			'#maxlength' => 17,
+		);
+
+
+		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Fin' ] = array (
+			'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+			'#disabled' => 'TRUE',
+			'#title' => 'Fecha de inicio',
+			'#default_value' => $Fecha_Fin,
+			'#date_format' => $format,
+			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+			'#size' => 17,
+			'#maxlength' => 17,
+		);
+
+		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Estado' ] = array (
+			'#type' => 'item', 
+			'#title' => 'Estado',
+			'#value' => $Challenge->Estado,
+		);
+	
+	
+		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Aceptar' ] = array
+		(
+			
+			'#type' => 'submit',
+			'#value' => t('Aceptar desafío'),
+			
+		);
+		
+	}
+	
+	
+	$form[ 'id_Modalidad_Juego' ] = array
+	(		
+		'#type' => 'hidden',
+		'#value' => $id_Modalidad_Juego,
+	);
+	
+	
+	
+	$form[ 'id_Temporada_Activa' ] = array
+	(		
+		'#type' => 'hidden',
+		'#value' => $Temporada_Activa,
+	);
+	
+	
+	
+	
+	
+	return $form;
+	
+}
+
+
+
 
 /**
  * Implementation of hook_node_info()
@@ -62,26 +211,29 @@ function match_menu(){
  */
  
 function match_node_info() {
-  return array(
-    'match' => array(
-      'name' => t('Match'),
-      'module' => 'match',
-      'description' => t("Un partido entre dos equipos participantes de un ránking."),
-    )
-  );
+  return array
+	(
+		'match' => array
+		(
+			'name' => t('Desafío'),
+			'module' => 'match',
+			'description' => t("Un partido entre dos equipos integrados a la puntuación."),
+		)
+	);
 } 
 
 //access argument for the node edit page - just return node access for updating the node
-function match_edit_access($node){
-  return node_access('update', $node);
+function match_edit_access( $node )
+{
+  return node_access( 'update', $node );
 }
 
 //access argument for the node report score page - just return node access for users who have permission to report the match score
-function match_report_access($node) {
+function match_report_access( $node ) {
   global $user;
   
   //users who can administer matches can do anything.
-  if (user_access('adminster matches', $account))
+  if ( user_access('administer matches', $account))
     return TRUE;
   
   //Revisa que el usuario sel el capitán/creador de alguno de los dos equipos en el match
@@ -117,7 +269,7 @@ function match_access($op, $node, $account){
       if(user_access('enter results', $account) && ($account->uid == $row['uid'])){
         return TRUE;
       }
-    }*
+    }*/
   }
   
   if ($op == 'delete') {
@@ -129,7 +281,7 @@ function match_access($op, $node, $account){
       if(user_access('delete own match', $account) && ($account->uid == $row['uid'])){
         return TRUE;
       }
-    }*
+    }*/
   }
   
   if ($op == 'view') {
@@ -146,41 +298,46 @@ function match_access($op, $node, $account){
  * @param $node is a challenge
  * @return unknown_type
  */
-function match_form(&$node, &$form_state) {
+function match_form( &$node )
+{
+	
+	module_load_include( 'php', 'team', 'db_functions' );
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
   //Esta función recibe sus argumentos de la barra de dirección,
   //el primer argumento numérico corresponde al taxonomy id indicándonos la modalidad a la que pertenece este match
   //el segundo si es que exite corresponde al nid_Equipo del equipo al que se está retando.
   global $user;
   $error = FALSE;
-  $Modalidad_Juego = arg(3);
-  $away_team = arg(4);
+  $id_Modalidad_Juego = arg( 2 );
+  $away_team = arg( 4 );
   
   // Creating the date/time element
   $date = '2011-12-31';
   $format = 'Y-m-d\TH:i';
   
   //Verifica que exita el modulo datepopup que es necesario para el correcto funcionamiento de este módulo.
-  if( !module_exists( 'date_popup' ) )
+  /*if( !module_exists( 'date_popup' ) )
 	{
     $datepopup = false;
     drupal_set_message('Es necesario isntalar el módulo date popup para que este módulo funcione correctamente!', 'error');
     $error = TRUE;
   }else{
     $datepopup = true;
-  }
+  }*/
   
   //$form['#validate'][] = 'match_validate';
-  
-  $temporada_activa = get_temporada_activa();
+	
+  $temporada_activa = temporada_activa( );
   
   //Checamos que exista una temporada activa, en caso de que no haya mostramos un mensaje al usuario indicando que tiene que haber una temporada activa
-  if( is_null( $temporada_activa) ){ 
+  if( is_null( $temporada_activa ) ){ 
     drupal_set_message('No puedes crear partidos si no hay temporadas activas.', 'error');
     $error = TRUE;
   }
   
   //Revisa que la modalidad esté activa en esta temporada
-  $id_Modalidad_Juego_Temporada = get_id_modalidad_juego_temporada( $modalidad, $temporada_activa->id_Temporada );
+  $Modalidad_Juego_Temporada = get_modalidad_juego_temporada( $id_Modalidad_Juego );
   
   //para la primera vez que se crea un match, 
   //si no tiene temporada asignada, le asigna la temporada activa
@@ -191,10 +348,15 @@ function match_form(&$node, &$form_state) {
   }
   
   //Revisa que el jugador sea capitán de un equipo inscrito en la modalidad durante la temporada activa
-  $nid_Equipo = is_capitan( $user->uid, $id_Modalidad_Juego_Temporada );
+  $nid_Equipo = is_capitan( $user->uid, $Modalidad_Juego_Temporada->id_Modalidad_Juego_Temporada );
+	
+	dpm( $user->uid );
+	dpm( get_modalidad_juego_temporada( $id_Modalidad_Juego ) );
+	
   if ( $nid_Equipo == NULL ) {
      drupal_set_message('No perteneces a ningún equipo o no eres el capitán de tu equipo. Sólo los capitanes pueden crear partidas.', 'error');
      $error = TRUE;
+		 drupal_goto( 'taxonomy/term/'.$id_Modalidad_Juego );
   }
   
   
@@ -225,13 +387,13 @@ function match_form(&$node, &$form_state) {
   $Teams = get_equipos( $id_Modalidad_Juego_Temporada  );
   
   
-  $hours = array();
+  /*$hours = array();
   for($count = 0; $count < 24; ++$count){
     $hours[$count] = sprintf("%02d",$count); ;
   }
   for($count = 0; $count < 60; $count=$count+15){
     $mins[$count] = sprintf("%02d",$count);
-  }
+  }*/
   
   /*$form[ 'season_league' ] = array(
     '#type' => 'select',
@@ -244,7 +406,7 @@ function match_form(&$node, &$form_state) {
   
   // We need to define form elements for the node's title and body.
   
-  $form[ 'Define_Challenge' ] = array(
+  $form[ 'Defining_Challenge' ] = array(
     '#type' => 'fieldset',
     '#title' => t( 'Define el desafío' ),
     //'#collapsible' => 'TRUE',
@@ -255,7 +417,7 @@ function match_form(&$node, &$form_state) {
   if ( is_null( $away_team ) )
   {
   
-    $form[ 'Define_Challenge' ]['home_team'] = array(
+    $form[ 'Defining_Challenge' ]['home_team'] = array(
       '#type' => 'select',
       '#title' => t( 'Equipo local' ),
       '#required' => TRUE,
@@ -266,7 +428,7 @@ function match_form(&$node, &$form_state) {
   }
   
   
-  $form[ 'Define_Challenge' ]['away_team'] = array(
+  $form[ 'Defining_Challenge' ]['visitor_team'] = array(
     '#type' => 'select',
     '#title' => t('Equipo visitante'),
     '#required' => TRUE,
@@ -302,7 +464,7 @@ function match_form(&$node, &$form_state) {
     '#default_value' => $start_minute,
   );*/
   
-  $form[ 'Define_Challenge' ][ 'Fecha_Uno' ] = array
+  $form[ 'Defining_Challenge' ][ 'Date_One' ] = array
   (
     '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
     '#title' => 'Posible fecha 1',
@@ -314,7 +476,7 @@ function match_form(&$node, &$form_state) {
     '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
   
-  $form[ 'Define_Challenge' ][ 'Fecha_Dos' ] = array
+  $form[ 'Defining_Challenge' ][ 'Date_Two' ] = array
   (
     '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
     '#title' => 'Posible fecha 2',
@@ -327,7 +489,7 @@ function match_form(&$node, &$form_state) {
   );
 
 
-  $form[ 'Define_Challenge' ][ 'Fecha_Tres' ] = array
+  $form[ 'Defining_Challenge' ][ 'Date_Three' ] = array
   (
     '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
     '#title' => 'Posible fecha 3',
@@ -341,10 +503,10 @@ function match_form(&$node, &$form_state) {
 
 
   
-  $form['Define_Challenge']['Mensaje'] = array
+  $form['Defining_Challenge']['Message'] = array
   (
     '#type' => 'textarea',
-    '#title' => t('Match Notes'),
+    '#title' => t('Mensaje de desafío'),
     '#default_value' => $node->body,
     '#required' => FALSE,
     '#description' => t('Usa este espacio para introducir algunos comentarios previos al desafío o para definir un reporte de desafío después del juego.'),
@@ -352,16 +514,16 @@ function match_form(&$node, &$form_state) {
   );
   
   
-  $form['Define_Challenge']['filter'] = filter_form( $node->format );
+  $form['Defining_Challenge']['filter'] = filter_form( $node->format );
   
-	$form[ 'Define_Challenge' ][ 'submit' ] = array
+	$form[ 'Defining_Challenge' ][ 'submit' ] = array
 	(
 
 		'#type' => 'submit',
 		'#value' => t( 'Crear' ),
 	);
 	
-  $form[ 'Define_Challenge' ][ 'id_Modalidad_Juego_Temporada' ] = array
+  $form[ 'Defining_Challenge' ][ 'id_Modalidad_Juego_Temporada' ] = array
 	(
 		'#type' => 'hidden',
 		'#value' => $id_Modalidad_Juego_Temporada,	
@@ -699,7 +861,7 @@ function match_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
  * @param $teaser
  * @param $page
  * @return unknown_type
- *
+ */
 function match_view($node, $teaser = FALSE, $page = FALSE){  
   $content = theme('match_content', $node);
     
@@ -750,7 +912,7 @@ function match_theme($existing, $type, $theme, $path) {
 
 /**
  * Implementation of hook_views_api()
- *
+ */
 function match_views_api() {
   return array(
     'api' => 2.0,
@@ -812,15 +974,14 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
 function _match_send_notification_mail($node) {
 
   $params = array(
-    'subject' => t('Tienes un partido pendiente: !title', array('!title' => $node->title)),
-    'body' => 'Se ha creado un partido para tí en BitNet.',
+    'subject' => t( 'Tienes un partido pendiente: !title', array( '!title' => $node->title ) ),
+    'body' => '¡Has sido desafiado!',
     'node' => $node,
   );
   
-  $seasson = node_load($node->relation_id);
-  if ($seasson->signup_min_pp > 1) {
-  }
-  else {
+  $seasson = node_load( $node->relation_id );
+  if ( $seasson->signup_min_pp <= 1 )
+	{
     $home_team = user_load($node->home_team);
     $home_language = user_preferred_language($home_team);
     $away_team = user_load($node->away_team);
