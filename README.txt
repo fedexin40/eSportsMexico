@@ -1,15 +1,26 @@
-MÛdulos para manejar la liga de eSports MÈxico con Drupal
-Programadores: AgustÌn Cruz Lozano
+M√≥dulos para manejar la liga de eSports M√©xico con Drupal
+Programadores: Agust√≠n Cruz Lozano
                Irmin Nadir
                
-Estructura de submÛdulos
-  1. Base_Datos_Externa: MÛdulo core donde residen todas las funciones principales
-  2. Team: MÛdulo para controlar y administrar la creaciÛn de equipos
-  3. Match: MÛdulo para controlar y administrar las partidas.
-  4. Ranking: MÛdulo para controlar y administrar las puntuaciones de equipos
+Estructura de subm√≥dulos
+  1. Base_Datos_Externa: M√≥dulo core donde residen todas las funciones principales
+  2. Team: M√≥dulo para controlar y administrar la creaci√≥n de equipos
+  3. Match: M√≥dulo para controlar y administrar las partidas.
+  4. Ranking: M√≥dulo para controlar y administrar las puntuaciones de equipos
 
-InstalaciÛn:
+Instalaci√≥n:
 
-Para instalar es necesario crear la base de datos externa definida en los archivos .sql de la carpeta "DefiniciÛn base de datos"
-el archivo con el que se generÛ la base de datos inicial (completa) para el servidor de pruebas fue el de la versiÛn del dÌa 07-23-11
-a partir de ahÌ se empezaron a generar ˙nicamente archivos para actualizar la base de datos al ˙ltimo estado de la base diseÒada.
+Para instalar es necesario crear la base de datos externa definida en los archivos .sql de la carpeta "Definici√≥n base de datos"
+el archivo con el que se gener√≥ la base de datos inicial (completa) para el servidor de pruebas fue el de la versi√≥n del d√≠a 07-23-11
+a partir de ah√≠ se empezaron a generar √∫nicamente archivos para actualizar la base de datos al √∫ltimo estado de la base dise√±ada.
+
+
+Desarrollo:
+
+Existe un conjunto de funciones √∫tiles para recolectar informaci√≥n de la base de datos. Si existen o se requieren, deben encontrarse dentro de
+un archivo que lleva por nombre db_functions.php.
+Para llamarlas desde otro m√≥dulo, deben incluirse primero dentro del √°mbito de la funci√≥n pertinente a trav√©s de el m√©todo siguiente:
+module_load_include( $type, $module, $name = NULL );
+Ejemplo:
+Para usar las funciones del archivo db_functions de tipo php, perteneciente al ·∏øodulo base_datos_externa se har√° de la siguiente manera:
+module_load_include( 'php', 'base_datos_externa', 'db_functions' );
