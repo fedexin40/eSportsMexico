@@ -406,7 +406,9 @@ function team_block( $op = 'list', $delta = 0 ){
             switch( $delta ) {
                 case 0:
                     $block = array( );
-                    if ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( $modalidad = term_is_active( $tid ) ) ) {
+                    $modalidad = term_is_active( $tid );
+                    
+                    if ( ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( is_object( $modalidad ) ) ) || (arg(0) == 'libres') || (arg(0) == 'puntuacion') || (arg(0) == 'node' && arg(1) == $modalidad->reglas)){
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
                         if (module_exists('match')) {
@@ -418,6 +420,7 @@ function team_block( $op = 'list', $delta = 0 ){
                             $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
                         if (module_exists('ranking'))
                             $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
+                        $content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
                         $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
                     }
                     break;
