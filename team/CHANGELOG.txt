@@ -1,0 +1,21 @@
+13 de julio 2011 - Cambios (Agustín Cruz Lozano)
+ 1. Modificado el nombre del módulo teams por team
+ 2. Módulo team dividido en archivos .inc y en subcarpetas inc y theme para hacer más fácil su manejo
+  2.2 Añadido archivo inscripcion.inc para controlar la forma de inscripción
+  
+ 3. Función term_is_active($tid) movida a módulo base_datos_externa.module para concentrar aquí todas las funciones relacionadas con modalidades que se puedan necesitar
+    La idea es que el módulo se convierta en el core donde residan todas las funciones básicas para el resto de los módulos que tengamos que crear.
+ 4. Creada la función temporada_activa($) en base_datos_externa.module para devolver un objeto con todas las características de la temporada activa.
+ 5. Función get_modalidad($id_Modalidad_Juego_Temporada) movida al base_datos_externa.module
+ 6. Creada la función get_teams($id_Modalidad_Juego_Temporada) devuelve el resultado de una consulta que almacena todos los equipos inscritos a una modalidad definida por el id_Modalidad_Juego_Temporada.
+ 7. En inscripción para equpos de una sóla persona, el sistema sugiere ahora el nombre del equipo igual al nombre de usuario.
+ 8. En team.module cambiada la definición de constantes a:
+    TIENE_EQUIPO: 2
+    AGENTE_LIBRE: 1
+    NO_INSCRITO: 0
+ 9. Añadida fucnión tiene_equipo($uid, $id_Modalidad_Juego_Temporada) en team.module para saber si el jugador pertenece a un equipo, es agente libre o no está inscrito.
+ 10. Añadida la función get_jugdor($uid, $id_Modalidad_Juego_Temporada) en team. module para obtener los datos de un jugador
+ 
+15 de julio 2011 - Agustín Cruz Lozano
+    1. Ahora el team_load agrega un arreglo integrantes con los objetos de todos los integrantes al nodo
+    2. Definida la ruta /user/%/myteams como una vista informativa de los equipos a los que pertenece el usuario

@@ -211,6 +211,9 @@ function challenges_binnacle( )
  */
  
 function match_node_info() {
+	
+	global $user;
+	
   return array
 	(
 		'match' => array
@@ -233,7 +236,7 @@ function match_report_access( $node ) {
   global $user;
   
   //users who can administer matches can do anything.
-  if ( user_access('administer matches', $account))
+  if ( user_access( 'administer matches', $account ) )
     return TRUE;
   
   //Revisa que el usuario sel el capitán/creador de alguno de los dos equipos en el match

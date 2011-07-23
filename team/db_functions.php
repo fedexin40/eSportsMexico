@@ -4,12 +4,15 @@
 
 //Función que recibe un identificador de juego y temporada
 //y devuelve un arreglo con los datos de todos los equipos inscritos
-function get_equipos($id_Modalidad_Juego_Temporada) {
+function get_equipos( $id_Modalidad_Juego_Temporada ) {
     db_set_active('eSM');
         $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
     db_set_active('default');
     
-    while ($equipo = db_fetch_array($result)) {
+    $equipos = array( );
+    
+    while ( $equipo = db_fetch_array( $result ) ) {
+      
         $equipos[$equipo['nid']] = $equipo;
     }
     return is_null( $equipos ) ? $equipos : NULL;
