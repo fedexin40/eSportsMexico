@@ -6,3 +6,6 @@
     
 15 julio 2011
     * Integracion del módulo team con messaging para enviar notificaciones a los usuarios cuando reciban una invitación, un suario solicite entrar en su equipo, etc.
+    
+23 julio, 2011
+    1. Verificar que is_capitan efectivamente devuelva un arreglo de objetos.

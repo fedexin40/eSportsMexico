@@ -26,6 +26,8 @@ function get_equipos( $id_Modalidad_Juego_Temporada ) {
 function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
     $equipos = get_equipos($id_Modalidad_Juego_Temporada);
     
+    
+    
     if (isset($equipos)) {
         foreach ($equipos as $nid=>$equipo) {
             $eval = node_load($equipo['nid_Equipo']);

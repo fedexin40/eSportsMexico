@@ -340,7 +340,7 @@ function match_form( &$node )
   }
   
   //Revisa que la modalidad esté activa en esta temporada
-  $id_Modalidad_Juego_Temporada = get_id_modalidad_juego_temporada($modalidad, $temporada_activa->id_Temporada);
+  $id_Modalidad_Juego_Temporada = get_modalidad_juego_temporada( $modalidad, $temporada_activa->id_Temporada );
 
   
   //para la primera vez que se crea un match, 
