@@ -408,7 +408,7 @@ function team_block( $op = 'list', $delta = 0 ){
                     $block = array( );
                     $modalidad = term_is_active( $tid );
                     
-                    if ( ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( is_object( $modalidad ) ) ) || (arg(0) == 'libres') || (arg(0) == 'puntuacion') || (arg(0) == 'node' && arg(1) == $modalidad->reglas)){
+                    if ( ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( is_object( $modalidad ) ) ) ){
                         $block[ 'subject' ] = 'Equipos';
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
                         if (module_exists('match')) {

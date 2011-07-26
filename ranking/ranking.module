@@ -533,3 +533,39 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
     
     return;
 }
+/**
+ * Función para obtener el ránking de una modalidad
+ *
+ * @param
+ * 		id_Modalida_Juego_Temporada
+ * 		
+ * @return
+ * 		objeto db_query con la tabla ordenada de equipos
+ */
+function ranking_get_ranking($id_Modalidad_Juego_Temporada) {
+	db_set_active('eSM');
+		$result = db_query('SELECT * FROM {Puntuacion} AS p INNER JOIN {Equipo} AS e ON p.nid_Equipo = e.nid_Equipo WHERE id_Modalidad_Juego_Temporada = %d ORDER BY Puntuacion DESC, PG DESC, TJ DESC, PJ DESC, nid_Equipo DESC', $id_Modalidad_Juego_Temporada);
+	db_set_active('default');
+	
+	return $result;
+}
+/**
+ * Función para usar combinada con ranking_get_ranking
+ * coloca en un arreglo todos los equipos participantes en el ránking
+ *
+ * @param
+ * 		id_Modalida_Juego_Temporada
+ * 		
+ * @return
+ * 		arreglo con la tabla ordenada de equipos
+ */
+function ranking_get_ranking_arreglo($id_Modalidad_Juego_Temporada) {
+	$ranking = ranking_get_ranking($id_Modalidad_Juego_Temporada);
+	
+	$result = array ();
+	while ($equipo = db_fetch_object($ranking)) {
+		$result[$equipo->nid_Equipo] = $equipo;
+	}
+	
+	return $result;
+}
