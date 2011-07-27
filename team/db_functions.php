@@ -13,8 +13,9 @@ function get_equipos( $id_Modalidad_Juego_Temporada ) {
     
     while ( $equipo = db_fetch_array( $result ) ) {
       
-        $equipos[ $equipo['nid_Equipo'] ] = $equipo;
+        $equipos[ $equipo[ 'nid_Equipo' ] ] = $equipo;
     }
+    
     return is_null( $equipos ) ? NULL : $equipos ;
 }
 
@@ -27,17 +28,17 @@ function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
   
     $equipos = get_equipos( $id_Modalidad_Juego_Temporada );
     
-    dpm( $equipos );
-    
-    if (isset($equipos)) {
-        foreach ($equipos as $nid=>$equipo) {
-            $eval = node_load($equipo['nid_Equipo']);
-            if ($eval->uid == $uid)
-                return $eval;
-        }
+    if ( isset( $equipos ) )
+    {
+      foreach ( $equipos as $nid=>$equipo )
+      {
+        $eval = node_load( $equipo[ 'nid_Equipo' ] );
+        if ( $eval->uid == $uid )
+          return $eval;
+      }
     }
     else
-        return NULL;
+      return NULL;
 }
 
 

@@ -943,6 +943,8 @@ function indirect_match_form( $node )
   $nid_Equipo = is_capitan( $user->uid, $Jugador->id_Modalidad_Juego_Temporada );
 	
 	
+	dpm( $nid_Equipo );
+	
 	//Obtenemos la modalidad de juego a través de $user
 
 	$Modalidad_Juego = get_modalidad_juego_user( $user );
