@@ -1,8 +1,0 @@
-13 julio 2011
-    * Pendiente agregar al objeto $node otros objetos que contengan el ranking del equipo y la cantidad de jugadores    Función: team_load()
-    * En el módulo de equipos desplegar la definición del agente libre como una fórma popup para hacerlo más elegante.
-    * Agregar validación de temporada y modalidad activa a todos los lugares donde los usarios soliciten inscripción (Tal vez volverlo una función)
-    * Tal vez crear una función para hacer la inscripción de los usuarios de manera centralizada
-    
-15 julio 2011
-    * Integracion del módulo team con messaging para enviar notificaciones a los usuarios cuando reciban una invitación, un suario solicite entrar en su equipo, etc.
