@@ -3,9 +3,8 @@
 /**
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
-function team_solicitud( )//&$form_state )
+function team_solicitud($node)
 {
-
   //Pasando las variables necesarias para procesar después de confirmar la acción
   $form[ 'nid_Equipo' ] = array
   (
@@ -48,8 +47,6 @@ function team_solicitud_validate( $form, &$form_state )
     //Verifica que el usuario no esté activo en otro equipo
     global $user;
 
-
-
     $team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );       //Carga el objeto del equipo para poder utilizarlo
 
     $modalidad = get_modalidad( $team->id_Modalidad_Juego_Temporada );
@@ -80,7 +77,6 @@ function team_solicitud_validate( $form, &$form_state )
         ACEPTADO
       )
     );
-    
     db_set_active( 'default' );
   
   
@@ -89,10 +85,25 @@ function team_solicitud_validate( $form, &$form_state )
 
       //El jugador ya está activo en un equipo. Salir
       drupal_set_message( 'No te puedes unir a este equipo porque ya estás activo en otro equipo.', 'error' );
-      drupal_goto( 'taxonomy/term/'.$modalidad->tid );
+      //drupal_goto( 'taxonomy/term/'.$modalidad->tid );
 
     }
+    
+    db_set_active( 'eSM' );
 
+    $solicitud_realizada = db_fetch_object
+    (
+      db_query
+      (
+        'SELECT * FROM { Integrantes_Equipo } AS ie INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador } WHERE j.{ uid } = %d AND ie.{ Estado } = %d AND ie. { nid_Equipo } = %d',
+        $user->uid, SOLICITA, $team->nid
+      )
+    );
+    db_set_active( 'default' );
+
+  if (is_object($solicitud_realizada)) {
+    form_error($form, t('Ya has solicitado unirte a este equipo.'));
+  }
 
 }
 
@@ -128,8 +139,6 @@ function team_solicitud_submit( $form, &$form_state )
       );
 
     db_set_active( 'default' );
-    
-    print_r($jugador);
   
     if( $jugador->uid == 0 )
     {
@@ -168,10 +177,9 @@ function team_solicitud_submit( $form, &$form_state )
     
     //Insertar el registro de solicitud en la base de datos y actualizar el estado del jugador
     db_set_active( 'eSM' );
-      db_query ('INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $team->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['mensaje']);
+      db_query ('INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $team->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['Mensaje']);
     db_set_active('default');
     
-  
   //set a message
   drupal_set_message( '¡Tu solicitud ha sido enviada con éxito!' );
   drupal_goto( '/taxonomy/term/'.$modalidad->tid );

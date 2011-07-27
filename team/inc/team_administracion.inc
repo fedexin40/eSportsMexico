@@ -185,11 +185,11 @@ function team_administrar_solicitudes( ) {
   {
     ++ $count;
     $account = user_load( array( 'uid' => $jugador->uid ) );
-    $form[ $jugador->id_Jugador ][ 'nombre' ] = array (
+    $form['Solicitudes'][ $jugador->id_Jugador ][ 'nombre' ] = array (
       '#value' => $account->name,
     );
   
-    $form[ $jugador->id_Jugador ][ 'mensaje' ] = array (
+    $form['Solicitudes'][ $jugador->id_Jugador ][ 'mensaje' ] = array (
       '#value' => $jugador->Mensaje,
     );
     
@@ -221,6 +221,8 @@ function team_administrar_solicitudes( ) {
       '#value' => $equipo->nid,
     );
   }
+  
+  $form['#theme'] = 'team_solicitudes';
   
   return $form;
   

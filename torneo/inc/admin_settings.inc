@@ -217,9 +217,9 @@ function torneo_admin_settings_form_submit ($form, $form_state) {
         else {
           
           db_set_active('eSM');
-            db_query("INSERT INTO {Torneos} (nid_Torneo, is_Modalidad_Juego_Temporada, Tipo, Eliminacion, Rondas_Dia, Fecha_Inicio, Fecha_Final, Estado) 
-             VALUES(%d, %d, %d, %d, %d, %d, %d)", 
-             $node->nid, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, FUTURO);
+            db_query("INSERT INTO {Torneos} (nid_Torneo, id_Modalidad_Juego_Temporada, Tipo, Eliminacion, Rondas_Dia, Fecha_Inicio, Fecha_Final, Estado) 
+             VALUES(%d, %d, %d, %d, %d, %d, %d, %d)", 
+             $node->nid, $modalidad->id_Modalidad_Juego_Temporada, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, FUTURO);
           db_set_active('default');
           
           if (module_exists('user_badges')) {

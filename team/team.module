@@ -559,6 +559,10 @@ function team_theme() {
             'arguments' => array ('form' => NULL),
             'file' => '/theme/user_invitaciones.inc',
         ),
+        'team_solicitudes' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/team_solicitudes.inc',
+        ),
     );
 }
 /**
