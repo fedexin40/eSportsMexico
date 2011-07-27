@@ -434,7 +434,7 @@ function team_block( $op = 'list', $delta = 0 ){
 
 }
 /**
- * Función para decidir si el usuario tiene acceso a las pestañas de administración del equipo
+ * Función para decidir si el usuario tiene accinseso a las pestañas de administración del equipo
  * dependiendo de si es el capitán del equipo y si es un equipo formado por más de una persona
  */
 function team_admin_access($node) {

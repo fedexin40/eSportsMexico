@@ -3,8 +3,10 @@
 /**
  * Implemetnación del hoock help
  */
-function ranking_help() {
+function ranking_help( $path ) {
 	$output = '';
+	
+	
 	switch( $path ){
 		case 'admin/help#ranking':
 			$output = '<p>'.t("Permite manejar y controlar el ránking de las modalidades.").'</p>';

@@ -13,9 +13,9 @@ function get_equipos( $id_Modalidad_Juego_Temporada ) {
     
     while ( $equipo = db_fetch_array( $result ) ) {
       
-        $equipos[$equipo['nid']] = $equipo;
+        $equipos[ $equipo['nid_Equipo'] ] = $equipo;
     }
-    return is_null( $equipos ) ? $equipos : NULL;
+    return is_null( $equipos ) ? NULL : $equipos ;
 }
 
 /**
@@ -24,9 +24,10 @@ function get_equipos( $id_Modalidad_Juego_Temporada ) {
   * recibe el uid del usuario que se quiere verificar y el id_Modalidad_Juego_Temporada
  */
 function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
-    $equipos = get_equipos($id_Modalidad_Juego_Temporada);
+  
+    $equipos = get_equipos( $id_Modalidad_Juego_Temporada );
     
-    
+    dpm( $equipos );
     
     if (isset($equipos)) {
         foreach ($equipos as $nid=>$equipo) {

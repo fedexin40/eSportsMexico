@@ -8,7 +8,7 @@
 	define( 'CANCELADO', 2 );
   define( 'COMPLETADO', 3 );
 
-/**
+/**	DONE
 * Implementation of hook_perm()
 * Outlines permissions for this module.
 * @return array - An array of valid permissions for the match module
@@ -18,7 +18,7 @@ function match_perm( ){
 }//end function match_perm()
 
 
-/**
+/**	DONE
  * Implementation of hook_menu()
  * Sets up the admin menu system for the matches.
  */
@@ -70,37 +70,589 @@ function match_menu(){
 	(
     'title' => 'Crear un desafío',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'match_form' ),
+    'page arguments' => array( 'indirect_match_form' ),
     'access callback' => 'match_report_access',
-    'access arguments' => array( 1 ),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
     //'file' => 'inc/match.admin.inc',
   );
+	
+	$items[ 'node/%node/desafiar/' ] = array
+	(
+    'title' => 'Desafiar',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'direct_match_form' ),
+    //'access callback' => 'match_report_access',
+    'access arguments' => array( 'create match' ),
+    'type' => MENU_LOCAL_TASK,
+    //'file' => 'inc/match.admin.inc',
+  );
+	
 	
   return $items;
 }
 
 
-/**
+
+
+
+
+
+/**	DONE
+ * Implementation of hook_node_info()
+ * Declare the content type match
+ * 
+ */ 
+function match_node_info() {
+	
+	global $user;
+	
+  return array
+	(
+		'match' => array
+		(
+			'name' => t('Desafío'),
+			'module' => 'match',
+			'description' => t("Un partido entre dos equipos integrados a la puntuación."),
+		)
+	);
+} 
+
+/**	DONE
+ *
+ * Access argument for the node edit page - just return node access for updating the node
+ */
+function match_edit_access( $node )
+{
+  return node_access( 'update', $node );
+}
+
+/**	DONE
+ *	Access argument for the node report score page -
+ *	just return node access for users who have permission to report the match score
+ */
+function match_report_access( ) {
+  global $user;
+  
+  //users who can administer matches can do anything.
+  if ( user_access( 'administer matches') )
+    return TRUE;
+  
+  //Revisa que el usuario sea el capitán/creador de alguno de los dos equipos en el match
+  //$home_team = node_load( $node->home_team );
+  //$visitor_team = node_load( $node->visitor_team );
+  
+  if ( $user->uid == $home_team->uid || $user->uid == $visitor_team->uid)
+      return TRUE;
+    
+  return FALSE;
+}
+
+/** DONE
+ * Implementation of hook_access()
+ */
+function match_access($op, $node, $account){
+  //users who can administer matches can do anything.
+  if ( user_access('adminster matches', $account ) )
+    return TRUE;
+  
+  if ($op == 'create') {
+    // Only users with permission to do so may create this node type.
+    return user_access('create match', $account);
+  }
+  
+  if ($op == 'update') {
+    if (user_access('edit own match', $account) && ($account->uid == $node->uid)) {
+      return TRUE;
+    }
+    /* No lo elimino, pero no se a que se refiere
+    while($row = db_fetch_array($result)){
+      if(user_access('enter results', $account) && ($account->uid == $row['uid'])){
+        return TRUE;
+      }
+    }*/
+  }
+  
+  if ($op == 'delete') {
+    if(user_access('delete own match', $account) && ($account -> uid == $node ->uid)) {
+      return TRUE;
+    }
+    /*Lo mismo que arriba, no se si se intentaba utilizar con los og groups o que
+    while($row = db_fetch_array($result)){
+      if(user_access('delete own match', $account) && ($account->uid == $row['uid'])){
+        return TRUE;
+      }
+    }*/
+  }
+  
+  if ($op == 'view') {
+    if(user_access('access content', $account)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+} 
+
+
+
+
+/**	ALMOST DONE
+ * Implementation of hook_load()
+ */
+function match_load($node)
+{
+  
+	//get the additional match information and attach to the node
+	
+	$Equipos = db_fetch_array( db_query( 'SELECT { Reto } AS { r }' ) );
+	
+	$teams = db_fetch_array(db_query("SELECT {match}.home_team, {match}.away_team, {match}.home_score, {match}.away_score, {match}.match_time, {match}.is_result, {match}.relation_id FROM {match} WHERE {match}.nid = %d;", intval($node->nid)));
+	
+	
+  $node->is_result = $teams['is_result'];
+  $node->home_team = $teams['home_team'];
+  $node->away_team = $teams['away_team'];
+  $node->season_league = $teams['relation_id'];
+  $node->match_time = array('year' => date('Y', $teams['match_time']),  'month' => date("n", $teams['match_time']), 'day' => date("j", $teams['match_time']));
+  $node->match_hour = date('G', $teams['match_time']);
+  $node->match_minute = date('i', $teams['match_time']);
+  //check if the score has not been entered yet
+  if($teams['is_result'] == 0){
+    $node->home_score = '';
+    $node->away_score = ''; 
+  }else{
+    $node->home_score = $teams['home_score'];
+    $node->away_score = $teams['away_score'];
+  }
+  
+  //load additional match data using hook_match_load
+  module_invoke_all('match_load', $node);
+  
+  return $node;
+}
+
+/** NOT DONE
+ * Implementation of hook_insert()
+ */
+function match_insert( $node )
+{
+  //add the extra details
+  if( $node->home_score != '' && $node->away_score != '' && variable_get('match_update_table_insert', '') == TRUE) {
+    _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
+    $is_result = 1;
+  }
+  //TODO: use this hook
+  module_invoke_all('match_insert', $node);
+  $match_time = mktime($node->match_hour, $node->match_minute, 0, intval($node->match_time['month']), intval($node->match_time['day']), intval($node->match_time['year']));
+  db_query("INSERT INTO {match} (nid, home_team, away_team, match_time, home_score, away_score, is_result, relation_id) VALUES (%d, %d, %d, %d, '%s', '%s', %d, %d)", intval($node->nid), intval($node->home_team), intval($node->away_team), check_plain($match_time), check_plain($node->home_score), check_plain($node->away_score), intval($is_result), intval($node->season_league));
+  
+  _match_send_notification_mail($node);
+}
+
+/**	NOT DONE
+ * Implementation of hook_update()
+ * @param Object $node
+ */
+function match_update($node){
+  //update the extra details
+  $is_result = 0;
+  if(variable_get('match_update_table_update', '') == TRUE){
+    $match = db_fetch_array(db_query("SELECT * FROM {match} WHERE nid = %d", intval($node->nid)));
+    if($node->home_score != '' && $node->away_score != ''){
+      //after checking if the user wants the standings table updated, get the old score to see if it has changed
+      $is_result = 1;
+      if(($match['home_score'] != $node->home_score || $match['away_score'] != $node->away_score) && ($match['is_result'] == 1)){
+        //delete old score values
+        _match_update_table($match['home_team'], $match['away_team'], $match['home_score'], $match['away_score'], $match['relation_id'], 'delete'); 
+        _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
+      }else if($match['is_result'] == 0){
+        _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
+        $report_time = time();
+        if (module_exists('userpoints')) 
+          _match_update_exp($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
+      }
+    }else{
+      if($match['is_result'] == 1){
+        //the match result has been removed. use the database to update the table appropriately
+        _match_update_table($match['home_team'], $match['away_team'], $match['home_score'], $match['away_score'], $match['relation_id'], 'delete');
+      }
+    }
+  }
+  //call event_manager hook for an updated game
+  module_invoke_all('match_update', $node);
+  
+  $match_time = mktime($node->match_hour, $node->match_minute, 0, intval($node->match_time['month']), intval($node->match_time['day']), intval($node->match_time['year']));
+  db_query("UPDATE {match} SET home_team = %d, away_team = %d, match_time = %d, report_time = %d, home_score = '%s', away_score = '%s', is_result = %d, relation_id = %d WHERE nid = %d;", intval($node->home_team), intval($node->away_team), check_plain($match_time), check_plain($report_time), check_plain($node->home_score), check_plain($node->away_score), intval($is_result), intval($node->season_league), intval($node->nid));
+}
+
+/**	NOT DONE
+ * Implementation of hook_delete()
+ * @param Object $node
+ */
+function match_delete($node){
+  //delete the extra details
+  $match = db_fetch_array(db_query("SELECT * FROM {match} WHERE nid = %d", intval($node->nid)));
+  //check if a match result exists. If so, check if we should udpate the league tables to reflect the deletion of the match
+  if($match['is_result'] == 1 && variable_get('match_update_table_delete', '') == TRUE){
+    //node is not completely built here, only basic information is available, so we use the database info instead.
+    _match_update_table($match['home_team'], $match['away_team'], $match['home_score'], $match['away_score'], $match['relation_id'], 'delete');
+  }
+  
+  db_query("DELETE FROM {match} WHERE nid = %d", intval($node->nid));
+  
+  module_invoke_all('match_delete', $node);
+}
+
+/**	NOT DONE
+ * Function that update the laddeer or bracket table for reflect the reported results
+ * @param
+ * $home_team: Home team id
+ * $away_team: Away team id
+ */
+function _match_update_table($home_team, $away_team, $home_score, $away_score, $relation_id, $op = "insert"){
+  $event_settings = db_fetch_array(db_query("SELECT type FROM {event_manager_settings} WHERE nid = %d", $relation_id));
+
+    if($op == "insert") {
+      switch ($event_settings['type']) {
+        case 1:					//Tornament promotions
+          $team = db_fetch_array(db_query("SELECT * FROM {event_manager_brackets} WHERE nid= %d and pid  = %d ORDER BY round DESC LIMIT 1", $relation_id, $home_team));
+          $newpos = ceil((float)$team['pos'] / 2.0 );
+          $newround = $team['round'] + 1;
+          
+          db_query("INSERT INTO {event_manager_brackets} (nid, pid, round, pos)VALUES (%d, %d, %d, %d)", $relation_id, ($home_score > $away_score ? $home_team : $away_team), $newround, $newpos);
+
+          break;
+        case 2:					//Ladder event whit ELO points so we calculate the updates on the points winning for each team
+          $home_standing = db_fetch_array(db_query("SELECT * FROM {event_manager_ladders} WHERE nid = %d AND pid = %d", $relation_id, $home_team));
+          $away_standing = db_fetch_array(db_query("SELECT * FROM {event_manager_ladders} WHERE nid = %d AND pid = %d", $relation_id, $away_team));
+
+          // was it a win, draw or loss? figure out the standings results
+          if($home_score > $away_score) {
+            ++$home_standing['wins'];
+            if($home_standing['streak'] > 0)
+              ++$home_standing['streak'];
+            else
+              $home_standing['streak'] = 1;
+            ++$away_standing['loss'];
+            if($away_standing['streak'] < 1)
+              --$away_standin['streak'];
+            else
+              $away_standing['streak'] = -1;
+          }
+          else if($home_score == $away_score) {
+            ++$home_standing['drawn'];
+            ++$away_standing['drawn'];
+          }
+          else {
+            ++$home_standing['loss'];
+            if($home_standing['streak'] < 1)
+              --$home_standing['streak'];
+            else
+              $home_standing['streak'] = -1;
+            ++$away_standing['wins'];
+            if($away_standing['streak'] > 0)
+              ++$away_standin['streak'];
+            else
+              $away_standing['streak'] = 1;
+          }
+          ++$home_standing['games'];
+          ++$away_standing['games'];
+
+          $home_new_points = $home_standing['points']+50*(($home_score/($home_score+$away_score))-(1/(1+10^(-($home_score-$away_score)/400))));
+          $away_new_points = $away_standing['points']+50*(($away_score/($home_score+$away_score))-(1/(1+10^(-($away_score-$home_score)/400))));
+
+          db_query("UPDATE {event_manager_ladders} SET wins = %d, loss = %d, games = %d, points = %d WHERE pid = %d AND nid = %d;", $home_standing['wins'], $home_standing['loss'], $home_standing['games'], $home_new_points, $home_team, $relation_id);
+          //now away team
+          db_query("UPDATE {event_manager_ladders} SET wins = %d, loss = %d, games = %d, points = %d WHERE pid = %d AND nid = %d;", $away_standing['wins'], $away_standing['loss'], $away_standing['games'], $away_new_points, $away_team, $relation_id);
+          break;
+      }
+    }
+}
+
+/**	NOT DONE
+ * Implementation of hook_validate
+ * Validates the match type before submission to ensure that the setup is correct
+ * @param Object $node
+ * @param Array $form
+ */
+function match_validate($node, $form){
+  //Check that both results are entered if any are entered
+
+  if($node->home_score != '' && $node->away_score == ''){
+    form_set_error('away_score', t('If you enter a home team score, you should enter an away team score.'));
+  }else if($node->home_score == '' && $node->away_score != ''){
+    form_set_error('home_score', t('If you enter an away team score, you should enter a home team score.'));
+  }
+  
+  //Check that a team is not playing itself
+  if($node->home_team == $node->away_team){
+    form_set_error('away_team', t('A team cannot play itself!'));
+  }
+  //TODO: check that both those teams exist within that season
+}
+
+/** NOT DONE
+ * Implementation of hook_form_FORM_ID_alter
+ * This sets the default team correctly on the dropdown boxes on the generated form
+ */
+function match_form_match_node_form_alter(&$form, $form_state){
+  if(is_numeric($form['nid']['#value'])){
+    if(!variable_get('match_change_teams', '')){
+      //remove the team fields so people cannot change the teams
+      $form['home_team']['#disabled'] = TRUE;
+      $form['away_team']['#disabled'] = TRUE;
+      $form['season_league']['#disabled'] = TRUE;
+    }
+  }
+}
+
+/**	NOT DONE
+ * Implementation of hook_submit
+ * Alters the title of the node before submission - otherwise it would be blank
+ * @param Object $node
+ */
+function match_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
+  if($op == 'presave' && $node->type == 'match'){
+  //get the title. query the database to get the title of the teams.
+    $season = db_fetch_array(db_query("SELECT min_pp FROM {signup} WHERE nid = %d", $node->season_league));
+    if ($season['min_pp'] > 1) {
+      $team = db_fetch_array(db_query("SELECT title FROM {node} WHERE nid = %d;", $node->home_team));
+      $home_team = $team['title'];
+      $team = db_fetch_array(db_query("SELECT title FROM {node} WHERE nid = %d;", $node ->away_team));
+      $away_team = $team['title'];
+    }
+    else {
+      $team = db_fetch_array(db_query("SELECT name FROM {users} WHERE uid = %d;", $node->home_team));
+      $home_team = $team['name'];
+      $team = db_fetch_array(db_query("SELECT name FROM {users} WHERE uid = %d;", $node ->away_team));
+      $away_team = $team['name'];
+    }
+    $search = array('[home_team]', '[away_team]');
+    $replace = array($home_team, $away_team);
+    if(module_exists('event_manager_scoring')){
+    	if(!isset($node->match_attributes)){
+    		//the attributes aren't set on the form we came from, so we don't have a result to enter. Load the last state of the node, and take the results from there
+    		$old_node = node_load($node->nid);
+    		if($old_node->is_result){
+    		  $node->home_score = $old_node->home_score;
+    		  $node->away_score = $old_node->away_score;
+    		}
+    	}else{
+        event_manager_scoring_calculate_score($node);
+    	}
+    }
+    //if the match is a result, home_score will be a number
+    if($node->home_score != ''){
+    	
+    	$search[] = '[home_score]';
+    	$search[] = '[away_score]';
+    	$replace[] = $node->home_score;
+    	$replace[] = $node->away_score;
+      //set the title to have the score in it.
+      
+      $title = str_replace($search, $replace, variable_get('match_general_result_name', '[home_score] [home_team] - [away_score] [away_team]'));
+    	//$title = $home_team.' '.$node->home_score.' - '.$away_team.' '.$node->away_score;
+      //the standings are updated in hook_update and hook_insert
+    }else{
+      $title = str_replace($search, $replace, variable_get('match_general_match_name', '[home_team] v [away_team]'));
+    	//$title = $home_team.' v '.$away_team;
+    }
+    $node->title = $title;
+  }
+}
+
+/**	NOT DONE
+ * Implementation of hook_view()
+ * @param $node
+ * @param $teaser
+ * @param $page
+ * @return unknown_type
+ */
+function match_view($node, $teaser = FALSE, $page = FALSE){  
+  $content = theme('match_content', $node);
+    
+  $node->title = '';
+  $node->content[] = array(
+    '#value' => $content, 
+    '#weight' => '0',
+  );
+  
+  return $node;
+}
+
+/**	NOT DONE
+ * Implementation of hook_theme()
+ * 
+ */
+function match_theme($existing, $type, $theme, $path) {
+  return array(
+    'match_list' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'inc/match.admin.inc',
+    ),
+    'match_node_form' => array(
+      'file' => 'node.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('form' => NULL),
+    ),
+    'match_content' => array(
+      'file' => 'node_content.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('node'),
+    ),
+    'match_block' => array(
+      'file' => 'block.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('content'),
+    ),
+    'match_filters' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'inc/match.admin.inc',
+    ),
+    'match_score_edit' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'inc/match.admin.inc',
+    ),
+  );
+}
+
+/**	NOT DONE
+ * Implementation of hook_views_api()
+ */
+function match_views_api() {
+  return array(
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'match') .'/views',
+  );
+}
+
+/**	NOT DONE
+ * Implementation of hook_block()
+ * @return unknown_type
+ */
+function match_block($op = 'list', $delta = 0, $edit = array()){
+  switch($op){
+    case 'list':
+      $blockArray = array();
+      $blockArray[0]['info'] = t('View upcoming games');
+      $blockArray[1]['info'] = t('View latest results');
+      return $blockArray;
+      break;
+    case 'view':
+      $block_content = '';
+      switch($delta){
+        case 0:
+          //upcoming games
+          $block['subject'] = t('Upcoming Matches');
+          $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 0 ORDER BY {match}.match_time ASC LIMIT %d;", 3);
+          break;
+        case 1:
+          //latest results
+          $block['subject'] = t('Latest Results');
+          $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 1 ORDER BY {match}.match_time DESC LIMIT %d;", 3);
+          break;
+      }
+      $block['content'] = theme('match_block', $to_show);
+      return $block;
+      break;
+    case 'save':
+      
+      break;
+    case 'configure':
+      
+      break;
+  }
+}
+
+/**	NOT DONE
+ * Send the notification e-mail to the users who are participating on match.
+ * 
+ *
+ * @param $node
+ *   The fully-loaded node object which the user signed up to.
+ *   
+ * @return
+ *   The return value from drupal_mail() if the mail is sent, or FALSE if the
+ *   confirmation was aborted for some reason (node not configured to send it,
+ *   user doesn't have a valid e-mail address, etc).
+ *  
+ */
+function _match_send_notification_mail($node) {
+
+  $params = array(
+    'subject' => t( 'Tienes un partido pendiente: !title', array( '!title' => $node->title ) ),
+    'body' => '¡Has sido desafiado!',
+    'node' => $node,
+  );
+  
+  $seasson = node_load( $node->relation_id );
+  if ( $seasson->signup_min_pp <= 1 )
+	{
+    $home_team = user_load($node->home_team);
+    $home_language = user_preferred_language($home_team);
+    $away_team = user_load($node->away_team);
+    $away_language = user_preferred_language($away_team);
+  }
+  drupal_mail('match', 'match_create_mail', $home_team->mail, $language, $params);
+  drupal_mail('match', 'match_create_mail', $away_team->mail, $language, $params);
+}
+
+/**	NOT DONE
+ * Implementation of hook_mail().
+ *
+ * Constructs all of the email messages generated by the signup module.
+ *
+ * @param $key
+ *   Unique key to indicate what message to build.
+ * @param $message
+ *   Reference to the message array being built.
+ * @param $params
+ *   Array of parameters to indicate what text to include in the message body.
+ *   If $params['ignore_tokens'] is TRUE, none of the signup-provided tokens
+ *   in the message body will be replaced, otherwise, tokens are replaced
+ *   using the node passed in as $params['node'] and the signup data from
+ *   $params['signup'].
+ *
+ * @see drupal_mail()
+ * @see _signup_cron_send_reminders()
+ * @see signup_sign_up_user()
+ * @see signup_broadcast_form_submit()
+ */
+function match_mail($key, &$message, $params) {
+  if (empty($params['ignore_tokens'])) {
+    $tokens = _signup_get_email_tokens($params['node'], $params['signup']);
+    $body = strtr($params['body'], $tokens);
+    $subject = strtr($params['subject'], $tokens);
+  }
+  else {
+    $body = $params['body'];
+    $subject = $params['subject'];
+  }
+  $message['subject'] .= str_replace(array("\r", "\n"), '', $subject);
+  $message['body'][] = $body;
+}
+
+
+
+/**	ALMOST DONE
  *	Función que se encargará de mostrar la bitácora de desafíos creados para las modalidades
  *	y temporadas activas al momento
  */
 function challenges_binnacle( )
 {
+	
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
 	
 	$date = '2011-12-31';
 	$format = 'Y-m-d\TH:i';
 	
-	$id_Modalidad_Juego = arg( 2 );
+	$tid_Modalidad_Juego = arg( 2 );
 	$Temporada_Activa = temporada_activa(  );
 
 	
 	db_set_active( 'eSM' );
-		$Challenges_result_set = db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { r.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_Temporada } INNER JOIN { Temporada } AS { t } ON { mjt.id_Temporada = t.id_Temporada } INNER JOIN { Modalidad_Juego } AS { mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego } WHERE { mj.tid = %d } AND { t.id_Temporada = %d } AND { r.Estado = %d }', $id_Modalidad_Juego, $Temporada_Activa->id_Temporada, CREADO );
+		$Challenges_result_set = db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { r.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_Temporada } INNER JOIN { Temporada } AS { t } ON { mjt.id_Temporada = t.id_Temporada } INNER JOIN { Modalidad_Juego } AS { mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego } WHERE { mj.tid = %d } AND { t.id_Temporada = %d } AND { r.Estado = %d }', $tid_Modalidad_Juego, $Temporada_Activa->id_Temporada, CREADO );
 	db_set_active( 'default' );
 
-	$Challenges = array( );
 	
 	$form[ 'Challenges_List' ] = array
 	(
@@ -112,16 +664,12 @@ function challenges_binnacle( )
 	
 	while( $Challenge = db_fetch_object( $Challenges_result_set ) )
 	{
-		//$Challenges[ $Challenge[ 'id_Reto' ] ] = $Challenge;
-		
-		
-		dsm( $Challenge );
 		
 		$Fecha_Inicio = timestamp_to_string( $Challenge->Fecha_Inicio );
 		$Fecha_Fin = timestamp_to_string( $Challenge->Fecha_Fin );
 
 		
-		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array
+		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'id_Reto' ] = array
 		(
 			'#type' => 'item',
 			//'label' => t( 'Nombre' ),
@@ -181,10 +729,10 @@ function challenges_binnacle( )
 	}
 	
 	
-	$form[ 'id_Modalidad_Juego' ] = array
+	$form[ 'tid_Modalidad_Juego' ] = array
 	(		
 		'#type' => 'hidden',
-		'#value' => $id_Modalidad_Juego,
+		'#value' => $tid_Modalidad_Juego,
 	);
 	
 	
@@ -196,7 +744,7 @@ function challenges_binnacle( )
 	);
 	
 	
-	
+	dpm( $form );
 	
 	
 	return $form;
@@ -206,135 +754,37 @@ function challenges_binnacle( )
 
 
 
-/**
- * Implementation of hook_node_info()
- * Declare the content type match
- */
- 
-function match_node_info() {
-	
-	global $user;
-	
-  return array
-	(
-		'match' => array
-		(
-			'name' => t('Desafío'),
-			'module' => 'match',
-			'description' => t("Un partido entre dos equipos integrados a la puntuación."),
-		)
-	);
-} 
 
-//access argument for the node edit page - just return node access for updating the node
-function match_edit_access( $node )
-{
-  return node_access( 'update', $node );
-}
 
-//access argument for the node report score page - just return node access for users who have permission to report the match score
-function match_report_access( $node ) {
-  global $user;
-  
-  //users who can administer matches can do anything.
-  if ( user_access( 'administer matches', $account ) )
-    return TRUE;
-  
-  //Revisa que el usuario sel el capitán/creador de alguno de los dos equipos en el match
-  $home_team = node_load($node->home_team);
-  $away_team = node_load($node->away_team);
-  
-  if ($user->uid == $home_team->uid || $user->uid == $away_team->uid)
-      return TRUE;
-    
-  return FALSE;
-}
 
-/**
- * Implementation of hook_access()
- */
-function match_access($op, $node, $account){
-  //users who can administer matches can do anything.
-  if (user_access('adminster matches', $account))
-    return TRUE;
-  
-  if ($op == 'create') {
-    // Only users with permission to do so may create this node type.
-    return user_access('create match', $account);
-  }
-  
-  if ($op == 'update') {
-    if (user_access('edit own match', $account) && ($account->uid == $node->uid)) {
-      return TRUE;
-    }
-    /* No lo elimino, pero no se a que se refiere
-    while($row = db_fetch_array($result)){
-      if(user_access('enter results', $account) && ($account->uid == $row['uid'])){
-        return TRUE;
-      }
-    }*/
-  }
-  
-  if ($op == 'delete') {
-    if(user_access('delete own match', $account) && ($account -> uid == $node ->uid)) {
-      return TRUE;
-    }
-    /*Lo mismo que arriba, no se si se intentaba utilizar con los og groups o que
-    while($row = db_fetch_array($result)){
-      if(user_access('delete own match', $account) && ($account->uid == $row['uid'])){
-        return TRUE;
-      }
-    }*/
-  }
-  
-  if ($op == 'view') {
-    if(user_access('access content', $account)) {
-      return TRUE;
-    }
-  }
-  return FALSE;
-} 
 
-/**
+
+
+/**	ALMOST DONE
  * Implementation of hook_form()
- * Sets up the form to add a match as a content type
- * @param unknown_type $node
+ * Sets up the form to add a match as a content type for challenging
+ * 	a specified team
+ * @param $node the team to challenge
  * @return unknown_type
  */
-function match_form( &$node )
+function direct_match_form( &$node )
 {
-	
+
+	global $user;
+		
 	module_load_include( 'php', 'team', 'db_functions' );
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
+
 
   //Esta función recibe sus argumentos de la barra de dirección,
-  //el primer argumento numérico corresponde al taxonomy id indicándonos la modalidad a la que pertenece este match
   //el segundo si es que exite corresponde al nid_Equipo del equipo al que se está retando.
-  global $user;
   $error = FALSE;
 
-  $id_Modalidad_Juego = arg( 2 );
-  $away_team = arg( 4 );
-  
-  //Verifica que exita el modulo datepopup que es necesario para el correcto funcionamiento de este módulo.
-
-  /*if( !module_exists( 'date_popup' ) )
-	{
-    $datepopup = false;
-    drupal_set_message('Es necesario isntalar el módulo date popup para que este módulo funcione correctamente!', 'error');
-    $error = TRUE;
-  }else{
-    $datepopup = true;
-  }*/
-  
-  //$form['#validate'][] = 'match_validate';
-	
-  $temporada_activa = temporada_activa( );
+  $visitor_team = arg( 1 );
   
   //Checamos que exista una temporada activa, en caso de que no haya mostramos un mensaje al usuario indicando que tiene que haber una temporada activa
 
-  if( is_null( $temporada_activa ) ){ 
+  if( is_null( temporada_activa( ) ) ){ 
     drupal_set_message('No puedes crear partidos si no hay temporadas activas.', 'error');
     $error = TRUE;
   }
@@ -362,23 +812,7 @@ function match_form( &$node )
      drupal_set_message('No perteneces a ningún equipo o no eres el capitán de tu equipo. Sólo los capitanes pueden crear partidas.', 'error');
      $error = TRUE;
 		 drupal_goto( 'taxonomy/term/'.$id_Modalidad_Juego );
-  }
-  
-  
-  /*if ( is_null($away_team) ) { //Si no se estableció en la forma el nid_Equipo del retador,
-    while($season = db_fetch_array($seasons)){
-      $season_list[$season['relation_id']] = $season['event_name'];
-      if ($season['min_pp'] > 1) 
-        $season_teams = db_query("SELECT sl.uid team_id, n.title title FROM {signup_log} sl INNER JOIN {node} n ON sl.uid = n.nid WHERE sl.nid = %d", $season['relation_id']);
-      else 
-        $season_teams = db_query("SELECT sl.uid team_id, u.name title FROM {signup_log} sl INNER JOIN {users} u ON sl.uid = u.uid WHERE sl.nid = %d", $season['relation_id']);
-      
-      while($team = db_fetch_array($season_teams)){
-        $teams[$team['team_id']] = $team['title'];
-      }
-    }
-
-  }*/
+	}
 
 
   while( $Seasons = db_fetch_array( $Seasons_result_set ) )
@@ -387,85 +821,7 @@ function match_form( &$node )
   } 
   
   $Teams = get_equipos( $id_Modalidad_Juego_Temporada  );
-  
-  
-  /*$hours = array();
-
-  for($count = 0; $count < 24; ++$count){
-    $hours[$count] = sprintf("%02d",$count); ;
-  }
-  for($count = 0; $count < 60; $count=$count+15){
-    $mins[$count] = sprintf("%02d",$count);
-  }
-  
-  $form['season_league'] = array(
-    '#type' => 'select',
-    '#title' => 'League and season',
-    '#required' => TRUE,
-    '#options' => $season_list,
-    '#weight' => -9,
-    '#default_value' => $node->season_league,
-  );
-  
-  // We need to define form elements for the node's title and body.
-  
-  $form[ 'Defining_Challenge' ] = array(
-    '#type' => 'fieldset',
-    '#title' => t( 'Define el desafío' ),
-    //'#collapsible' => 'TRUE',
-    '#collapsed' => 'FALSE',
-  
-  );
-  
-  if ( is_null( $away_team ) )
-  {
-  
-    $form[ 'Defining_Challenge' ]['home_team'] = array(
-      '#type' => 'select',
-      '#title' => t( 'Equipo local' ),
-      '#required' => TRUE,
-      '#options' => $Teams,
-      '#weight' => -8,
-      '#default_value' => $node->home_team,
-    );
-  }
-  
-  
-  $form[ 'Defining_Challenge' ]['visitor_team'] = array(
-    '#type' => 'select',
-    '#title' => t('Away Team'),
-    '#required' => TRUE,
-    '#options' => $teams,
-    '#weight' => -7,
-    '#default_value' => $node->away_team,
-  );
-  $form['date'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('The date and start time for the match'),
-    '#weight' => -6,
-  );
-  $form['date']['match_time'] = array(
-    '#type' => 'date',
-    '#title' => t('Match Date'),  
-    '#required' => TRUE,
-    '#weight' => -1,
-    '#default_value' => $node->match_time,
-  );
-  $form['date']['match_hour'] = array(
-    '#type' => 'select',
-    '#title' => 'hour',
-    '#required' => TRUE,
-    '#options' => $hours,
-    '#default_value' => $start_hour,
-  );
-  $form['date']['match_minute'] = array(
-    '#type' => 'select',
-    '#title' => 'minute',
-    '#required' => TRUE,
-    '#options' => $mins,
-    '#default_value' => $start_minute,
-  );*/
-  
+    
   $form[ 'Defining_Challenge' ][ 'Date_One' ] = array
   (
     '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
@@ -534,430 +890,144 @@ function match_form( &$node )
   return $form;
 }
 
-/*
- * Implementation of hook_load()
+
+
+
+
+/**DONE
+ * Implementation of hook_form()
+ * Sets up the form to add a match as a content type
+ * @param unknown_type $node
+ * @return unknown_type
  */
-function match_load($node){
-  //get the additional match information and attach to the node
-  $teams = db_fetch_array(db_query("SELECT {match}.home_team, {match}.away_team, {match}.home_score, {match}.away_score, {match}.match_time, {match}.is_result, {match}.relation_id FROM {match} WHERE {match}.nid = %d;", intval($node->nid)));
-  $node->is_result = $teams['is_result'];
-  $node->home_team = $teams['home_team'];
-  $node->away_team = $teams['away_team'];
-  $node->season_league = $teams['relation_id'];
-  $node->match_time = array('year' => date('Y', $teams['match_time']),  'month' => date("n", $teams['match_time']), 'day' => date("j", $teams['match_time']));
-  $node->match_hour = date('G', $teams['match_time']);
-  $node->match_minute = date('i', $teams['match_time']);
-  //check if the score has not been entered yet
-  if($teams['is_result'] == 0){
-    $node->home_score = '';
-    $node->away_score = ''; 
+function indirect_match_form( $node )
+{
+	global $user;
+	
+	module_load_include( 'php', 'team', 'db_functions' );
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
+  //Esta función recibe sus argumentos de la barra de dirección,
+  //el primer argumento numérico corresponde al taxonomy id indicándonos la modalidad a la que pertenece este match
+  $error = FALSE;
+  
+  //Checamos que exista una temporada activa, en caso de que no haya mostramos un mensaje al usuario indicando que tiene que haber una temporada activa
+  if( is_null( $Temporada_Activa = temporada_activa( ) ) ){ 
+    drupal_set_message( 'No puedes crear partidos si no hay temporadas activas.', 'error' );
+    $error = TRUE;
+  }
+	
+	//Obtiene la modalidad de jugo a través del tid y la temporada activa
+  $Modalidad_Juego_Temporada = get_modalidad_juego_temporada_user( $user );	//$tid_Modalidad_Juego, $Temporada_Activa->id_Temporada );
+	
+	
+	dpm( $Modalidad_Juego_Temporada );
+	
+	//Obtenemos la modalidad de equipo
+	db_set_active( 'eSM' );
+		$Jugador = db_fetch_object( db_query( 'SELECT { * } FROM { Jugador } AS { j } WHERE { j.id_Modalidad_Juego_Temporada = %d }', $Modalidad_Juego_Temporada->id_Modalidad_Juego_Temporada ) );
+	db_set_active( 'default' );
+
+
+	
+
+  //para la primera vez que se crea un match, 
+  //si no tiene temporada asignada, le asigna la temporada activa
+  if( isset( $node->temporada ) ){
+    $default_value = $node->temporada;
   }else{
-    $node->home_score = $teams['home_score'];
-    $node->away_score = $teams['away_score'];
+    $default_value = $Temporada_Activa->id_Temporada;
   }
   
-  //load additional match data using hook_match_load
-  module_invoke_all('match_load', $node);
+  //Revisa que el jugador sea capitán de un equipo inscrito en la modalidad durante la temporada activa
+  $nid_Equipo = is_capitan( $user->uid, $Jugador->id_Modalidad_Juego_Temporada );
+	
+	
+	//Obtenemos la modalidad de juego a través de $user
+
+	$Modalidad_Juego = get_modalidad_juego_user( $user );
+	
+	
+  if ( $nid_Equipo == NULL ) {
+     drupal_set_message('No perteneces a ningún equipo o no eres el capitán de tu equipo. Sólo los capitanes pueden crear partidas.', 'error');
+     $error = TRUE;
+		 drupal_goto( 'taxonomy/term/'.$Modalidad_Juego->tid );
+  }
+
+
+
+  while( $Seasons = db_fetch_array( $Seasons_result_set ) )
+  {
+    $Seasons_list[ $Seasons[ 'id_Temporada' ] ] = $Seasons[ 'Nombre' ];
+  } 
   
-  return $node;
-}
-
-/**
- * Implementation of hook_insert()
- */
-function match_insert($node){
-  //add the extra details
-  if($node->home_score != '' && $node->away_score != '' && variable_get('match_update_table_insert', '') == TRUE) {
-    _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
-    $is_result = 1;
-  }
-  //TODO: use this hook
-  module_invoke_all('match_insert', $node);
-  $match_time = mktime($node->match_hour, $node->match_minute, 0, intval($node->match_time['month']), intval($node->match_time['day']), intval($node->match_time['year']));
-  db_query("INSERT INTO {match} (nid, home_team, away_team, match_time, home_score, away_score, is_result, relation_id) VALUES (%d, %d, %d, %d, '%s', '%s', %d, %d)", intval($node->nid), intval($node->home_team), intval($node->away_team), check_plain($match_time), check_plain($node->home_score), check_plain($node->away_score), intval($is_result), intval($node->season_league));
+  $Teams = get_equipos( $id_Modalidad_Juego_Temporada  );
   
-  _match_send_notification_mail($node);
-}
-
-/**
- * Implementation of hook_update()
- * @param Object $node
- */
-function match_update($node){
-  //update the extra details
-  $is_result = 0;
-  if(variable_get('match_update_table_update', '') == TRUE){
-    $match = db_fetch_array(db_query("SELECT * FROM {match} WHERE nid = %d", intval($node->nid)));
-    if($node->home_score != '' && $node->away_score != ''){
-      //after checking if the user wants the standings table updated, get the old score to see if it has changed
-      $is_result = 1;
-      if(($match['home_score'] != $node->home_score || $match['away_score'] != $node->away_score) && ($match['is_result'] == 1)){
-        //delete old score values
-        _match_update_table($match['home_team'], $match['away_team'], $match['home_score'], $match['away_score'], $match['relation_id'], 'delete'); 
-        _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
-      }else if($match['is_result'] == 0){
-        _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
-        $report_time = time();
-        if (module_exists('userpoints')) 
-          _match_update_exp($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
-      }
-    }else{
-      if($match['is_result'] == 1){
-        //the match result has been removed. use the database to update the table appropriately
-        _match_update_table($match['home_team'], $match['away_team'], $match['home_score'], $match['away_score'], $match['relation_id'], 'delete');
-      }
-    }
-  }
-  //call event_manager hook for an updated game
-  module_invoke_all('match_update', $node);
-  
-  $match_time = mktime($node->match_hour, $node->match_minute, 0, intval($node->match_time['month']), intval($node->match_time['day']), intval($node->match_time['year']));
-  db_query("UPDATE {match} SET home_team = %d, away_team = %d, match_time = %d, report_time = %d, home_score = '%s', away_score = '%s', is_result = %d, relation_id = %d WHERE nid = %d;", intval($node->home_team), intval($node->away_team), check_plain($match_time), check_plain($report_time), check_plain($node->home_score), check_plain($node->away_score), intval($is_result), intval($node->season_league), intval($node->nid));
-}
-
-/**
- * Implementation of hook_delete()
- * @param Object $node
- */
-function match_delete($node){
-  //delete the extra details
-  $match = db_fetch_array(db_query("SELECT * FROM {match} WHERE nid = %d", intval($node->nid)));
-  //check if a match result exists. If so, check if we should udpate the league tables to reflect the deletion of the match
-  if($match['is_result'] == 1 && variable_get('match_update_table_delete', '') == TRUE){
-    //node is not completely built here, only basic information is available, so we use the database info instead.
-    _match_update_table($match['home_team'], $match['away_team'], $match['home_score'], $match['away_score'], $match['relation_id'], 'delete');
-  }
-  
-  db_query("DELETE FROM {match} WHERE nid = %d", intval($node->nid));
-  
-  module_invoke_all('match_delete', $node);
-}
-
-/**
- * Function that update the laddeer or bracket table for reflect the reported results
- * @param
- * $home_team: Home team id
- * $away_team: Away team id
- */
-function _match_update_table($home_team, $away_team, $home_score, $away_score, $relation_id, $op = "insert"){
-  $event_settings = db_fetch_array(db_query("SELECT type FROM {event_manager_settings} WHERE nid = %d", $relation_id));
-
-    if($op == "insert") {
-      switch ($event_settings['type']) {
-        case 1:					//Tornament promotions
-          $team = db_fetch_array(db_query("SELECT * FROM {event_manager_brackets} WHERE nid= %d and pid  = %d ORDER BY round DESC LIMIT 1", $relation_id, $home_team));
-          $newpos = ceil((float)$team['pos'] / 2.0 );
-          $newround = $team['round'] + 1;
-          
-          db_query("INSERT INTO {event_manager_brackets} (nid, pid, round, pos)VALUES (%d, %d, %d, %d)", $relation_id, ($home_score > $away_score ? $home_team : $away_team), $newround, $newpos);
-
-          break;
-        case 2:					//Ladder event whit ELO points so we calculate the updates on the points winning for each team
-          $home_standing = db_fetch_array(db_query("SELECT * FROM {event_manager_ladders} WHERE nid = %d AND pid = %d", $relation_id, $home_team));
-          $away_standing = db_fetch_array(db_query("SELECT * FROM {event_manager_ladders} WHERE nid = %d AND pid = %d", $relation_id, $away_team));
-
-          // was it a win, draw or loss? figure out the standings results
-          if($home_score > $away_score) {
-            ++$home_standing['wins'];
-            if($home_standing['streak'] > 0)
-              ++$home_standing['streak'];
-            else
-              $home_standing['streak'] = 1;
-            ++$away_standing['loss'];
-            if($away_standing['streak'] < 1)
-              --$away_standin['streak'];
-            else
-              $away_standing['streak'] = -1;
-          }
-          else if($home_score == $away_score) {
-            ++$home_standing['drawn'];
-            ++$away_standing['drawn'];
-          }
-          else {
-            ++$home_standing['loss'];
-            if($home_standing['streak'] < 1)
-              --$home_standing['streak'];
-            else
-              $home_standing['streak'] = -1;
-            ++$away_standing['wins'];
-            if($away_standing['streak'] > 0)
-              ++$away_standin['streak'];
-            else
-              $away_standing['streak'] = 1;
-          }
-          ++$home_standing['games'];
-          ++$away_standing['games'];
-
-          $home_new_points = $home_standing['points']+50*(($home_score/($home_score+$away_score))-(1/(1+10^(-($home_score-$away_score)/400))));
-          $away_new_points = $away_standing['points']+50*(($away_score/($home_score+$away_score))-(1/(1+10^(-($away_score-$home_score)/400))));
-
-          db_query("UPDATE {event_manager_ladders} SET wins = %d, loss = %d, games = %d, points = %d WHERE pid = %d AND nid = %d;", $home_standing['wins'], $home_standing['loss'], $home_standing['games'], $home_new_points, $home_team, $relation_id);
-          //now away team
-          db_query("UPDATE {event_manager_ladders} SET wins = %d, loss = %d, games = %d, points = %d WHERE pid = %d AND nid = %d;", $away_standing['wins'], $away_standing['loss'], $away_standing['games'], $away_new_points, $away_team, $relation_id);
-          break;
-      }
-    }
-}
-
-/**
- * Implementation of hook_validate
- * Validates the match type before submission to ensure that the setup is correct
- * @param Object $node
- * @param Array $form
- */
-function match_validate($node, $form){
-  //Check that both results are entered if any are entered
-
-  if($node->home_score != '' && $node->away_score == ''){
-    form_set_error('away_score', t('If you enter a home team score, you should enter an away team score.'));
-  }else if($node->home_score == '' && $node->away_score != ''){
-    form_set_error('home_score', t('If you enter an away team score, you should enter a home team score.'));
-  }
-  
-  //Check that a team is not playing itself
-  if($node->home_team == $node->away_team){
-    form_set_error('away_team', t('A team cannot play itself!'));
-  }
-  //TODO: check that both those teams exist within that season
-}
-
-/**
- * Implementation of hook_form_FORM_ID_alter
- * This sets the default team correctly on the dropdown boxes on the generated form
- */
-function match_form_match_node_form_alter(&$form, $form_state){
-  if(is_numeric($form['nid']['#value'])){
-    if(!variable_get('match_change_teams', '')){
-      //remove the team fields so people cannot change the teams
-      $form['home_team']['#disabled'] = TRUE;
-      $form['away_team']['#disabled'] = TRUE;
-      $form['season_league']['#disabled'] = TRUE;
-    }
-  }
-}
-
-/**
- * Implementation of hook_submit
- * Alters the title of the node before submission - otherwise it would be blank
- * @param Object $node
- */
-function match_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
-  if($op == 'presave' && $node->type == 'match'){
-  //get the title. query the database to get the title of the teams.
-    $season = db_fetch_array(db_query("SELECT min_pp FROM {signup} WHERE nid = %d", $node->season_league));
-    if ($season['min_pp'] > 1) {
-      $team = db_fetch_array(db_query("SELECT title FROM {node} WHERE nid = %d;", $node->home_team));
-      $home_team = $team['title'];
-      $team = db_fetch_array(db_query("SELECT title FROM {node} WHERE nid = %d;", $node ->away_team));
-      $away_team = $team['title'];
-    }
-    else {
-      $team = db_fetch_array(db_query("SELECT name FROM {users} WHERE uid = %d;", $node->home_team));
-      $home_team = $team['name'];
-      $team = db_fetch_array(db_query("SELECT name FROM {users} WHERE uid = %d;", $node ->away_team));
-      $away_team = $team['name'];
-    }
-    $search = array('[home_team]', '[away_team]');
-    $replace = array($home_team, $away_team);
-    if(module_exists('event_manager_scoring')){
-    	if(!isset($node->match_attributes)){
-    		//the attributes aren't set on the form we came from, so we don't have a result to enter. Load the last state of the node, and take the results from there
-    		$old_node = node_load($node->nid);
-    		if($old_node->is_result){
-    		  $node->home_score = $old_node->home_score;
-    		  $node->away_score = $old_node->away_score;
-    		}
-    	}else{
-        event_manager_scoring_calculate_score($node);
-    	}
-    }
-    //if the match is a result, home_score will be a number
-    if($node->home_score != ''){
-    	
-    	$search[] = '[home_score]';
-    	$search[] = '[away_score]';
-    	$replace[] = $node->home_score;
-    	$replace[] = $node->away_score;
-      //set the title to have the score in it.
-      
-      $title = str_replace($search, $replace, variable_get('match_general_result_name', '[home_score] [home_team] - [away_score] [away_team]'));
-    	//$title = $home_team.' '.$node->home_score.' - '.$away_team.' '.$node->away_score;
-      //the standings are updated in hook_update and hook_insert
-    }else{
-      $title = str_replace($search, $replace, variable_get('match_general_match_name', '[home_team] v [away_team]'));
-    	//$title = $home_team.' v '.$away_team;
-    }
-    $node->title = $title;
-  }
-}
-
-/**
- * Implementation of hook_view()
- * @param $node
- * @param $teaser
- * @param $page
- * @return unknown_type
- */
-function match_view($node, $teaser = FALSE, $page = FALSE){  
-  $content = theme('match_content', $node);
     
-  $node->title = '';
-  $node->content[] = array(
-    '#value' => $content, 
-    '#weight' => '0',
+  $form[ 'Defining_Challenge' ][ 'Date_One' ] = array
+  (
+    '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+    '#title' => 'Posible fecha 1',
+    '#default_value' => date( 'Y-m-d\TH:i' ), 
+    '#date_format' => $format,
+    '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+    '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+    '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+    '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
   
-  return $node;
-}
-
-/**
- * Implementation of hook_theme()
- * 
- */
-function match_theme($existing, $type, $theme, $path) {
-  return array(
-    'match_list' => array(
-      'arguments' => array('form' => NULL),
-      'file' => 'inc/match.admin.inc',
-    ),
-    'match_node_form' => array(
-      'file' => 'node.inc',
-      'path' => drupal_get_path('module', 'match') .'/theme',
-      'arguments' => array('form' => NULL),
-    ),
-    'match_content' => array(
-      'file' => 'node_content.inc',
-      'path' => drupal_get_path('module', 'match') .'/theme',
-      'arguments' => array('node'),
-    ),
-    'match_block' => array(
-      'file' => 'block.inc',
-      'path' => drupal_get_path('module', 'match') .'/theme',
-      'arguments' => array('content'),
-    ),
-    'match_filters' => array(
-      'arguments' => array('form' => NULL),
-      'file' => 'inc/match.admin.inc',
-    ),
-    'match_score_edit' => array(
-      'arguments' => array('form' => NULL),
-      'file' => 'inc/match.admin.inc',
-    ),
+  $form[ 'Defining_Challenge' ][ 'Date_Two' ] = array
+  (
+    '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+    '#title' => 'Posible fecha 2',
+    '#default_value' => date( 'Y-m-d\TH:i' ), 
+    '#date_format' => $format,
+    '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+    '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+    '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+    '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
-}
 
-/**
- * Implementation of hook_views_api()
- */
-function match_views_api() {
-  return array(
-    'api' => 2.0,
-    'path' => drupal_get_path('module', 'match') .'/views',
+
+  $form[ 'Defining_Challenge' ][ 'Date_Three' ] = array
+  (
+    '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+    '#title' => 'Posible fecha 3',
+    '#default_value' => date( 'Y-m-d\TH:i' ), 
+    '#date_format' => $format,
+    '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+    '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+    '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+    '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
-}
 
-/**
- * Implementation of hook_block()
- * @return unknown_type
- */
-function match_block($op = 'list', $delta = 0, $edit = array()){
-  switch($op){
-    case 'list':
-      $blockArray = array();
-      $blockArray[0]['info'] = t('View upcoming games');
-      $blockArray[1]['info'] = t('View latest results');
-      return $blockArray;
-      break;
-    case 'view':
-      $block_content = '';
-      switch($delta){
-        case 0:
-          //upcoming games
-          $block['subject'] = t('Upcoming Matches');
-          $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 0 ORDER BY {match}.match_time ASC LIMIT %d;", 3);
-          break;
-        case 1:
-          //latest results
-          $block['subject'] = t('Latest Results');
-          $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 1 ORDER BY {match}.match_time DESC LIMIT %d;", 3);
-          break;
-      }
-      $block['content'] = theme('match_block', $to_show);
-      return $block;
-      break;
-    case 'save':
-      
-      break;
-    case 'configure':
-      
-      break;
-  }
-}
 
-/**
- * Send the notification e-mail to the users who are participating on match.
- * 
- *
- * @param $node
- *   The fully-loaded node object which the user signed up to.
- *   
- * @return
- *   The return value from drupal_mail() if the mail is sent, or FALSE if the
- *   confirmation was aborted for some reason (node not configured to send it,
- *   user doesn't have a valid e-mail address, etc).
- *  
- */
-function _match_send_notification_mail($node) {
-
-  $params = array(
-    'subject' => t( 'Tienes un partido pendiente: !title', array( '!title' => $node->title ) ),
-    'body' => '¡Has sido desafiado!',
-    'node' => $node,
+  
+  $form['Defining_Challenge']['Message'] = array
+  (
+    '#type' => 'textarea',
+    '#title' => t('Mensaje de desafío'),
+    '#default_value' => $node->body,
+    '#required' => FALSE,
+    '#description' => t('Use this to enter some pre-match comments for the game, or post a match report after the game.'),
+    '#weight' => -5,
   );
   
-  $seasson = node_load( $node->relation_id );
-  if ( $seasson->signup_min_pp <= 1 )
-	{
-    $home_team = user_load($node->home_team);
-    $home_language = user_preferred_language($home_team);
-    $away_team = user_load($node->away_team);
-    $away_language = user_preferred_language($away_team);
-  }
-  drupal_mail('match', 'match_create_mail', $home_team->mail, $language, $params);
-  drupal_mail('match', 'match_create_mail', $away_team->mail, $language, $params);
-}
+  
+  $form['Defining_Challenge']['filter'] = filter_form( $node->format );
+  
+	$form[ 'Defining_Challenge' ][ 'submit' ] = array
+	(
 
-/**
- * Implementation of hook_mail().
- *
- * Constructs all of the email messages generated by the signup module.
- *
- * @param $key
- *   Unique key to indicate what message to build.
- * @param $message
- *   Reference to the message array being built.
- * @param $params
- *   Array of parameters to indicate what text to include in the message body.
- *   If $params['ignore_tokens'] is TRUE, none of the signup-provided tokens
- *   in the message body will be replaced, otherwise, tokens are replaced
- *   using the node passed in as $params['node'] and the signup data from
- *   $params['signup'].
- *
- * @see drupal_mail()
- * @see _signup_cron_send_reminders()
- * @see signup_sign_up_user()
- * @see signup_broadcast_form_submit()
- */
-function match_mail($key, &$message, $params) {
-  if (empty($params['ignore_tokens'])) {
-    $tokens = _signup_get_email_tokens($params['node'], $params['signup']);
-    $body = strtr($params['body'], $tokens);
-    $subject = strtr($params['subject'], $tokens);
-  }
-  else {
-    $body = $params['body'];
-    $subject = $params['subject'];
-  }
-  $message['subject'] .= str_replace(array("\r", "\n"), '', $subject);
-  $message['body'][] = $body;
+		'#type' => 'submit',
+		'#value' => t( 'Crear' ),
+	);
+	
+  $form[ 'Defining_Challenge' ][ 'id_Modalidad_Juego_Temporada' ] = array
+	(
+		'#type' => 'hidden',
+		'#value' => $id_Modalidad_Juego_Temporada,	
+	);
+	
+  return $form;
 }
