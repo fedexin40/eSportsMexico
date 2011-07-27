@@ -1,0 +1,192 @@
+tr.row1,
+tr.row1 a {
+  color:#FFFF00;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row2,
+tr.row2 a {
+  color:#FFEE00;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row3,
+tr.row3 a {
+  color:#FFDD00;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row4,
+tr.row4 a {
+  color:#FFCC00;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row5,
+tr.row5 a {
+  color:#FFBB00;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row6,
+tr.row6 a {
+  color:#FFAA00;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row7,
+tr.row7 a {
+  color:#FF9900;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row8,
+tr.row8 a {
+  color:#FF8800;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row9,
+tr.row9 a {
+  color:#FF7700;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row10,
+tr.row10 a {
+  color:#FF6600;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row11,
+tr.row11 a {
+  color:#FF5500;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row12,
+tr.row12 a {
+  color:#FF4400;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row13,
+tr.row13 a {
+  color:#FF3300;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+tr.row14,
+tr.row14 a {
+  color:#FF2200;
+  font-weight:bold;
+  background-color:#404040;
+}
+
+tr.row15,
+tr.row15 a {
+  color:#FF1100;
+  font-weight:bold;
+  background-color:#333333;
+}
+
+.event_manager_intentos td{
+  width: 20%;
+  padding:3px 5px;
+  border:1px solid #444444;
+}
+
+.event_manager_intentos td.num{
+  width: 10px;
+}
+
+.event_manager_intentos tr{
+  text-align: center;
+}
+
+.event_manager_intentos th{
+  background-color:#1B1B1B;
+  border:1px solid #000000;
+  color:#FFFF00;
+  font-size:12px;
+  font-weight:bold;
+  height:15px;
+  margin-left:5px;
+  padding-left:5px;
+  text-transform:capitalize;
+}
+
+.event_manager_intentos table{
+  border:1px solid #000000;
+}
+
+#Event_Manager_Brackets {
+  border:0;
+  margin:5px;
+  width: 98%;
+}
+
+#Event_Manager_Brackets td {
+  border: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#Event_Manager_Brackets tr {
+  vertical-align:top;
+  border:medium none;
+}
+#Event_Manager_Brackets .teams {
+  width:100%;
+  text-align:center;
+}
+
+#Event_Manager_Brackets tr.header {
+  height: 42px;
+  vertical-align: bottom;
+}
+
+.bracket,
+.bracketko {
+  background: url('grey.png') !important;
+}
+
+.bracket:hover {
+  background:transparent url(darkgrey.png) repeat scroll 0 0 !important;
+}
+
+#Event_Manager_Brackets .bracket a,
+#Event_Manager_Brackets .bracket span,
+#Event_Manager_Brackets .bracketko a,
+#Event_Manager_Brackets .bracketko span {
+  color: #EEEEEE;
+}
+
+#semi {
+  color: #FFA50E;
+}
+
+#final {
+  color: #ff0000;
+}
+
+.separador {
+  width: 5px;
+}
+
+.separador .color{
+  background-color: #CCCCCC;
+}

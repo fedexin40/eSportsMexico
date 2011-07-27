@@ -32,7 +32,7 @@ function torneo_help($path, $arg) {
 /**
  * Implementación del hook perm
  */
-function torneo_pem() {
+function torneo_perm() {
   return array ('administrar torneos', 'ver torneos', 'administrar resultados');
 }
 /**
@@ -42,9 +42,9 @@ function torneo_menu() {
   $items = array();
   
   $items['node/%node/eliminatorias'] = array(
-    'title' => 'Resultados',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => 'torneo_eliminatorias',
+    'title' => 'Eliminatorias',
+    'page callback' => 'torneo_eliminatorias',
+    'page arguments' => array(1),
 	'access callback' => '_torneo_menu_access',
     'access arguments' => array(1, 'ver torneos'),
     'type' => MENU_LOCAL_TASK,
@@ -53,9 +53,9 @@ function torneo_menu() {
   );
   if (module_exists('match')) {
 		$items['node/%node/resultados'] = array(
-		  'title' => 'Event Results',
+		  'title' => 'Resultados',
 		  'page callback' => 'drupal_get_form',
-		  'page arguments' => 'torneo_resultados',
+		  'page arguments' => array('torneo_resultados'),
 		  'access callback' => '_torneo_menu_access',
 		  'access arguments' => array(1, 'ver torneos'),
 		  'type' => MENU_LOCAL_TASK,
@@ -64,9 +64,9 @@ function torneo_menu() {
 		);
   }
   $items['node/%node/participantes'] = array(
-    'title' => 'Event Results',
+    'title' => 'Participantes',
     'page callback' => 'drupal_get_form',
-    'page arguments' => 'torneo_participantes',
+    'page arguments' => array('torneo_participantes'),
 	'access callback' => '_torneo_menu_access',
     'access arguments' => array(1, 'ver torneos'),
     'type' => MENU_LOCAL_TASK,
@@ -74,7 +74,7 @@ function torneo_menu() {
     'file' => 'inc/participantes.inc',
   );
   $items['node/%node/admin'] = array(
-    'title' => 'Event Results',
+    'title' => 'Administrar',
     'page callback' => 'torneo_admin',
     'page arguments' => array(1),
 	'access callback' => '_torneo_menu_access',
@@ -102,6 +102,8 @@ function torneo_menu() {
     'weight' => -5,
 	'file' => 'inc/admin_results.inc',
   );
+  
+  return $items;
 }
 /**
  * _torneo_menu_access: Función para definir el acceso a los menús de torneo
@@ -119,6 +121,7 @@ function torneo_menu() {
  */
 function _torneo_menu_access($node, $menu_type = 'node') {
   global $user;
+
   // If the node isn't signup enabled, immediately return failure.
   if (empty($node->signup)) {
     return FALSE;
@@ -141,7 +144,7 @@ function _torneo_menu_access($node, $menu_type = 'node') {
   switch ($menu_type) {
     case 'ver torneos':
       // Verifica que el usuario tenga permiso de acceder a los torneos
-      return (user_access('ver torneos');
+      return (user_access('ver torneos'));
 
     case 'administrar torneos':
       //Verifica que el usuario tenga permiso de administrar los torneos
@@ -164,11 +167,11 @@ function _torneo_menu_access($node, $menu_type = 'node') {
  */
 function torneo_admin($node) {
   if (user_access('administrar torneo')) 
-    drupal_goto("node/$node->nid/admin/settings");
+    drupal_goto("node/". $node->nid ."/admin/settings");
   elseif (user_access('administrar resultados'))
-    drupal_goto("node/$node->nid/admin/resultados");
+    drupal_goto("node/". $node->nid ."/admin/resultados");
   else
-	drupal_goto("node/$node->nid");
+	drupal_goto("node/". $node->nid);
 }
 /**
  * Implementation of hook_cron().
@@ -207,7 +210,7 @@ function torneo_theme () {
  */
 function get_settings_torneo ($nid) {
   db_set_active('eSM');
-	$result = db_fetch_object(db_query('SELECT * FROM {Torneo} AS t INNER JOIN {Torneos_Badges} AS tb ON t.nid_Torneo = tb.nid_Torneo WHERE nid = %d', $nid));
+	$result = db_fetch_object(db_query('SELECT * FROM {Torneos} WHERE nid_Torneo = %d', $nid));
   db_set_active('default');
   
   return $result;
@@ -223,7 +226,7 @@ function get_settings_torneo ($nid) {
  */
 function torneo_get_total_participantes ($nid_Torneo) {
   db_set_active('eSM');
-		$resultado = db_result(db_query("SELECT COUNT(*) FROM {Torneo_Participantes} WHERE nid_Torneo = %d", $nid_Torneo));
+		$resultado = db_result(db_query("SELECT COUNT(*) FROM {Torneos_Participantes} WHERE nid_Torneo = %d", $nid_Torneo));
   db_set_active('default');
   
   return $resultado;
@@ -250,7 +253,7 @@ function torneo_get_total_brackets ($nid_Torneo) {
  * @param
  *
  */
-function torneo_get_bracket_info ($nid_Torneo, $Ronda, $Posicion) {
+function _torneo_get_bracket_info ($nid_Torneo, $Ronda, $Posicion) {
   db_set_active('eSM');
 		$team_info = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d", $nid_Torneo, $Ronda, $Posicion));
   db_set_active('default');
@@ -266,7 +269,7 @@ function torneo_get_bracket_info ($nid_Torneo, $Ronda, $Posicion) {
  */
 function torneo_get_participantes($nid_Torneo) {
   db_set_active('eSM');                                                 //Obtiene la lista de participantes
-    $participantes = db_query('SELECT * FROM {Torneo_Participantes} WHERE nid = %d', $nid_Torneo);
+    $participantes = db_query('SELECT * FROM {Torneos_Participantes} WHERE nid_Torneo = %d', $nid_Torneo);
   db_set_active('default');
   
   return $participantes;

@@ -17,6 +17,7 @@ function torneo_participantes () {
     $equipo = node_load( array( 'nid' => $equipo->nid_Equipo ) );
 
     $form['participantes'][ $equipo->nid ][ 'nombre' ] = array (
+      '#type' => 'item',
       '#value' => l($equipo->title, 'node/'. $equipo->nid),
     );
     
@@ -28,6 +29,8 @@ function torneo_participantes () {
       '#value' => t('No hay equipos inscritos en este torneo todavia.'),
     );
   }
+  
+  $form['#theme'] = 'participantes';
   
   return $form;
 }

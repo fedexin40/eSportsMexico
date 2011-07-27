@@ -3,7 +3,7 @@
 /**
  * Implemetnación del hoock help
  */
-function ranking_help() {
+function ranking_help($path, $arg) {
 	$output = '';
 	switch($path){
 		case 'admin/help#ranking':
@@ -544,7 +544,7 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
  */
 function ranking_get_ranking($id_Modalidad_Juego_Temporada) {
 	db_set_active('eSM');
-		$result = db_query('SELECT * FROM {Puntuacion} AS p INNER JOIN {Equipo} AS e ON p.nid_Equipo = e.nid_Equipo WHERE id_Modalidad_Juego_Temporada = %d ORDER BY Puntuacion DESC, PG DESC, TJ DESC, PJ DESC, nid_Equipo DESC', $id_Modalidad_Juego_Temporada);
+		$result = db_query('SELECT * FROM {Puntuacion} AS p INNER JOIN {Equipo} AS e ON p.nid_Equipo = e.nid_Equipo WHERE id_Modalidad_Juego_Temporada = %d ORDER BY Puntuacion DESC, PG DESC, TJ DESC, PJ DESC, p.nid_Equipo ASC', $id_Modalidad_Juego_Temporada);
 	db_set_active('default');
 	
 	return $result;

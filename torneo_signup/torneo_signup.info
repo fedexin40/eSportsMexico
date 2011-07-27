@@ -1,0 +1,6 @@
+name = Inscripcion de Torneos
+description = "Proporciona la integracion entre el modulo signup y el modulo torneos."
+core = 6.x
+package = eSM
+dependencies[] = uc_signup
+dependencies[] = team

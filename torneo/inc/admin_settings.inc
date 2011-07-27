@@ -5,7 +5,7 @@
 /**
  * Page callback for the node/N/signups/settings subtab.
  */
-function event_manager_settings_page($node) {
+function torneo_admin_settings_page($node) {
   return drupal_get_form('torneo_admin_settings_form', $node, $node->type, TRUE);
 }
 /**
@@ -13,6 +13,7 @@ function event_manager_settings_page($node) {
  */
 function torneo_admin_settings_form($form_state, $node = NULL, $node_type = NULL, $include_buttons = FALSE) {
    $settings = get_settings_torneo($node->nid);    //Obtiene los resultados de la tabla si es que el torneo ya existe.
+   
     $date = '2011-12-31 00:00';
     $format = 'Y-m-d H:i';
    
@@ -35,20 +36,20 @@ function torneo_admin_settings_form($form_state, $node = NULL, $node_type = NULL
       '#weight' => -3,
       );
     $form['torneo']['instrucciones'] = array(
-      '#value' => '<p>Define las carácteristicas de este evento.</p>',
+      '#value' => '<p>Define las caracteristicas de este evento.</p>',
       '#weight' => -3,
       );
     $form['torneo']['Tipo'] = array(
       '#type' => 'radios',
-        '#title' => t("Event type"),
+        '#title' => t("Tipo de Torneo"),
         '#description' => t('Select the type of the event'),
         '#options' => array(
-          MASTER_CUP => t('Para los eventos trimestrales y finales.'),
-          MINI_CUP => t('Para los eventos regionales.'),
-          FUN_CUP => t('Para los torneos de diversion.'),
+          MASTER_CUP => t('Master Cup. Para los eventos trimestrales y finales.'),
+          MINI_CUP => t('Mini Cup. Para los eventos regionales.'),
+          FUN_CUP => t('Fun Cup. Para los torneos de diversion.'),
           ),
         '#default_value' => $settings->Tipo,
-        '#weight' => -2,
+        '#weight' => -100,
         '#required' => TRUE,
       );
     $form['torneo']['Eliminacion'] = array(
@@ -80,22 +81,21 @@ function torneo_admin_settings_form($form_state, $node = NULL, $node_type = NULL
       );
     $form['torneo']['Fecha_Inicio'] = array(
       '#type' => 'date_select',
-      '#title' => t('Rondas por Dia'),
-      '#description' => t('Introduce la fecha y hora de incio del torneo.'),
-      '#default_value' => timestamp_to_string( $settings->Fecha_Incio),
+      '#title' => t('Fecha de Inicio del torneo'),
+      '#description' => t('Selecciona la fecha y hora en la que inicia el torneo.'),
+      '#default_value' =>  format_date($settings->Fecha_Inicio, 'small', $format),//timestamp_to_string($settings->Fecha_Inicio),
       '#date_format' => $format,
       '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
       '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
       '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
       '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-      '#weight' => -2,
-      '#required' => TRUE,
+      '#weight' => -4,
       );
     $form['torneo']['Fecha_Final'] = array(
       '#type' => 'date_select',
       '#title' => t('Fecha de la Final'),
       '#description' => t('Selecciona la fecha y hora en la que se va a jugar la final si no sigue la secuencia de los primeros dias de juego.'),
-      '#default_value' => timestamp_to_string($settings->Fecha_Final),
+      '#default_value' => format_date($settings->Fecha_Final, 'small', $format),//timestamp_to_string($settings->Fecha_Final),
       '#date_format' => $format,
       '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
       '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
@@ -162,7 +162,7 @@ function torneo_admin_settings_form_validate ($form, $form_state) {
   // Encuentra si estamos haciendo una actualización de un Torneo o insertando uno nuevo.
    $node = $form['#node'];
    db_set_active('eSM');
-    $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {Torneos} WHERE nid=%d", $node->nid));
+    $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {Torneos} WHERE nid_Torneo = %d", $node->nid));
    db_set_active('default');
    
    $is_update = $settings && ($settings->n > 0);
@@ -180,11 +180,12 @@ function torneo_admin_settings_form_validate ($form, $form_state) {
 function torneo_admin_settings_form_submit ($form, $form_state) {
   // Encuentra si estamos haciendo una actualización de un Torneo o insertando uno nuevo.
    $node = $form['#node'];
-   $fecha_incio = string_to_timestamp($form_state['values']['Fecha_Inicio']);
-   $fecha_final = string_to_timestamp($form_state['values']['Fecha_Final']);
+   
+   $fecha_incio = strtotime($form_state['values']['Fecha_Inicio']);
+   $fecha_final = strtotime($form_state['values']['Fecha_Final']);
    
    db_set_active('eSM');
-    $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {Torneos} WHERE nid=%d", $node->nid));
+    $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {Torneos} WHERE nid_Torneo = %d", $node->nid));
    db_set_active('default');
    
    $is_update = $settings && ($settings->n > 0);
@@ -199,11 +200,10 @@ function torneo_admin_settings_form_submit ($form, $form_state) {
       if (is_object($modalidad)) {        //El nodo es activo en una modalidad y tenemos ya los datos de la modalidad.
         
         if ($is_update) {
-          
           db_set_active('eSM');
             db_query("UPDATE {Torneos}
-                     SET Tipo=%d, Eliminacion=%d, Rondas_Dia=%d, Fecha_Inicio=%d, Fecha_Fin=%d, Estado=%d WHERE nid=%d", 
-                    $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, $node->nid);
+                     SET id_Modalidad_Juego_Temporada=%d, Tipo=%d, Eliminacion=%d, Rondas_Dia=%d, Fecha_Inicio=%d, Fecha_Final=%d WHERE nid_Torneo = %d", 
+                    $modalidad->id_Modalidad_Juego_Temporada, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, $node->nid);
           db_set_active('default');
           
           if (module_exists('user_badges')) {
@@ -217,7 +217,7 @@ function torneo_admin_settings_form_submit ($form, $form_state) {
         else {
           
           db_set_active('eSM');
-            db_query("INSERT INTO {Torneos} (nid_Torneo, Tipo, Eliminacion, Rondas_Dia, Fecah_Incio, Fecha_Final, Estado) 
+            db_query("INSERT INTO {Torneos} (nid_Torneo, is_Modalidad_Juego_Temporada, Tipo, Eliminacion, Rondas_Dia, Fecha_Inicio, Fecha_Final, Estado) 
              VALUES(%d, %d, %d, %d, %d, %d, %d)", 
              $node->nid, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, FUTURO);
           db_set_active('default');
@@ -230,6 +230,7 @@ function torneo_admin_settings_form_submit ($form, $form_state) {
             db_set_active('default');
           }
         }
+        drupal_set_message(t('Se han guardado las opciones correctamente.'));
         break;
       }
     }

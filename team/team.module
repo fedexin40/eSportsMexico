@@ -612,3 +612,40 @@ function get_user_teams($uid) {
     }
     return $output;
 }
+/**
+ * Función para obtener la plantilla de un equipo
+ */
+function _team_get_plantilla($nid_Equipo) {
+  db_set_active( 'eSM' );  //Carga todos los jugadores activos en el equipo.
+    $jugadores = db_query
+    (
+      'SELECT
+          *
+        FROM
+          { Jugador }
+        AS
+          j
+      INNER JOIN
+          { Integrantes_Equipo }
+        AS
+          ie
+        ON
+          j.{ id_Jugador } = ie.{ id_Jugador }
+      INNER JOIN
+        { Equipo }
+        AS
+          e
+        ON
+          ie.{ nid_Equipo } = e.{ nid_Equipo }
+      WHERE
+          e.{ nid_Equipo } = %d
+        AND
+          ie.{ Estado } = %d',
+      $nid_Equipo,
+      ACEPTADO
+    );
+
+  db_set_active('default');
+  
+  return $jugadores;
+}

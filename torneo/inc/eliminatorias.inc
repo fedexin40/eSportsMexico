@@ -3,15 +3,15 @@
  * Función para mostrar las eliminatorias del torneo en la pantalla
  * en este momento únicamente están implementadas las eliminatorias para tornes simples
  */
-function torneo_eliminatorias () {
-  $nid_Torneo = arg(1);     //Obtiene el nid del torneo
+function torneo_eliminatorias ($node) {
+  $nid_Torneo = $node->nid;     //Obtiene el nid del torneo
   $settings = get_settings_torneo($nid_Torneo);   //Obtiene las configuraciones del torneo
   
   $image_path = drupal_get_path('module', 'torneo') . '/imagenes/';      //Obtiene la ruta de donde se van a tomar las imagenes
   
   drupal_add_css(drupal_get_path('module', 'torneo') . '/css/brackets.css');  //Añade el archivo css necesario para que se visualizen correctamente los brackets
   
-  $totalteams = torneo_get_total_participants($nid_Torneo);
+  $totalteams = torneo_get_total_participantes($nid_Torneo);
   $totalbrackets = torneo_get_total_brackets($nid_Torneo);
   
   if ($totalbrackets == 0) {
@@ -56,7 +56,7 @@ function torneo_eliminatorias () {
 			  $data['Equipo'.$x.'Espacio'.$y] = array('data' => array('&nbsp;'));
 			}
 		}
-		$team_info = torneo_get_bracket_info($nid_Torneo, $table, $x);
+		$team_info = _torneo_get_bracket_info($nid_Torneo, $table, $x);
         
 		if ($team_info['nid_Equipo'] == 1) {
 			$data['Equipo'.$x] = array('data' => array('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span><i>KO</i></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'), 'class' => 'bracketko', 'align' => 'center>');
@@ -65,9 +65,9 @@ function torneo_eliminatorias () {
 			$data['Equipo'.$x] = array('data' => array('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'), 'class' => 'bracketko', 'align' => 'center>');
 		}
 		else {
-          $team = node_load(array('nid' => $team_info[$nid_Equipo]));
+          $team = node_load(array('nid' => $team_info['nid_Equipo']));
           
-          $data['Equipo'.$x] = array('data' => array('&nbsp;<a href="/node/' . $team->nid . '">' . $team->title . '</a>&nbsp;'), 'class' => 'bracket', 'align' => 'center>');
+          $data['Equipo'.$x] = array('data' => array('&nbsp;<a href="node/' . $team->nid . '">' . $team->title . '</a>&nbsp;'), 'class' => 'bracket', 'align' => 'center>');
 		}
 	    $middle=$lead+2;
 	  }
@@ -80,7 +80,9 @@ function torneo_eliminatorias () {
 	    $data['Espacio'] = array('data' => array('&nbsp;'));
 	    //$data['Espacio2'] = array('data' => array('&nbsp;'));
 	    for ($w=1;$w<=$bracketSize;$w++) {
-       		$mid = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid=%d AND round=%d AND pos=%d", $nid, $table, $w*2));
+			db_set_active('eSM');
+			  $mid = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d", $nid, $table, $w*2));
+			db_set_active('default');
        		
           for ($t=0;$t<$front;$t++) {
               $data['Equipo'.$w.'Front'.$t]= array('data' => array('&nbsp;'));

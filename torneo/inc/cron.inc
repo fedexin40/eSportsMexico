@@ -8,7 +8,7 @@ function _torneo_init_brackets () {
     $result = db_query('SELECT * FROM {Torneos} WHERE Estado = %d', FUTURO);
   db_set_active ('default');
   
-  $fecha_actual = string_to_timestamp (date( "Y-m-d H:i" )) + 14400;
+  $fecha_actual = strtotime( date( "Y-m-d H:i")) + 14400;//string_to_timestamp (date( "Y-m-d H:i" )) + 14400
   
   while ($torneo = db_fetch_object($result)) {
     if ($fecha_actual >= $torneo->Fecha_Inicio) {
@@ -37,12 +37,12 @@ function _torneo_create_brackets($nid_Torneo) {
     //Obtiene la lista de los equipos participantes en el torneo
     $teams = torneo_get_participantes($nid_Torneo);
     while ($team = db_fetch_array($teams)) {
-      $participantes[$team->nid_Equipo] = $team;
+      $participantes[$team['nid_Equipo']] = $team;
     }
-    
+
     //Obtiene la tabla de posiciones de los equipos en el ranking
     $ranking = ranking_get_ranking($settings->id_Modalidad_Juego_Temporada);
-    
+
     $ids[] = array();
     $n=0;
     while ($team =  db_fetch_object($ranking)) {
@@ -51,6 +51,7 @@ function _torneo_create_brackets($nid_Torneo) {
         $n++;
       }
     }
+
     // find next power of 2 ($bracketSize)
     $bracketSize = 2;
     $numrounds = 2;
@@ -95,16 +96,16 @@ function _torneo_create_brackets($nid_Torneo) {
     // promote byes through bracket
     for ($round=1; $round < $numrounds; $round++) {
       for ($y=0 ; $y<=$bracketSize ; $y++) {
-        $team1 = torneo_get_bracket_info($nid_Torneo, $round, $y);
+        $team1 = _torneo_get_bracket_info($nid_Torneo, $round, $y);
         
         if($team1['nid_Equipo'] == 1) {
           // get winning team info
           if($y&1) { //is odd
-            $team2 = torneo_get_bracket_info($nid_Torneo, $round, ($y + 1));
+            $team2 = _torneo_get_bracket_info($nid_Torneo, $round, ($y + 1));
             $y++;
           }
           else {//is even
-            $team2 = torneo_get_bracket_info($nid_Torneo, $round, ($y - 1));
+            $team2 = _torneo_get_bracket_info($nid_Torneo, $round, ($y - 1));
           }			
           // update database with winner
           db_set_active('eSM');
@@ -116,4 +117,10 @@ function _torneo_create_brackets($nid_Torneo) {
       }
     }
   }
+}
+/**
+ * Función para finalizar los torneos
+ */
+function _torneo_ending_event() {
+  
 }
