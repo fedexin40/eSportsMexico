@@ -1,0 +1,149 @@
+<?php
+/**
+ * Módulo para integrar signup y el módulo de torneos
+ */
+/**
+ * Implementación del hook help
+ */
+function torneo_signup_help($path, $arg) {
+  $output = '';  //declare your output variable
+  switch ($path) {
+    case "admin/help#torneo_signup":
+      $output = '<p>'.  t("Integra la administracion de torneos con las inscripciones a traves de uc_signup.") .'</p>';
+      break;
+  }
+  return $output;
+} // function event_manager_help
+/**
+ * Implementación del hook cron
+ * a través de este hook, se está monitoreando que equipos se han incrito
+ * y a que equipos les hace falta integrantes
+ */
+/**
+ * Implementación del hook perm
+ */
+function torneo_signup_perm() {
+  return array ('ver inscritos');
+}
+function torneo_signup_cron() {
+  //TODO: Cambiar esta función para utilizar el módulo rules
+  
+  module_load_include('inc', 'torneo_signup', 'inc/cron');
+  _torneo_signup_update_equipos();
+}
+/**
+ * Implementación del hook menu
+ */
+function torneo_signup_menu() {
+  $items = array ();
+  
+  $items['node/%node/pendientes'] = array(
+    'title' => 'Equipos Incompletos',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('torneo_signup_pendientes'),
+	'access callback' => '_torneo_signup_menu_access',
+    'access arguments' => array(1, 'ver inscritos'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+    'file' => 'inc/pendientes.inc',
+  );
+  
+  return $items;
+}
+/**
+ * Implementación del hook theme
+ */
+function torneo_signup_theme () {
+    return array (
+        'equipos_pendientes' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/equipos_pendientes.inc',
+        ),
+    );
+}
+/**
+ * Función para verificar si un usuario tiene acceso a la pestaña de usuarios pendientes
+ */
+function _torneo_signup_menu_access($node, $menu_type = 'node') {
+  global $user;
+
+  // If the node isn't signup enabled, immediately return failure.
+  if (empty($node->signup)) {
+    return FALSE;
+  }
+  // For certain menu types, invoke a hook to allow other modules to alter the
+  // access behavior for signup menu items. Just relying on hook_menu_alter()
+  // for this won't work, since there are places outside of the menu system,
+  // where we call this function to decide if a user should have access to
+  // something. If multiple modules return a value, the logical OR is used, so
+  // if anyone returns TRUE, access is granted.
+  if (in_array($menu_type, array('ver inscritos'))) {
+    $access_array = module_invoke_all('_torneo_signup_menu_access', $node, $menu_type);
+    if (!empty($access_array)) {
+      // Return TRUE if any values are TRUE, otherwise, FALSE.
+      return in_array(TRUE, $access_array);
+    }
+  }
+  
+  foreach($node->taxonomy as $tid => $termino) {
+	$modalidad = term_is_active($termino->tid);
+  
+	if ($modalidad->Maximo_Jugadores == 1) {
+	  return FALSE;			//Oculta la pestaña para las modalidades de 1 sólo jugador.
+	}
+  }
+  // No module returned a value in hook_torneo_menu_access, so continue with
+  // the main logic.
+  switch ($menu_type) {
+    case 'ver inscritos':
+      // Verifica que el usuario tenga permiso de acceder a los torneos
+      return (user_access('ver inscritos'));
+  }
+}
+/**
+ * Función para saber si un usuario está inscrito a un nodo o no.
+ * @param
+ * 	$uid
+ * 	$nid_Torneo
+ *
+ * 	Regresa TRUE o FALSE
+ * 	
+ */
+function _torneo_signup_esta_inscrito($uid, $nid_Torneo) {
+  
+  $query = db_fetch_array(db_query("SELECT ucl.sid, ucl.uid, sl.nid FROM {uc_signup_log} ucl INNER JOIN {signup_log} sl ON sl.sid = ucl.sid WHERE sl.nid = %d AND type = 1 AND ucl.uid = %d", $nid_Torneo, $uid));
+  
+  if (is_array($query))
+	return TRUE;
+  else
+	return FALSE;
+}
+/**
+ * Función para revisar si un equipo está o no inscrito a un torneo
+ * @param
+ * 	$nid_Torneo
+ * 	$nid_Equipo
+ */
+function _torneo_signup_check_team_signup($nid_Equipo, $nid_Torneo) {
+  db_set_active('eSM');
+	$result = db_fetch_array(db_query('SELECT * FROM {Torneos_Participantes} WHERE nid_Equipo = %d AND nid_Torneo = %d', $nid_Equipo, $nid_Torneo));
+  db_set_active('default');
+  
+  if (is_array($result))
+	return TRUE;
+  else
+	return FALSE;
+}
+/**
+ * Función para inscribir a un equipo a un torneo
+ * @param
+ *		$nid_Equipo
+ *		$nid_Torneo
+ */
+function _torneo_signup_register_team($nid_Equipo, $nid_Torneo) {
+  db_set_active('eSM');
+	db_query('INSERT INTO {Torneos_Participantes} (nid_Torneo, nid_Equipo)
+			 VALUES (%d, %d)',
+			 $nid_Torneo, $nid_Equipo);
+  db_set_active('default');
+}

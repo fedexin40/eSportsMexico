@@ -53,20 +53,18 @@ function get_term_data( $tid )
     
     $term_data_set = db_query
     (
-        "SELECT
-        { vid }
-        FROM
-        { term_data }
-        WHERE
-        { tid } = %d
-        AND
-        { vid } = %d",
-        arg( 2 ),
-        variable_get( 'vocabulario_modalidades', NULL )
-        );
+      "SELECT
+      { vid }
+      FROM
+      { term_data }
+      WHERE
+      { tid } = %d
+      AND
+      { vid } = %d",
+      arg( 2 ),
+      variable_get( 'vocabulario_modalidades', NULL )
+    );
     
-    $term_data = db_fetch_object( $term_data_set );
-    
-    return $term_data;
+    return db_fetch_object( $term_data_set );
     
 }

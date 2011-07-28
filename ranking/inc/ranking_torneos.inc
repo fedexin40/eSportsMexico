@@ -141,5 +141,5 @@ function ranking_torneos_submit ($form, $form_state) {
         db_set_active('default');
     }
     
-    dsm('Las puntuaciones se han guardado correctamente.');
+    drupal_set_message('Las puntuaciones se han guardado correctamente.');
 }

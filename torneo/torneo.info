@@ -1,7 +1,7 @@
-; $Id$
-
-dependencies[ ] = match
-name = Torneos
-description = "Habilita la creación y adminstración de torneos dentro de una liga"
+name = Adminsitración de Torneos
+description = "Proporciona la administración de torneos en base a equipos e inscripciones."
 core = 6.x
 package = eSM
+dependencies[] = torneo_signup
+dependencies[] = ranking
+dependencies[] = team

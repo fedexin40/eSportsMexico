@@ -80,5 +80,5 @@ function ranking_desafios_submit ($form, $form_state) {
             db_query('INSERT INTO {Puntos_Desafio_Jugador_Inferior} (Diferencia_Puntos, Puntos_Win, Puntos_Loss) VALUES (%d, %d, %d)', $form_state['values']['Diferencia_'. $i], $form_state['values']['Equipo_Inferior_Win_'. $i], $form_state['values']['Equipo_Inferior_Loss_'. $i]);
         db_set_active('default');
     }
-    dsm('Las puntuaciones se han guardado correctamente.');
+    drupal_set_message('Las puntuaciones se han guardado correctamente.');
 }

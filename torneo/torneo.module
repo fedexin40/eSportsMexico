@@ -1,116 +1,308 @@
 <?php
-// $Id: leaguesite.module,v 1.21 2010/09/21 17:03:04 alun Exp $
-
 /**
-* Display help information for the module
-* @param path - which path of the site we are displaying help
-* @param arg - array that holds the current path as would be returned from arg() function
-* @return help = text for the path
-*/ 
-
-function torneo_help($path, $arg){
-	$output = '';
-	switch($path){
-		case 'admin/help#torneo':
-			$output = '<p>'.t("Permite crear y manejar torneos entre equipos isncritos en un ranking").'</p>';
-			break;
-		case 'admin/content/torneo':
-			$output = '<p>'.t('Este módulo permite crear y administrar torneos').'</p>';
-			break;
-	}
-	return $output;
-} //end function leaguesite_help()
-
-
-/**
-* Implementation of hook_perm()
-* Outlines permissions for this module.
-* @return array - An array of valid permissions for the leaguesite module
-*/
-function torneo_perm(){
-	return array('create torneo', 'edit own torneo', 'delete own torneo', 'view torneo');
-}//end function leaguesite_perm()
-/**
- * Implementation of hook_menu()
- * Admin menu link for the module
- * @return unknown_type
+ * Módulo para controlar la funcionalidad de los torneos
  */
-function torneo_menu(){
-/*	$items [ 'user/%/mytorneos'] = array (
-			'title' => 'Mis Equipos',
-			'page callback' => 'drupal_get_form',
-			'page arguments' => array('equipos_usuario'),
-			'access arguments' => array('view torneo'),
-			'file' => 'inc/equipos_usuario.inc',
-			'type' => MENU_CALLBACK,
-	);*/
 
-	return $items;
+/**
+ * Definición de constantes
+ */
+  //Define los tipos de torneos que puede haber
+  define (MASTER_CUP, 2);
+  define (MINI_CUP, 1);
+  define (FUN_CUP, 0);
+  //Define las constantes para diferenciar simple y doble eliminación
+  define (ELIMINACION_SIMPLE, 0);
+  define (ELIMINACION_DOBLE, 1);
+  //Define los tipos de estado en los que puede permanecer un torneo
+  define (FUTURO, 0);	//El torneo todavía no empieza
+  define (PRESENTE, 1);	//El torneo se está jugando en estos momentos
+  define (PASADO, 2);	//El torneo ya ha terminado
+/**
+ * Implementación del hook help
+ */
+function torneo_help($path, $arg) {
+  $output = '';  //declare your output variable
+  switch ($path) {
+    case "admin/help#torneo":
+      $output = '<p>'.  t("Permite administrarlos torneos.") .'</p>';
+      break;
+  }
+  return $output;
+} // function event_manager_help
+/**
+ * Implementación del hook perm
+ */
+function torneo_perm() {
+  return array ('administrar torneos', 'ver torneos', 'administrar resultados');
 }
-	
 /**
- * Implementation of hook_node_info()
+ * Implementación del hook menú
  */
-function torneo_node_info() {
-	return array(
-		'torneo' => array(
-			'name' => t('Torneo'),
-			'module' => 'torneo',
-			'description' => t("Crea un torneo."),
-		)
-	);
-} 
-
+function torneo_menu() {
+  $items = array();
+  
+  $items['node/%node/eliminatorias'] = array(
+    'title' => 'Eliminatorias',
+    'page callback' => 'torneo_eliminatorias',
+    'page arguments' => array(1),
+	'access callback' => '_torneo_menu_access',
+    'access arguments' => array(1, 'ver torneos'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+    'file' => 'inc/eliminatorias.inc',
+  );
+  if (module_exists('match')) {
+		$items['node/%node/resultados'] = array(
+		  'title' => 'Resultados',
+		  'page callback' => 'drupal_get_form',
+		  'page arguments' => array('torneo_resultados'),
+		  'access callback' => '_torneo_menu_access',
+		  'access arguments' => array(1, 'ver torneos'),
+		  'type' => MENU_LOCAL_TASK,
+		  'weight' => -5,
+		  'file' => 'inc/resultados.inc',
+		);
+  }
+  $items['node/%node/participantes'] = array(
+    'title' => 'Participantes',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('torneo_participantes'),
+	'access callback' => '_torneo_menu_access',
+    'access arguments' => array(1, 'ver torneos'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+    'file' => 'inc/participantes.inc',
+  );
+  $items['node/%node/admin'] = array(
+    'title' => 'Administrar',
+    'page callback' => 'torneo_admin',
+    'page arguments' => array(1),
+	'access callback' => '_torneo_menu_access',
+    'access arguments' => array(1, 'administrar torneos', 'administrar resultados'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+  );
+  $items['node/%node/admin/settings'] = array(
+    'title' => t('Basic Settings'),
+    'page callback' => 'torneo_admin_settings_page',
+    'page arguments' => array(1),
+	'access callback' => '_torneo_menu_access',
+    'access arguments' => array(1, 'administrar torneos'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+	'file' => 'inc/admin_settings.inc',
+  );
+  $items['node/%node/admin/resultados'] = array(
+    'title' => 'Administrar Resultados',
+    'page callback' => 'torneo_admin_results',
+    'page arguments' => array(1),
+	'access callback' => '_torneo_menu_access',
+    'access arguments' => array(1, 'administrar resultados'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+	'file' => 'inc/admin_results.inc',
+  );
+  
+  return $items;
+}
 /**
- * Implementation of hook_access()
+ * _torneo_menu_access: Función para definir el acceso a los menús de torneo
+ * primero tiene que checar si el nodo tiene habilitadas las inscripciones
+ * después tiene que checar que el usuario tenga permiso de acceder a las ventas
+ * @param
+ * 		$node un nodo completo cargado y proporcionado por el hook menu
+ * 		$menu_type el tipo de menú al que se esta intentando accesar
+ *
+ * 	@return
+ * 		TRUE si el nodo que se está visualizando tiene habilitadas las incripciones
+ * 		y el usuario tiene permiso de acceder al menú que se está solicitando
+ *
+ * 		FALSE si el nodo no tiene habilitadas inscripciones o el usuario no tiene permiso
  */
-function torneo_access($op, $node, $account){
-		if($op == 'view'){
-		return user_access('view torneo', $account);
-	}
-	
-	if ($op == 'create') {
-		// Only users with permission to do so may create this node type.
-		return user_access('create torneo', $account);
-	}
+function _torneo_menu_access($node, $menu_type = 'node') {
+  global $user;
 
-	// Users who create a node may edit or delete it later, assuming they have the
-	// necessary permissions.
-	if ($op == 'update' || $op == 'delete') {
-		if (user_access('edit own torneo', $account) && ($account->uid == $node->uid)) {
-			return TRUE;
-		}
-	}
-} 
+  // If the node isn't signup enabled, immediately return failure.
+  if (empty($node->signup)) {
+    return FALSE;
+  }
+  // For certain menu types, invoke a hook to allow other modules to alter the
+  // access behavior for signup menu items. Just relying on hook_menu_alter()
+  // for this won't work, since there are places outside of the menu system,
+  // where we call this function to decide if a user should have access to
+  // something. If multiple modules return a value, the logical OR is used, so
+  // if anyone returns TRUE, access is granted.
+  if (in_array($menu_type, array('ver torneos', 'administrar torneos', 'administrar resultados'))) {
+    $access_array = module_invoke_all('torneo_menu_access', $node, $menu_type);
+    if (!empty($access_array)) {
+      // Return TRUE if any values are TRUE, otherwise, FALSE.
+      return in_array(TRUE, $access_array);
+    }
+  }
+  // No module returned a value in hook_torneo_menu_access, so continue with
+  // the main logic.
+  switch ($menu_type) {
+    case 'ver torneos':
+      // Verifica que el usuario tenga permiso de acceder a los torneos
+      return (user_access('ver torneos'));
 
+    case 'administrar torneos':
+      //Verifica que el usuario tenga permiso de administrar los torneos
+      return user_access('administrar torneos');
+
+    case 'administrar resultados':
+      // Verifica que el usario tenga permiso de administrar los resultados
+	  // o que tenga permiso de administrar los torneos
+      return user_access('administrar torneos') || user_access('administrar resultados');
+  }
+}
 /**
- * Implementation of hook_form()
+ * Menu callback to handle the default tab at node/N/admin
+ *
  * @param $node
- * @param $form_state
- * @return unknown_type
+ *   Fully loaded node object to generate the node/N/torneo menu handler for.
+ *
+ * @return
+ *   redirect to the tab user have permission.
  */
-function torneo_form(&$node, $form_state) {
-	// We need to define form elements for the node's title and body.
-	$form[ 'title' ] = array
-	(
-	  '#type' => 'textfield',
-	  '#title' => t( 'Nombre de equipo' ),
-	  '#required' => TRUE,
-	  '#default_value' => $node->title,
-	  '#weight' => -6,
-	);
-	// We want the body and filter elements to be adjacent. We could try doing
-	// this by setting their weights, but another module might add elements to the
-	// form with the same weights and end up between ours. By putting them into a
-	// sub-array together, we're able force them to be rendered together.
-	$form['body_filter']['body'] = array(
-	  '#type' => 'textarea',
-	  '#title' => t( 'Descripcion del Equipo' ),
-	  '#default_value' => $node->body,
-	  '#required' => FALSE,
-	  '#description' => t('Puedes ingresar la información que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
-	);
-	$form[ 'body_filter' ][ 'filter' ] = filter_form( $node->format );
-	
-	return $form;
+function torneo_admin($node) {
+  if (user_access('administrar torneo')) 
+    drupal_goto("node/". $node->nid ."/admin/settings");
+  elseif (user_access('administrar resultados'))
+    drupal_goto("node/". $node->nid ."/admin/resultados");
+  else
+	drupal_goto("node/". $node->nid);
 }
+/**
+ * Implementation of hook_cron().
+ *
+ * Hay dos tareas básica que se llevan a cabo durante la ejecución de cron
+ * Realizar el llenado de los brackets de acuerdo a los equipos inscritos y su posición en el ránking 1 hora antes de empezar los partidos
+ * Realizar el cierre del torneo 24 horas después de la final para actualizar los puntos y premios de cada uno de los equipos participantes
+ * como requieren bastante proceso de datos, cada una de las tareas tiene una función especial para llevarla a cabo
+ */
+function torneo_cron() {
+  module_load_include('inc', 'torneo', 'inc/cron');
+  _torneo_init_brackets();
+		
+  _torneo_ending_event();
+}
+/**
+ * Implementación del hook theme
+ */
+function torneo_theme () {
+    return array (
+        'participantes' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/participantes.inc',
+        ),
+    );
+}
+/**
+ * Función para obtener las configuraciones de un torneo de la tabla
+ * 
+ * @param
+ * 		nid torneo
+ *
+ * @return
+ * 		objeto settings con todas las características del torneo
+ * 		NULL si no está definido el torneo
+ */
+function get_settings_torneo ($nid) {
+  db_set_active('eSM');
+	$result = db_fetch_object(db_query('SELECT * FROM {Torneos} WHERE nid_Torneo = %d', $nid));
+  db_set_active('default');
+  
+  return $result;
+}
+/**
+ * Función para obtener el número total de equipos participantes en un torneo
+ *
+ * @param
+ * 		nid_Torneo
+ *
+ * @return
+ * 		número de participantes en número
+ */
+function torneo_get_total_participantes ($nid_Torneo) {
+  db_set_active('eSM');
+		$resultado = db_result(db_query("SELECT COUNT(*) FROM {Torneos_Participantes} WHERE nid_Torneo = %d", $nid_Torneo));
+  db_set_active('default');
+  
+  return $resultado;
+}
+/**
+ * Función para obtener el total de filas que ocupa un bracket en la tabla
+ *
+ * @param
+ * 		nid_Torneo
+ *
+ * 	@return
+ * 		número de filas en el bracket
+ */
+function torneo_get_total_brackets ($nid_Torneo) {
+  db_set_active('eSM');
+    $resultado = db_result(db_query("SELECT COUNT(*) FROM {Torneos_Brackets} WHERE nid_Torneo = %d", $nid_Torneo));
+  db_set_active('default');
+  
+  return $resultado;
+}
+/**
+ * Función para obtener la información de un equipo en una determinada posición en el bracket
+ *
+ * @param
+ *
+ */
+function _torneo_get_bracket_info ($nid_Torneo, $Ronda, $Posicion) {
+  db_set_active('eSM');
+		$team_info = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d", $nid_Torneo, $Ronda, $Posicion));
+  db_set_active('default');
+  
+  return $team_info;
+}
+/**
+ * Función para obtener toda la lista de participantes en un torneo
+ * @param
+ * 		$nid_Torneo
+ * @return
+ * 		un db_query con todos los participantes
+ */
+function torneo_get_participantes($nid_Torneo) {
+  db_set_active('eSM');                                                 //Obtiene la lista de participantes
+    $participantes = db_query('SELECT * FROM {Torneos_Participantes} WHERE nid_Torneo = %d', $nid_Torneo);
+  db_set_active('default');
+  
+  return $participantes;
+}
+/**
+ * Función para actualizar el estado de un torneo
+ * @param
+ * 		$nid_Torneo
+ * 		Estado a otorgar al torneo
+ */
+function _torneo_update_estado($nid_Torneo, $estado) {
+  db_set_active('eSM');
+		db_query('UPDATE {Torneos} SET Estado = %d WHERE nid_Torneo = %d', $estado, $nid_Torneo);
+  db_set_active('default');
+}
+/**
+ * Función para actualizar los resultados de un match en la tabla
+ * @param
+ * 		$nid_Torneo
+ * 		$nid_Equipo del equipo a pasar a la siguiente ronda
+ */
+function _torneo_update_bracket($nid_Torneo, $nid_Equipo) {
+  db_set_active('eSM');
+		$team = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo= %d and nid_Equipo = %d ORDER BY Ronda DESC LIMIT 1", $nid_Torneo, $nid_Equipo));
+  db_set_active('default');
+  
+  $newround = $team['Ronda'] + 1;	//Calcula la nueva ronda a la que tiene que ser promovido el jugador
+  $newpos = ceil((float)$team['Posicion'] / 2.0 );		//Calcula la nueva posición del jugador en el bracket
+  
+  db_set_active('eSM');
+		db_query("INSERT INTO {Torneos_Brackets} (nid_Torneo, nid_Equipo, Ronda, Posicion)
+				 VALUES (%d, %d, %d, %d)",
+				 $nid_Torneo, $nid_Equipo, $newround, $newpos);
+  db_set_active('default');
+}
+?>

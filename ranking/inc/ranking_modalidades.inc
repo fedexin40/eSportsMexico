@@ -11,6 +11,7 @@ function mostrar_puntuacion(  ) {
 	
 	db_set_active( 'eSM' );
 		$Puntuacion_result = db_query( "SELECT { * } FROM { Puntuacion } AS { p } INNER JOIN { Equipo } AS { e } ON { p.nid_Equipo } = { e.nid_Equipo } WHERE { e.id_Modalidad_Juego_Temporada } = %d ORDER BY {p.Puntuacion} DESC", $modalidad->id_Modalidad_Juego_Temporada );
+		//$Puntuacion_result = ranking_get_ranking($modalidad->id_Modalidad_Juego_Temporada);
 	db_set_active( 'default' );	
 	
 	$count = 0;
@@ -103,9 +104,11 @@ function mostrar_puntuacion(  ) {
  */
 function get_actividad($nid_Equipo) {
 	db_set_active('eSM');
-		$time = db_fetch_array(db_query('SELECT (max(Fecha)) AS {numdays} FROM {Reto} AS r INNER JOIN {Adversario} AS a ON r.idReto = a.id_Reto WHERE (a.id_Retador = %d OR a.id_Retado = %d)', $nid_Equipo, $nid_Equipo));
-	db_set_active('default');
-    $matches = time() - $time['numdays'];
+	
+		$time = db_fetch_array( db_query( 'SELECT ( max( Fecha_Inicio ) ) AS { numdays } FROM { Reto } AS { r } INNER JOIN { Inicio_Reto } AS { ir } ON { r.id_Reto = ir.id_Reto } WHERE ( ir.nid_Equipo_Local = %d } OR  { ir.nid_Equipo_Visitante = %d } )', $nid_Equipo, $nid_Equipo ) );
+	
+	db_set_active( 'default' );
+    $matches = time( ) - $time[ 'numdays' ];
     $image_path = drupal_get_path('module', 'ranking') . '/images/';
 	
     if ($matches=="" || $matches > 2592000 ) 

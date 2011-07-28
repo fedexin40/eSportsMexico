@@ -3,7 +3,7 @@
 /**
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
-function team_solicitud( )//&$form_state )
+function team_solicitud( $node )//&$form_state )
 {
 
   //Pasando las variables necesarias para procesar después de confirmar la acción
@@ -91,10 +91,25 @@ function team_solicitud_validate( $form, &$form_state )
 
       //El jugador ya está activo en un equipo. Salir
       drupal_set_message( 'No te puedes unir a este equipo porque ya estás activo en otro equipo.', 'error' );
-      drupal_goto( 'taxonomy/term/'.$modalidad->tid );
+      //drupal_goto( 'taxonomy/term/'.$modalidad->tid );
 
     }
 
+	db_set_active( 'eSM' );
+
+    $solicitud_realizada = db_fetch_object
+    (
+      db_query
+      (
+        'SELECT * FROM { Integrantes_Equipo } AS ie INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador } WHERE j.{ uid } = %d AND ie.{ Estado } = %d AND ie. { nid_Equipo } = %d',
+        $user->uid, SOLICITA, $team->nid
+      )
+    );
+    db_set_active( 'default' );
+
+  if (is_object($solicitud_realizada)) {
+    form_error($form, t('Ya has solicitado unirte a este equipo.'));
+  }
 
 }
 
@@ -134,7 +149,7 @@ function team_solicitud_submit( $form, &$form_state )
 
     db_set_active( 'default' );
     
-    print_r($jugador);
+    //print_r($jugador);
   
     if( $jugador->uid == 0 )
     {
@@ -150,7 +165,7 @@ function team_solicitud_submit( $form, &$form_state )
                 Estado
             )			
             VALUES ( %d, %d, %d, %d )",
-                $team->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE
+                $team->id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), PENDIENTE
         );
 
         $jugador = db_fetch_object

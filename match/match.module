@@ -4,7 +4,7 @@
 
 // Define los estados del desafío
 	define( 'CREADO', 0 );
-  define( 'PROGRAMADO', 1 );	
+  define( 'PROGRAMADO', 1 );
 	define( 'CANCELADO', 2 );
   define( 'COMPLETADO', 3 );
 
@@ -87,6 +87,17 @@ function match_menu(){
     //'file' => 'inc/match.admin.inc',
   );
 	
+	
+	$items[ 'node/%node/desafios/' ] = array
+	(
+    'title' => 'Desafiar',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'team_challenges_binnacle' ),
+    //'access callback' => 'match_report_access',
+    'access arguments' => array( 'create match' ),
+    'type' => MENU_LOCAL_TASK,
+    //'file' => 'inc/match.admin.inc',
+  );
 	
   return $items;
 }
@@ -198,12 +209,24 @@ function match_access($op, $node, $account){
 /**	ALMOST DONE
  * Implementation of hook_load()
  */
-function match_load($node)
+function match_load( $node )
 {
   
-	//get the additional match information and attach to the node
+	$Retos = db_fetch_object( db_query( 'SELECT { Reto } AS { r } INNER JOIN { Inicio_Reto } AS { ir } ON { r.id_Reto = ir.id_Reto } INNER JOIN { Jugador }  AS { j } ON { j.id_Modalidad_juego_Temporada }' ) );
 	
-	$Equipos = db_fetch_array( db_query( 'SELECT { Reto } AS { r }' ) );
+	
+	
+	
+	
+	//get the additional match information and attach to the node
+	/*if(  )
+	{
+		
+		
+		
+	}*/
+	
+	
 	
 	$teams = db_fetch_array(db_query("SELECT {match}.home_team, {match}.away_team, {match}.home_score, {match}.away_score, {match}.match_time, {match}.is_result, {match}.relation_id FROM {match} WHERE {match}.nid = %d;", intval($node->nid)));
 	
@@ -643,108 +666,127 @@ function challenges_binnacle( )
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
 	
 	$date = '2011-12-31';
-	$format = 'Y-m-d\TH:i';
+	$format = 'Y-m-d H:i';
 	
 	$tid_Modalidad_Juego = arg( 2 );
 	$Temporada_Activa = temporada_activa(  );
-
 	
 	db_set_active( 'eSM' );
 		$Challenges_result_set = db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { r.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_Temporada } INNER JOIN { Temporada } AS { t } ON { mjt.id_Temporada = t.id_Temporada } INNER JOIN { Modalidad_Juego } AS { mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego } WHERE { mj.tid = %d } AND { t.id_Temporada = %d } AND { r.Estado = %d }', $tid_Modalidad_Juego, $Temporada_Activa->id_Temporada, CREADO );
 	db_set_active( 'default' );
 
+	if ( $Challenges_result_set->num_rows )
+	{
+
+			/*$form[ 'Challenges_List' ] = array
+			(
+			
+				'#type' => 'fieldset',
+				'#title' => 'Lista de desafíos',
+				'#collapsible' => 'FALSE',
+				'#collapsed' => 'FALSE',
+			 
+			);*/		
 	
-	$form[ 'Challenges_List' ] = array
-	(
+		
+		
+		while( $Challenge = db_fetch_object( $Challenges_result_set ) )
+		{
+			
+
+
+			
+			$Fecha_Inicio = timestamp_to_string( $Challenge->Fecha_Inicio );
+			$Fecha_Fin = timestamp_to_string( $Challenge->Fecha_Fin );
 	
-		'#type' => 'fieldset',
-		'#title' => 'Lista de desafíos'
-	 
-	);
+			
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'id_Reto' ] = array
+			(
+				'#type' => 'item',
+				//'label' => t( 'Nombre' ),
+				//'#disabled' => 'TRUE',
+				//'size' => 17,
+				//'maxlength' => 17,
+				'#title' => t( 'Número de reto' ),
+				//'#required' => TRUE,
+				'#weight' => -8,
+				'#value' => $Challenge->id_Reto,
+			);
+			
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array (
+				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+				'#disabled' => 'TRUE',
+				'#title' => 'Fecha de inicio',
+				'#default_value' => $Fecha_Inicio,
+				'#date_format' => $format,
+				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+				'#size' => 17,
+				'#maxlength' => 17,
+			);
 	
-	while( $Challenge = db_fetch_object( $Challenges_result_set ) )
+	
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Fin' ] = array (
+				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+				'#disabled' => 'TRUE',
+				'#title' => 'Fecha de inicio',
+				'#default_value' => $Fecha_Fin,
+				'#date_format' => $format,
+				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+				'#size' => 17,
+				'#maxlength' => 17,
+			);
+	
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Estado' ] = array (
+				'#type' => 'item', 
+				'#title' => 'Estado',
+				'#value' => $Challenge->Estado,
+			);
+		
+		
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Aceptar' ] = array
+			(
+				
+				'#type' => 'submit',
+				'#value' => t('Aceptar desafío'),
+				
+			);
+			
+		}	
+		
+		$form[ 'tid_Modalidad_Juego' ] = array
+		(		
+			'#type' => 'hidden',
+			'#value' => $tid_Modalidad_Juego,
+		);
+		
+		
+		
+		$form[ 'id_Temporada_Activa' ] = array
+		(		
+			'#type' => 'hidden',
+			'#value' => $Temporada_Activa,
+		);
+
+	}
+	
+	else
 	{
 		
-		$Fecha_Inicio = timestamp_to_string( $Challenge->Fecha_Inicio );
-		$Fecha_Fin = timestamp_to_string( $Challenge->Fecha_Fin );
-
-		
-		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'id_Reto' ] = array
-		(
-			'#type' => 'item',
-			//'label' => t( 'Nombre' ),
-			//'#disabled' => 'TRUE',
-			//'size' => 17,
-			//'maxlength' => 17,
-			'#title' => t( 'Número de reto' ),
-			//'#required' => TRUE,
-			'#weight' => -8,
-			'#value' => $Challenge->id_Reto,
-		);
-		
-		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array (
-			'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-			'#disabled' => 'TRUE',
-			'#title' => 'Fecha de inicio',
-			'#default_value' => $Fecha_Inicio,
-			'#date_format' => $format,
-			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-			'#size' => 17,
-			'#maxlength' => 17,
-		);
-
-
-		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Fin' ] = array (
-			'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-			'#disabled' => 'TRUE',
-			'#title' => 'Fecha de inicio',
-			'#default_value' => $Fecha_Fin,
-			'#date_format' => $format,
-			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-			'#size' => 17,
-			'#maxlength' => 17,
-		);
-
-		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Estado' ] = array (
-			'#type' => 'item', 
-			'#title' => 'Estado',
-			'#value' => $Challenge->Estado,
-		);
-	
-	
-		$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Aceptar' ] = array
+		$form[ 'Message' ] = array
 		(
 			
-			'#type' => 'submit',
-			'#value' => t('Aceptar desafío'),
+			'#type' => 'item',
+			'#value' => t( 'No hay desafíos disponibles para esta modalidad' ),
 			
 		);
 		
 	}
-	
-	
-	$form[ 'tid_Modalidad_Juego' ] = array
-	(		
-		'#type' => 'hidden',
-		'#value' => $tid_Modalidad_Juego,
-	);
-	
-	
-	
-	$form[ 'id_Temporada_Activa' ] = array
-	(		
-		'#type' => 'hidden',
-		'#value' => $Temporada_Activa,
-	);
-	
-	
-	dpm( $form );
 	
 	
 	return $form;
@@ -753,9 +795,142 @@ function challenges_binnacle( )
 
 
 
+/**	ALMOST DONE
+ *	Función que se encargará de mostrar la bitácora de desafíos creados para las modalidades
+ *	y temporadas activas al momento
+ */
+function team_challenges_binnacle( )
+{
+	
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
+	$date = '2011-12-31';
+	$format = 'Y-m-d H:i';
+	
+	$tid_Modalidad_Juego = arg( 2 );
+	$Temporada_Activa = temporada_activa(  );
+	
+	db_set_active( 'eSM' );
+		$Challenges_result_set = db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { r.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_Temporada } INNER JOIN { Temporada } AS { t } ON { mjt.id_Temporada = t.id_Temporada } INNER JOIN { Modalidad_Juego } AS { mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego } WHERE { mj.tid = %d } AND { t.id_Temporada = %d } AND { r.Estado = %d }', $tid_Modalidad_Juego, $Temporada_Activa->id_Temporada, CREADO );
+	db_set_active( 'default' );
+
+	if ( $Challenges_result_set->num_rows )
+	{
+
+			/*$form[ 'Challenges_List' ] = array
+			(
+			
+				'#type' => 'fieldset',
+				'#title' => 'Lista de desafíos',
+				'#collapsible' => 'FALSE',
+				'#collapsed' => 'FALSE',
+			 
+			);*/		
+	
+		
+		
+		while( $Challenge = db_fetch_object( $Challenges_result_set ) )
+		{
+			
 
 
+			
+			$Fecha_Inicio = timestamp_to_string( $Challenge->Fecha_Inicio );
+			$Fecha_Fin = timestamp_to_string( $Challenge->Fecha_Fin );
+	
+			
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'id_Reto' ] = array
+			(
+				'#type' => 'item',
+				//'label' => t( 'Nombre' ),
+				//'#disabled' => 'TRUE',
+				//'size' => 17,
+				//'maxlength' => 17,
+				'#title' => t( 'Número de reto' ),
+				//'#required' => TRUE,
+				'#weight' => -8,
+				'#value' => $Challenge->id_Reto,
+			);
+			
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array (
+				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+				'#disabled' => 'TRUE',
+				'#title' => 'Fecha de inicio',
+				'#default_value' => $Fecha_Inicio,
+				'#date_format' => $format,
+				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+				'#size' => 17,
+				'#maxlength' => 17,
+			);
+	
+	
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Fin' ] = array (
+				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+				'#disabled' => 'TRUE',
+				'#title' => 'Fecha de inicio',
+				'#default_value' => $Fecha_Fin,
+				'#date_format' => $format,
+				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+				'#size' => 17,
+				'#maxlength' => 17,
+			);
+	
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Estado' ] = array (
+				'#type' => 'item', 
+				'#title' => 'Estado',
+				'#value' => $Challenge->Estado,
+			);
+		
+		
+			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Aceptar' ] = array
+			(
+				
+				'#type' => 'submit',
+				'#value' => t('Aceptar desafío'),
+				
+			);
+			
+		}	
+		
+		$form[ 'tid_Modalidad_Juego' ] = array
+		(		
+			'#type' => 'hidden',
+			'#value' => $tid_Modalidad_Juego,
+		);
+		
+		
+		
+		$form[ 'id_Temporada_Activa' ] = array
+		(		
+			'#type' => 'hidden',
+			'#value' => $Temporada_Activa,
+		);
 
+	}
+	
+	else
+	{
+		
+		$form[ 'Message' ] = array
+		(
+			
+			'#type' => 'item',
+			'#value' => t( 'No hay desafíos disponibles para esta modalidad' ),
+			
+		);
+		
+	}
+	
+	
+	return $form;
+	
+}
 
 
 
@@ -767,10 +942,15 @@ function challenges_binnacle( )
  * @param $node the team to challenge
  * @return unknown_type
  */
-function direct_match_form( &$node )
+function direct_match_form( $node )
 {
 
+	$date = '2011-12-31';
+	$format = 'Y-m-d H:i';
+
 	global $user;
+	
+	dpm( 'Hola' );
 		
 	module_load_include( 'php', 'team', 'db_functions' );
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
@@ -805,8 +985,6 @@ function direct_match_form( &$node )
 
   $nid_Equipo = is_capitan( $user->uid, $Modalidad_Juego_Temporada->id_Modalidad_Juego_Temporada );
 	
-	dpm( $user->uid );
-	dpm( get_modalidad_juego_temporada( $id_Modalidad_Juego ) );
 	
   if ( $nid_Equipo == NULL ) {
      drupal_set_message('No perteneces a ningún equipo o no eres el capitán de tu equipo. Sólo los capitanes pueden crear partidas.', 'error');
@@ -904,6 +1082,10 @@ function indirect_match_form( $node )
 {
 	global $user;
 	
+	
+	$date = '2011-12-31';
+	$format = 'Y-m-d H:i';
+	
 	module_load_include( 'php', 'team', 'db_functions' );
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
 	
@@ -920,8 +1102,6 @@ function indirect_match_form( $node )
 	//Obtiene la modalidad de jugo a través del tid y la temporada activa
   $Modalidad_Juego_Temporada = get_modalidad_juego_temporada_user( $user );	//$tid_Modalidad_Juego, $Temporada_Activa->id_Temporada );
 	
-	
-	dpm( $Modalidad_Juego_Temporada );
 	
 	//Obtenemos la modalidad de equipo
 	db_set_active( 'eSM' );
@@ -943,8 +1123,6 @@ function indirect_match_form( $node )
   $nid_Equipo = is_capitan( $user->uid, $Jugador->id_Modalidad_Juego_Temporada );
 	
 	
-	dpm( $nid_Equipo );
-	
 	//Obtenemos la modalidad de juego a través de $user
 
 	$Modalidad_Juego = get_modalidad_juego_user( $user );
@@ -958,12 +1136,12 @@ function indirect_match_form( $node )
 
 
 
-  while( $Seasons = db_fetch_array( $Seasons_result_set ) )
+  /*while( $Seasons = db_fetch_array( $Seasons_result_set ) )
   {
     $Seasons_list[ $Seasons[ 'id_Temporada' ] ] = $Seasons[ 'Nombre' ];
   } 
   
-  $Teams = get_equipos( $id_Modalidad_Juego_Temporada  );
+  $Teams = get_equipos( $id_Modalidad_Juego_Temporada  );*/
   
     
   $form[ 'Defining_Challenge' ][ 'Date_One' ] = array
@@ -1003,20 +1181,18 @@ function indirect_match_form( $node )
     '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
 
-
-  
+	
   $form['Defining_Challenge']['Message'] = array
   (
     '#type' => 'textarea',
     '#title' => t('Mensaje de desafío'),
-    '#default_value' => $node->body,
     '#required' => FALSE,
     '#description' => t('Use this to enter some pre-match comments for the game, or post a match report after the game.'),
     '#weight' => -5,
   );
   
   
-  $form['Defining_Challenge']['filter'] = filter_form( $node->format );
+  //$form['Defining_Challenge']['filter'] = filter_form( $node->format );
   
 	$form[ 'Defining_Challenge' ][ 'submit' ] = array
 	(
@@ -1028,7 +1204,7 @@ function indirect_match_form( $node )
   $form[ 'Defining_Challenge' ][ 'id_Modalidad_Juego_Temporada' ] = array
 	(
 		'#type' => 'hidden',
-		'#value' => $id_Modalidad_Juego_Temporada,	
+		'#value' => $Jugador->id_Modalidad_Juego_Temporada,
 	);
 	
   return $form;

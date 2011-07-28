@@ -15,9 +15,7 @@ function inscripcion( ) {
   
   module_load_include( 'php', 'base_datos_externa', 'db_functions' );
     $tid = arg( 1 );  //Obtiene el tid de la modalidad de la barra de direcciones
-    global $user;
-    
-    
+    global $user;    
     
     $Temporada_Activa = temporada_activa(  );
     
