@@ -95,13 +95,7 @@ function invitar_usuario_submit ($form, $form_state) {
     db_set_active('default');
     
     drupal_set_message(t('Tu invitacion se ha enviado correctamente.'));
-<<<<<<< HEAD
-      $modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
-=======
+
       $modalidad = get_modalidad_juego_temporada($equipo->id_Modalidad_Juego_Temporada);
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
     drupal_goto('/libres/'. $modalidad->tid .'/lista');
-
-
-
 }

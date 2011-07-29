@@ -394,22 +394,18 @@ function team_load($node){
  * Implementación del hook_block()
  */
 function team_block( $op = 'list', $delta = 0 ){
-<<<<<<< HEAD
-=======
 
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
+
 	$tid = arg( 2 );
 	
     switch( $op ) {
         case 'list':
             $block = array();
             $block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-<<<<<<< HEAD
+
             $block[ 1 ][ 'info' ] = t('Muestra los equipos a los que el jugador pertenece.');
-=======
-			$block[ 1 ][ 'info' ] = t('Muestra los equipos a los que el jugador pertenece.');	
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
+
             break;
 		
         case 'view':
@@ -417,7 +413,6 @@ function team_block( $op = 'list', $delta = 0 ){
             switch( $delta ) {
                 case 0:
                     $block = array( );
-<<<<<<< HEAD
                     $modalidad = term_is_active( $tid );
                     
                     if ( ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( is_object( $modalidad ) ) ) ){
@@ -425,16 +420,6 @@ function team_block( $op = 'list', $delta = 0 ){
                         $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
                         if (module_exists('match')) {
                             $content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
-=======
-										
-										$modalidad = term_is_active( $tid );
-
-                    if ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( term_is_active( $tid ) ) ) {
-                        $block[ 'subject' ] = 'Equipos';
-                        $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-						if (module_exists('match')) {
-                        $content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
                             $content[] = l( t( 'Proximos Partidos' ), 'libres/'. $tid . '/lista' );
                             $content[] = l( t( 'Ultimos Resultados' ), 'libres/'. $tid . '/lista' );
                         }
@@ -442,11 +427,8 @@ function team_block( $op = 'list', $delta = 0 ){
                             $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
                         if (module_exists('ranking'))
                             $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
-<<<<<<< HEAD
                         $content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
-=======
-						$content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
+
                         $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 					}
                     break;
