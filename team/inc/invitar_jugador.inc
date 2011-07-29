@@ -83,6 +83,10 @@ function invitar_usuario_validate($form, $form_state)
  * Función para crear la forma de invitación
  */
 function invitar_usuario_submit ($form, $form_state) {
+    
+    module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+    
+    
     $equipo = $form_state['values']['nid_Equipo'];
     $id_Jugador = $form_state['values']['id_Jugador'];
     
@@ -91,7 +95,11 @@ function invitar_usuario_submit ($form, $form_state) {
     db_set_active('default');
     
     drupal_set_message(t('Tu invitacion se ha enviado correctamente.'));
+<<<<<<< HEAD
       $modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
+=======
+      $modalidad = get_modalidad_juego_temporada($equipo->id_Modalidad_Juego_Temporada);
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
     drupal_goto('/libres/'. $modalidad->tid .'/lista');
 
 

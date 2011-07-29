@@ -178,6 +178,9 @@ function agente_libre_validate ( $form, $form_state ) {
 *	Función para listar a los agentes libres
 */
 function agente_libre_listar ( ) {
+    
+    module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+    
     global $user;
     $tid = arg(1);     //obtiene el tid de la barra de direcciones
 

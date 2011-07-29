@@ -1,0 +1,2 @@
+julio 23, 2011
+1. Verificar que get_modalidades_juego_temporada_activas devuelva efectivamente un arreglo

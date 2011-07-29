@@ -1,0 +1,3 @@
+julio 23, 2011
+	1. Cambiado el nombre de get_modalidad por el de get_modalidad_juego_temporada en todas sus apariciones
+	2. Cambiado el nombre de get_modalidades_activas por el de get_modalidades_juego_temporada_activas en todas sus apariciones

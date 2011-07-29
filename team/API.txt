@@ -1,0 +1,83 @@
+Módulo base de datos externa.
+
+Documentación para la interacción con la tabla Equipos de la base de datos eSM.
+
+Funciones y métodos.
+
+Nombre:
+	get_equipos
+	
+	Descripción:
+	Obtiene un objeto con la modalidad de juego por temporada.
+
+	Parámetros:
+	$id_Modalidad_Juego_Temporada El id de la modalidad de la que se quiere
+		obtener información.
+
+	Valor de retorno:
+	Nulo si no existe.
+	Arreglo de objetos con los equipos pertenecientes a la modalidad de juego
+		activa en la temporada actual.
+	
+	Ejemplo:
+	<?php
+	
+		$equipos = get_equipos( $id_Modalidad_Juego_Temporada );
+
+	?>
+	
+
+	
+
+
+Nombre:
+	is_capitan
+	
+	Descripción:
+	Obtiene un arreglo que contiene diferentes nid para los que el usuario es
+		capitán.
+
+	Parámetros:
+	$uid El uid del usuario actual.
+	$id_Modalidad_Juego_Temporada El id de la modalidad de juego activa en la
+		temporada actual.
+
+	Valor de retorno:
+	Nulo si no existe.
+	Arreglo de objetos con diferentes nid para los que el usuario es capitán.
+	
+	Ejemplo:
+	<?php
+	
+		$equipos = is_capitan( $uid, $id_Modalidad_Juego_Temporada );
+
+	?>
+	
+
+	
+	
+Nombre:
+	get_term_data( $tid )
+	
+	Descripción:
+	Obtiene los datos correspondientes al término requerido.
+	
+	
+	Parámetros:
+	$tid Término actual.
+	
+	Valor de retorno:
+	Nulo si no existe.
+	Devuelve el objeto con características de un término a través de un tid y
+		de una variable_modalidades almacenada en la tabla variables de drupal
+		que contiene el vid de nuestro vocabulario.
+
+
+	
+	Ejemplo:
+	<?php
+	
+		$term_data = get_term_data( $tid )
+		
+
+	?>

@@ -449,6 +449,7 @@ function base_datos_externa_admin( ) {
 		
 		return $timestamp;
 	}
+<<<<<<< HEAD
 	
 /*
  *  Función para verificar si un término pertenece al vocabulario definido para las modalidad
@@ -531,3 +532,6 @@ function get_modalidades_activas (){
         return NULL;
     }
 }
+=======
+	
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25

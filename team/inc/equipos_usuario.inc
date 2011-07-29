@@ -4,10 +4,12 @@
  * Formulario de vista para los equipos de un usuario
  */
 function equipos_usuario() {
+    module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+    
     $usuario['uid'] = arg(1);
     $usuario = user_load($usuario);
     
-    $modalidades_activas = get_modalidades_activas();   //Obtiene todas las modalidades activas en una temporada
+    $modalidades_activas = get_modalidades_juego_temporada_activas();   //Obtiene todas las modalidades activas en una temporada
     $count = 0;
     
     foreach($modalidades_activas as $indice => $modalidad) {

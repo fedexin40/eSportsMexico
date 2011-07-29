@@ -4,6 +4,8 @@
  *	Función para mostrar la puntuación de una modalidad
  */
 function mostrar_puntuacion(  ) {
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
 	$tid = arg( 1 );
 	$modalidad = term_is_active($tid);
 	
@@ -99,9 +101,11 @@ function mostrar_puntuacion(  ) {
  */
 function get_actividad($nid_Equipo) {
 	db_set_active('eSM');
-		$time = db_fetch_array(db_query('SELECT (max(Fecha)) AS {numdays} FROM {Reto} AS r INNER JOIN {Adversario} AS a ON r.idReto = a.id_Reto WHERE (a.id_Retador = %d OR a.id_Retado = %d)', $nid_Equipo, $nid_Equipo));
-	db_set_active('default');
-    $matches = time() - $time['numdays'];
+	
+		$time = db_fetch_array( db_query( 'SELECT ( max( Fecha_Inicio ) ) AS { numdays } FROM { Reto } AS { r } INNER JOIN { Inicio_Reto } AS { ir } ON { r.id_Reto = ir.id_Reto } WHERE ( ir.nid_Equipo_Local = %d } OR  { ir.nid_Equipo_Visitante = %d } )', $nid_Equipo, $nid_Equipo ) );
+	
+	db_set_active( 'default' );
+    $matches = time( ) - $time[ 'numdays' ];
     $image_path = drupal_get_path('module', 'ranking') . '/images/';
 	
     if ($matches=="" || $matches > 2592000 ) 

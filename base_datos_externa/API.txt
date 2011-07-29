@@ -1,0 +1,91 @@
+Módulo base de datos externa.
+
+Documentación para la interacción con la base de datos eSM.
+
+Funciones y métodos.
+
+Nombre:
+	get_modalidad_juego_temporada
+	
+	Descripción:
+	Obtiene un objeto con la modalidad de juego por temporada.
+
+	Parámetros:
+	$id_Modalidad_Juego_Temporada El id de la modalidad de la que se quiere obtener información.
+
+	Valor de retorno:
+	Nulo si no existe.
+	Objeto con la modalidad de juego por temporada activa.
+	
+	Ejemplo:
+	<?php
+	
+		$modalidad_juego_temporada = get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada );
+
+	?>
+	
+	
+
+
+Nombre:
+	get_modalidades_juego_temporada_activas
+	
+	Descripción:
+	Obtiene un objeto con las modalidad de juego activas en la temporada actual.
+	
+	Valor de retorno:
+	Nulo si no existe.
+	Arreglo de objetos con las modalidades de juego activas.
+
+	Ejemplo:
+	<?php
+	
+		$modalidades_activas = get_modalidades_juego_temporada_activas( );
+
+	?>
+	
+	
+Nombre:
+	term_is_active
+	
+	Descripción:
+	Obtiene la modalidad correspondiente al término requerido.
+	
+	
+	Parámetros:
+	$tid Término actual.
+	
+	Valor de retorno:
+	Nulo si no existe.
+	Objeto con la modalidad correspondiente al término requerido.
+
+	
+	Ejemplo:
+	<?php
+	
+		$modalidad = term_is_active( $tid );
+		
+
+	?>
+
+
+Nombre:
+	temporada_activa
+	
+	Descripción:
+	Obtiene la temporada activa en la fecha actual.
+	
+	
+	Parámetros:
+	$tid Término actual.
+	
+	Valor de retorno:
+	Nulo si no existe.
+	Objeto con la temporada activa.
+	
+	Ejemplo:
+	<?php
+	
+		$modalidad = term_is_active( $tid );
+		
+	?>

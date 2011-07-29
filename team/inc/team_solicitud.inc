@@ -3,7 +3,11 @@
 /**
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
+<<<<<<< HEAD
 function team_solicitud($node)
+=======
+function team_solicitud( $node )//&$form_state )
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
 {
   //Pasando las variables necesarias para procesar después de confirmar la acción
   $form[ 'nid_Equipo' ] = array
@@ -44,12 +48,14 @@ function team_solicitud($node)
 function team_solicitud_validate( $form, &$form_state )
 {
 
+    module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+
     //Verifica que el usuario no esté activo en otro equipo
     global $user;
 
     $team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );       //Carga el objeto del equipo para poder utilizarlo
 
-    $modalidad = get_modalidad( $team->id_Modalidad_Juego_Temporada );
+    $modalidad = get_modalidad_juego_temporada( $team->id_Modalidad_Juego_Temporada );
 
     db_set_active( 'eSM' );
 
@@ -91,6 +97,11 @@ function team_solicitud_validate( $form, &$form_state )
     
     db_set_active( 'eSM' );
 
+<<<<<<< HEAD
+=======
+	db_set_active( 'eSM' );
+
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
     $solicitud_realizada = db_fetch_object
     (
       db_query
@@ -112,13 +123,16 @@ function team_solicitud_validate( $form, &$form_state )
 * Submit handler for previus confirm form
 */
 function team_solicitud_submit( $form, &$form_state )
-{ 
+{
+  
+    module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+    
     global $user;
     
     //Revisa si el jugador ya está registrado en la tabla de jugadores activos para esta temporada, sino lo agrega
     $team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );
     
-    $modalidad = get_modalidad( $team->id_Modalidad_Juego_Temporada ); //Obtiene los datos de la modalidad para poder redireccionar la forma
+    $modalidad = get_modalidad_juego_temporada( $team->id_Modalidad_Juego_Temporada ); //Obtiene los datos de la modalidad para poder redireccionar la forma
 
     db_set_active( 'eSM' );
       $jugador = db_fetch_object
@@ -139,6 +153,11 @@ function team_solicitud_submit( $form, &$form_state )
       );
 
     db_set_active( 'default' );
+<<<<<<< HEAD
+=======
+    
+    //print_r($jugador);
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
   
     if( $jugador->uid == 0 )
     {

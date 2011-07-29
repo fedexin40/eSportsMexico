@@ -4,15 +4,19 @@
 
 //Función que recibe un identificador de juego y temporada
 //y devuelve un arreglo con los datos de todos los equipos inscritos
-function get_equipos($id_Modalidad_Juego_Tempodada) {
+function get_equipos( $id_Modalidad_Juego_Temporada ) {
     db_set_active('eSM');
-        $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Tempodada));
+        $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
     db_set_active('default');
     
-    while ($equipo = db_fetch_array($result)) {
-        $equipos[$equipo['nid']] = $equipo;
+    $equipos = array( );
+    
+    while ( $equipo = db_fetch_array( $result ) ) {
+      
+        $equipos[ $equipo[ 'nid_Equipo' ] ] = $equipo;
     }
-    return $equipos;
+    
+    return is_null( $equipos ) ? NULL : $equipos ;
 }
 
 /**
@@ -21,17 +25,20 @@ function get_equipos($id_Modalidad_Juego_Tempodada) {
   * recibe el uid del usuario que se quiere verificar y el id_Modalidad_Juego_Temporada
  */
 function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
-    $equipos = get_equipos($id_Modalidad_Juego_Temporada);
+  
+    $equipos = get_equipos( $id_Modalidad_Juego_Temporada );
     
-    if (isset($equipos)) {
-        foreach ($equipos as $nid=>$equipo) {
-            $eval = node_load($equipo['nid_Equipo']);
-            if ($eval->uid == $uid)
-                return $eval;
-        }
+    if ( isset( $equipos ) )
+    {
+      foreach ( $equipos as $nid=>$equipo )
+      {
+        $eval = node_load( $equipo[ 'nid_Equipo' ] );
+        if ( $eval->uid == $uid )
+          return $eval;
+      }
     }
     else
-        return NULL;
+      return NULL;
 }
 
 
@@ -46,18 +53,18 @@ function get_term_data( $tid )
     
     $term_data_set = db_query
     (
-        "SELECT
-        { vid }
-        FROM
-        { term_data }
-        WHERE
-        { tid } = %d
-        AND
-        { vid } = %d",
-        arg( 2 ),
-        variable_get( 'vocabulario_modalidades', NULL )
-        );
+      "SELECT
+      { vid }
+      FROM
+      { term_data }
+      WHERE
+      { tid } = %d
+      AND
+      { vid } = %d",
+      arg( 2 ),
+      variable_get( 'vocabulario_modalidades', NULL )
+    );
     
-    $term_data = db_fetch_object( $term_data_set );
+    return db_fetch_object( $term_data_set );
     
 }

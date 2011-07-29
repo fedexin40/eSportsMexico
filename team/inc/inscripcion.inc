@@ -12,45 +12,60 @@
  * despliega las opciones de acuerdo al máximo de jugadores para los equipos.
  */
 function inscripcion( ) {
-                $tid = arg(1);  //Obtiene el tid de la modalidad de la barra de direcciones
-                global $user;
-                $tiene_equipo = tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
-                
-                if (!($modalidad = term_is_active($tid))) {
-                        drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );				
-                        drupal_goto ('taxonomy/term/'.$tid);    //Regresa a la vista de noticias de la modalidad
-                }
-                else{                        
-                        if (($tiene_equipo == AGENTE_LIBRE) || ($tiene_equipo == NO_REGISTRADO)) {
-                                if ($modalidad->Maximo_Jugadores == 1){
-                                                drupal_goto('node/add/team/'. $modalidad->id_Modalidad_Juego_Temporada);
-                                }
-                                else {
-                                                drupal_goto('inscripcion/multijugador/'. $modalidad->id_Modalidad_Juego_Temporada);
-                                }
-                        }
-                        else {
-                                drupal_set_message('Ya perteneces a un equipo de esta modalidad. Para poder inscribirte en otro equipo debes salir primero del equipo al que estás inscrito actualmente.');
-                                drupal_goto('taxonomy/term/'. $tid);
-                        }
-                }
+  
+  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+    $tid = arg( 1 );  //Obtiene el tid de la modalidad de la barra de direcciones
+    global $user;    
+    
+    $Temporada_Activa = temporada_activa(  );
+    
+    $Modalidad_Juego_Temporada = get_modalidad_juego_temporada_tid_id_temporada( $tid, $Temporada_Activa->id_Temporada );
+    
+    //Es necesario que el uid tenga el id_Modalidad_Juego_Temporada
+    //if( !isset( $node->id_Modalidad_Juego_Temporada ) )
+    //  $node->id_Modalidad_Juego_Temporada = $Modalidad_Juego_Temporada->id_Modalidad_Juego_Temporada;
+
+    
+    $tiene_equipo = tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
+    
+    if (!($modalidad = term_is_active($tid))) {
+            drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );				
+            drupal_goto ('taxonomy/term/'.$tid);    //Regresa a la vista de noticias de la modalidad
+    }
+    else{                        
+            if (($tiene_equipo == AGENTE_LIBRE) || ($tiene_equipo == NO_REGISTRADO)) {
+                    if ($modalidad->Maximo_Jugadores == 1){
+                                    drupal_goto('node/add/team/'. $modalidad->id_Modalidad_Juego_Temporada);
+                    }
+                    else {
+                                    drupal_goto('inscripcion/multijugador/'. $modalidad->id_Modalidad_Juego_Temporada);
+                    }
+            }
+            else {
+                    drupal_set_message('Ya perteneces a un equipo de esta modalidad. Para poder inscribirte en otro equipo debes salir primero del equipo al que estás inscrito actualmente.');
+                    drupal_goto('taxonomy/term/'. $tid);
+            }
+    }
 }
 
-/**
+/**  TODO campo imagen columna
 * forma para presentar opciones de inscripción a las modalidades por equipos
 */
 function team_inscripcion( )
 {
+
+  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+                
   $id_Modalidad_Juego_Temporada = arg( 2 );  //Obtiene el id_Modalidad_Juego_Temporada que le pasa la función de inscripción como tercer argumento en la barra de direcciones
 
-  $modalidad = get_modalidad( $id_Modalidad_Juego_Temporada );
-  
-  $teams = get_teams( $id_Modalidad_Juego_Temporada );
+  $modalidad = get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada );
+  module_load_include( 'php', 'team', 'db_functions' );
+  $teams = get_equipos( $id_Modalidad_Juego_Temporada );
   
   
   $count = 0;
   //Primero almacenaremos todos los equipos en nodos
-
+  
   while ( $team = db_fetch_object( $teams ) )
   {
     $team = node_load( array( 'nid' => $team->nid_Equipo) );
