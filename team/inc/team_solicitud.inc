@@ -3,9 +3,7 @@
 /**
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
-function team_solicitud( $node )//&$form_state )
-{
-
+function team_solicitud($node) {
   //Pasando las variables necesarias para procesar después de confirmar la acción
   $form[ 'nid_Equipo' ] = array
   (
@@ -50,8 +48,6 @@ function team_solicitud_validate( $form, &$form_state )
     //Verifica que el usuario no esté activo en otro equipo
     global $user;
 
-
-
     $team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );       //Carga el objeto del equipo para poder utilizarlo
 
     $modalidad = get_modalidad_juego_temporada( $team->id_Modalidad_Juego_Temporada );
@@ -82,7 +78,6 @@ function team_solicitud_validate( $form, &$form_state )
         ACEPTADO
       )
     );
-    
     db_set_active( 'default' );
   
   
@@ -94,9 +89,14 @@ function team_solicitud_validate( $form, &$form_state )
       //drupal_goto( 'taxonomy/term/'.$modalidad->tid );
 
     }
+    
+    db_set_active( 'eSM' );
 
+<<<<<<< HEAD
+=======
 	db_set_active( 'eSM' );
 
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
     $solicitud_realizada = db_fetch_object
     (
       db_query
@@ -148,8 +148,11 @@ function team_solicitud_submit( $form, &$form_state )
       );
 
     db_set_active( 'default' );
+<<<<<<< HEAD
+=======
     
     //print_r($jugador);
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
   
     if( $jugador->uid == 0 )
     {
@@ -188,10 +191,9 @@ function team_solicitud_submit( $form, &$form_state )
     
     //Insertar el registro de solicitud en la base de datos y actualizar el estado del jugador
     db_set_active( 'eSM' );
-      db_query ('INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $team->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['mensaje']);
+      db_query ('INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $team->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['Mensaje']);
     db_set_active('default');
     
-  
   //set a message
   drupal_set_message( '¡Tu solicitud ha sido enviada con éxito!' );
   drupal_goto( '/taxonomy/term/'.$modalidad->tid );

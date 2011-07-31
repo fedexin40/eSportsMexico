@@ -1,4 +1,5 @@
 <?php
+<<<<<<< HEAD
 // $Id: match.module,v 1.19 2010/04/15 18:35:03 alun Exp $
 
 
@@ -295,6 +296,35 @@
 	//}*/
 
 
+=======
+// Define los estados del desafío
+  define( 'CREADO', 0 );
+  define( 'PROGRAMADO', 1 );
+  define( 'CANCELADO', 2 );
+  define( 'COMPLETADO', 3 );
+/**	DONE
+ * Implementation of hook_node_info()
+ * Declare the content type match
+ * 
+ */ 
+function match_node_info() {
+  return array (
+	'match' => array (
+      'name' => t('Desafio'),
+      'module' => 'match',
+      'description' => t("Un partido entre dos equipos integrados a la puntuación."),
+    )
+  );
+} 
+/**	DONE
+* Implementation of hook_perm()
+* Outlines permissions for this module.
+* @return array - An array of valid permissions for the match module
+*/
+function match_perm( ){
+  return array( 'administer matches', 'create match', 'edit own match', 'delete own match', 'enter own match results', 'view match' );
+}//end function match_perm()
+>>>>>>> c074e9393b18280072dc7b0542dc7226227d61a9
 
 
 /**	DONE
@@ -382,11 +412,14 @@ function match_menu(){
 }
 
 
+<<<<<<< HEAD
 
 
 
 
 
+=======
+>>>>>>> c074e9393b18280072dc7b0542dc7226227d61a9
 /**	DONE
  *
  * Access argument for the node edit page - just return node access for updating the node
@@ -417,9 +450,195 @@ function match_report_access( ) {
   return FALSE;
 }
 
+<<<<<<< HEAD
 
 
 /**	DONE
+=======
+/** DONE
+ * Implementation of hook_access()
+ */
+function match_access($op, $node, $account){
+  //users who can administer matches can do anything.
+  if ( user_access('adminster matches', $account ) )
+    return TRUE;
+  
+  if ($op == 'create') {
+    // Only users with permission to do so may create this node type.
+    return user_access('create match', $account);
+  }
+  
+  if ($op == 'update') {
+    if (user_access('edit own match', $account) && ($account->uid == $node->uid)) {
+      return TRUE;
+    }
+    /* No lo elimino, pero no se a que se refiere
+    while($row = db_fetch_array($result)){
+      if(user_access('enter results', $account) && ($account->uid == $row['uid'])){
+        return TRUE;
+      }
+    }*/
+  }
+  
+  if ($op == 'delete') {
+    if(user_access('delete own match', $account) && ($account -> uid == $node ->uid)) {
+      return TRUE;
+    }
+    /*Lo mismo que arriba, no se si se intentaba utilizar con los og groups o que
+    while($row = db_fetch_array($result)){
+      if(user_access('delete own match', $account) && ($account->uid == $row['uid'])){
+        return TRUE;
+      }
+    }*/
+  }
+  
+  if ($op == 'view') {
+    if(user_access('access content', $account)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+} 
+
+/**
+ * Implementation of hook_form()
+ * Sets up the form to add a match as a content type
+ * @param unknown_type $node
+ * @return unknown_type
+ */
+function match_form(&$node, $form_state) {
+  //Esta función recibe sus argumentos de la barra de dirección,
+  //el primer argumento numérico corresponde al taxonomy id indicándonos la modalidad a la que pertenece este match
+  //el segundo si es que exite corresponde al nid_Equipo del equipo al que se está retando.
+  global $user;
+  $error = FALSE;
+  $modalidad = arg(3);
+  $away_team = arg(4);
+  
+  //Verifica que exita el modulo datepopup que es necesario para el correcto funcionamiento de este módulo.
+  
+  if(!module_exists('date_popup')){
+    $datepopup = false;
+    drupal_set_message('Es necesario isntalar el módulo date popup para que este módulo funcione correctamente!', 'error');
+    $error = TRUE;
+  }else{
+    $datepopup = true;
+  }
+  
+  //$form['#validate'][] = 'match_validate';
+  
+  $temporada_activa = get_temporada_activa();
+  
+  //Checamos que exista una temporada activa, en caso de que no haya mostramos un mensaje al usuario indicando que tiene que haber una temporada activa
+  if( is_null( $temporada_activa)){ 
+    drupal_set_message('No puedes crear partidos si no hay temporadas activas.', 'error');
+    $error = TRUE;
+  }
+  
+  //Revisa que la modalidad esté activa en esta temporada
+  $id_Modalidad_Juego_Temporada = get_id_modalidad_juego_temporada($modalidad, $temporada_activa->id_Temporada);
+  
+  //para la primera vez que se crea un match, 
+  //si no tiene temporada asignada, le asigna la temporada activa
+  if(isset($node->temporada)){
+    $default_value = $node->temporada;
+  }else{
+    $default_value = $temporada_activa->id_Temporada;
+  }
+  
+  //Revisa que el jugador sea capitán de un equipo inscrito en la modalidad durante la temporada activa
+  if !($nid_Equipo = is_capitan($user->uid, $id_Modalidad_Juego_Temporada) > 0) {
+     drupal_set_message('No perteneces a ningún equipo o no eres el capitán de tu equipo. Sólo los capitanes pueden crear partidas.', 'error');
+     $error = TRUE;
+  }
+  
+  
+  if is_null($away_team) { //Si no se estableció en la forma el nid_Equipo del retador,
+    while($season = db_fetch_array($seasons)){
+      $season_list[$season['relation_id']] = $season['event_name'];
+      if ($season['min_pp'] > 1) 
+        $season_teams = db_query("SELECT sl.uid team_id, n.title title FROM {signup_log} sl INNER JOIN {node} n ON sl.uid = n.nid WHERE sl.nid = %d", $season['relation_id']);
+      else 
+        $season_teams = db_query("SELECT sl.uid team_id, u.name title FROM {signup_log} sl INNER JOIN {users} u ON sl.uid = u.uid WHERE sl.nid = %d", $season['relation_id']);
+      
+      while($team = db_fetch_array($season_teams)){
+        $teams[$team['team_id']] = $team['title'];
+      }
+    }
+  }
+  $hours = array();
+  for($count = 0; $count < 24; ++$count){
+    $hours[$count] = sprintf("%02d",$count); ;
+  }
+  for($count = 0; $count < 60; $count=$count+15){
+    $mins[$count] = sprintf("%02d",$count);
+  }
+  
+  $form['season_league'] = array(
+    '#type' => 'select',
+    '#title' => 'League and season',
+    '#required' => TRUE,
+    '#options' => $season_list,
+    '#weight' => -9,
+    '#default_value' => $node->season_league,
+  );
+  
+  // We need to define form elements for the node's title and body.
+  $form['home_team'] = array(
+    '#type' => 'select',
+    '#title' => t('Home Team'),
+    '#required' => TRUE,
+    '#options' => $teams,
+    '#weight' => -8,
+    '#default_value' => $node->home_team,
+  );
+  $form['away_team'] = array(
+    '#type' => 'select',
+    '#title' => t('Away Team'),
+    '#required' => TRUE,
+    '#options' => $teams,
+    '#weight' => -7,
+    '#default_value' => $node->away_team,
+  );
+  $form['date'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('The date and start time for the match'),
+    '#weight' => -6,
+  );
+  $form['date']['match_time'] = array(
+    '#type' => 'date',
+    '#title' => t('Match Date'),  
+    '#required' => TRUE,
+    '#weight' => -1,
+    '#default_value' => $node->match_time,
+  );
+  $form['date']['match_hour'] = array(
+    '#type' => 'select',
+    '#title' => 'hour',
+    '#required' => TRUE,
+    '#options' => $hours,
+    '#default_value' => $start_hour,
+  );
+  $form['date']['match_minute'] = array(
+    '#type' => 'select',
+    '#title' => 'minute',
+    '#required' => TRUE,
+    '#options' => $mins,
+    '#default_value' => $start_minute,
+  );
+  $form['body_filter']['body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Match Notes'),
+    '#default_value' => $node->body,
+    '#required' => FALSE,
+    '#description' => t('Use this to enter some pre-match comments for the game, or post a match report after the game.'),
+    '#weight' => -5,
+  );
+  $form['body_filter']['filter'] = filter_form($node->format);
+  return $form;
+}
+/**	ALMOST DONE
+>>>>>>> c074e9393b18280072dc7b0542dc7226227d61a9
  * Implementation of hook_load()
  */
 function match_load( $node )
@@ -465,20 +684,49 @@ function match_load( $node )
 	//load additional match data using hook_match_load
 	//module_invoke_all('match_load', $node);*/
 	
+<<<<<<< HEAD
 	return $node;
 
+=======
+
+  $node->is_result = $teams['is_result'];
+  $node->home_team = $teams['home_team'];
+  $node->away_team = $teams['away_team'];
+  $node->season_league = $teams['relation_id'];
+  $node->match_time = array('year' => date('Y', $teams['match_time']),  'month' => date("n", $teams['match_time']), 'day' => date("j", $teams['match_time']));
+  $node->match_hour = date('G', $teams['match_time']);
+  $node->match_minute = date('i', $teams['match_time']);
+  //check if the score has not been entered yet
+  if($teams['is_result'] == 0){
+    $node->home_score = '';
+    $node->away_score = ''; 
+  }else{
+    $node->home_score = $teams['home_score'];
+    $node->away_score = $teams['away_score'];
+  }
+  
+  //load additional match data using hook_match_load
+  module_invoke_all('match_load', $node);
+  
+  return $node;
+>>>>>>> c074e9393b18280072dc7b0542dc7226227d61a9
 }
 
 /** DONE
  * Implementation of hook_insert()
  */
-function match_insert( $node )
-{
+function match_insert($node){
   //add the extra details
+<<<<<<< HEAD
   if( $node->Puntuacion_Equipo_Local != '' && $node->Puntuacion_Equipo_Visitante != '' )//&& variable_get( 'match_update_table_insert', '' ) == TRUE)
 	{
     _match_update_table( $node->nid_Equipo_Local, $node->nid_Equipo_Visitante, $node->Puntuacion_Equipo_Local, $node->Puntuacion_Equipo_Visitante );
     //$is_result = 1;
+=======
+  if($node->home_score != '' && $node->away_score != '' && variable_get('match_update_table_insert', '') == TRUE) {
+    _match_update_table($node->home_team, $node->away_team, $node->home_score, $node->away_score, $node->season_league);
+    $is_result = 1;
+>>>>>>> c074e9393b18280072dc7b0542dc7226227d61a9
   }
   
 	//TODO: use this hook
@@ -918,6 +1166,9 @@ function match_mail($key, &$message, $params) {
   }
   $message['subject'] .= str_replace(array("\r", "\n"), '', $subject);
   $message['body'][] = $body;
+<<<<<<< HEAD
+}
+=======
 }
 
 
@@ -1463,3 +1714,4 @@ function indirect_match_form( $node )
 	
   return $form;
 }
+>>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25

@@ -9,10 +9,7 @@ function mostrar_puntuacion(  ) {
 	$tid = arg( 1 );
 	$modalidad = term_is_active($tid);
 	
-	db_set_active( 'eSM' );
-		$Puntuacion_result = db_query( "SELECT { * } FROM { Puntuacion } AS { p } INNER JOIN { Equipo } AS { e } ON { p.nid_Equipo } = { e.nid_Equipo } WHERE { e.id_Modalidad_Juego_Temporada } = %d ORDER BY {p.Puntuacion} DESC", $modalidad->id_Modalidad_Juego_Temporada );
-		//$Puntuacion_result = ranking_get_ranking($modalidad->id_Modalidad_Juego_Temporada);
-	db_set_active( 'default' );	
+	$Puntuacion_result = ranking_get_ranking($modalidad->id_Modalidad_Juego_Temporada);
 	
 	$count = 0;
 	//Primero mostraremos todos los equipos
