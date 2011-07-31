@@ -9,6 +9,8 @@ function theme_lista_agentes_libres ($form) {
     $header = array(t('Imagen'), t('Jugador'), t('Presentacion'), t('Dias'), t('Horarios'), t(' ')) ;
     $rows = array();
     
+    $output = '';
+    
     foreach (element_children($form['Jugadores_Libres']) as $user)   {
         
         $row = array();

@@ -425,7 +425,7 @@ function team_block( $op = 'list', $delta = 0 ){
                             $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
                         if (module_exists('ranking'))
                             $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
-						$content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
+						$content[] = l(t('Reglas'), 'node/'. $modalidad->Reglas);
                         $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 					}
                     break;

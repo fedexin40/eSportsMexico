@@ -11,7 +11,7 @@ function get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada ){
 	db_set_active('eSM');
 		$Modalidad_Juego_Temporada = db_fetch_object(db_query('SELECT * FROM {Modalidad_Juego} AS mj INNER JOIN {Modalidad_Juego_Temporada} AS mjt ON mj.{id_Modalidad_Juego} = mjt.{id_Modalidad_Juego} WHERE mjt.{id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
 	db_set_active('default');
-	return $Modalidad_Juego_Temporada;
+	return is_null ( $Modalidad_Juego_Temporada ) ? NULL : $Modalidad_Juego_Temporada;
 }
 
 
@@ -24,10 +24,10 @@ function get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada ){
 
 		
 		db_set_active('eSM');
-			$Modalidad_Juego_temporada = db_fetch_object( db_query( 'SELECT * FROM { Modalidad_Juego_Temporada } AS { mjt } INNER JOIN { Modalidad_Juego } as{ mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego }  WHERE { mj.tid } = %d AND { mjt.id_Temporada } = %d', $tid_Modalidad_Juego, $id_Temporada ) );
+			$Modalidad_Juego_Temporada = db_fetch_object( db_query( 'SELECT * FROM { Modalidad_Juego_Temporada } AS { mjt } INNER JOIN { Modalidad_Juego } as{ mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego }  WHERE { mj.tid } = %d AND { mjt.id_Temporada } = %d', $tid_Modalidad_Juego, $id_Temporada ) );
 		db_set_active('default');
 		
-		return $Modalidad_Juego_Temporada;
+		return is_null ( $Modalidad_Juego_Temporada ) ? NULL : $Modalidad_Juego_Temporada;
 		
 	}
 
@@ -43,8 +43,7 @@ function get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada ){
 			$Modalidad_Juego_Temporada = db_fetch_object( db_query( 'SELECT * FROM { Jugador } as { j } INNER JOIN { Modalidad_Juego_Temporada } as { mjt } ON { j.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_temporada } WHERE { j.uid } = %d ', $user->uid ) );
 		db_set_active('default');
 		
-		return $Modalidad_Juego_Temporada;
-		
+		return is_null ( $Modalidad_Juego_Temporada ) ? NULL : $Modalidad_Juego_Temporada;
 		
 		
 	}
@@ -61,7 +60,7 @@ function get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada ){
 			$Modalidad_Juego = db_fetch_object ( db_query( 'SELECT { * } FROM { Modalidad_Juego } AS { mj } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { mj.id_Modalidad_Juego = mjt.id_Modalidad_Juego } INNER JOIN { Jugador } AS { j } ON { mjt.id_Modalidad_Juego_Temporada = j.id_Modalidad_Juego_Temporada } WHERE { j.uid = %d } ', $user->uid ) );
 		db_set_active( 'default' );
 
-		return $Modalidad_Juego;
+		return is_null ( $Modalidad_Juego ) ? NULL : $Modalidad_Juego;
 		
 	}
 
@@ -74,28 +73,30 @@ function get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada ){
  * o devuelve un arreglo de objetos conteniendo
  * todas las modalidades activas en la temporada.
  */
-function get_modalidades_juego_temporada_activas (){
-    $temporada = temporada_activa();   //Obtiene la temporada activa actual
-    
-    if (isset($temporada)) {
-        db_set_active('eSM');
-            $result = db_query('SELECT * FROM {Modalidad_Juego_Temporada} WHERE id_Temporada = %d', $temporada->id_Temporada);
-        db_set_active('default');
-        $count = 0;
-        while ($modalidad_activa = db_fetch_object($result)) {
-            ++$count;
-            $modalidad = get_modalidad_juego_temporada($modalidad_activa->id_Modalidad_Juego_Temporada);
-            if (isset($modalidad))
-                $modalidades[] = $modalidad;
-        }
-        if ($count == 0)
-            return NULL;
-        else
-            return $modalidades;
-    }
-    else {
-        return NULL;
-    }
+function get_modalidades_juego_temporada_activas ( )
+{
+	$Temporada = temporada_activa( );   //Obtiene la temporada activa actual
+	
+	if ( isset( $Temporada ) ) {
+		db_set_active ( 'eSM' );
+				$result = db_query ( 'SELECT * FROM {Modalidad_Juego_Temporada} WHERE id_Temporada = %d', $Temporada->id_Temporada );
+		db_set_active ( 'default' );
+		$count = 0;
+		while ( $Modalidad_activa = db_fetch_object ( $result ) )
+		{
+			++$count;
+			$Modalidad = get_modalidad_juego_temporada ( $Modalidad_activa->id_Modalidad_Juego_Temporada );
+			if ( isset( $Modalidad ) )
+				$Modalidades[  ] = $Modalidad;
+		}
+		if ( $count == 0 )
+			return NULL;
+		else
+			return $Modalidades;
+	}
+	else {
+		return NULL;
+	}
 }
 
 
@@ -105,20 +106,20 @@ function get_modalidades_juego_temporada_activas (){
  *  Regresa un objeto con la modalidad si está activa o NULL si no está activa
  */
 function term_is_active( $tid ) {
-	$modalidad  = NULL;
+	$Modalidad_Juego  = NULL;
 	$temporada_activa = temporada_activa( );
 	
 	db_set_active ('eSM');
-		$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {id_Modalidad_Juego_Temporada} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
+		$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {id_Modalidad_Juego_Temporada}, { Reglas } FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
 	db_set_active ('default');
 	
 	while ( $result = db_fetch_object( $modalidades_activas ) )
 	{
 		
-		//dpm( $result );
+		
 		if ( $result->tid == $tid )
 		{
-			$modalidad = $result;
+			$Modalidad_Juego = $result;
 			break;
 		}
 		
@@ -126,7 +127,7 @@ function term_is_active( $tid ) {
 	
 	//drupal_set_message( $modalidad );
 	
-	return $modalidad;
+	return is_null( $Modalidad_Juego ) ? NULL : $Modalidad_Juego;
 }
 
 
@@ -136,11 +137,11 @@ function term_is_active( $tid ) {
  * devuelve un objeto con todas las características de la temproada activa
  * o NULL si no existe temporada activa
  */
-function temporada_activa() {
+function temporada_activa( ) {
 	$temporada_activa = NULL;
-	db_set_active ('eSM');
+	db_set_active ( 'eSM' );
 		$temporada_activa = db_fetch_object( db_query('SELECT * FROM {Temporada} WHERE {Estado} = %d', 1 ) );
-	db_set_active ('default');
+	db_set_active ( 'default' );
 	return $temporada_activa;
 }
 

@@ -11,9 +11,10 @@ function get_equipos( $id_Modalidad_Juego_Temporada ) {
     
     $equipos = array( );
     
-    while ( $equipo = db_fetch_array( $result ) ) {
+    while ( $equipo = db_fetch_array( $result ) )
+    {
       
-        $equipos[ $equipo[ 'nid_Equipo' ] ] = $equipo;
+       $equipos[ $equipo[ 'nid_Equipo' ] ] = $equipo;
     }
     
     return is_null( $equipos ) ? NULL : $equipos ;
@@ -65,6 +66,26 @@ function get_term_data( $tid )
       variable_get( 'vocabulario_modalidades', NULL )
     );
     
-    return db_fetch_object( $term_data_set );
+    $term_data_set = db_fetch_object( $term_data_set );
     
+    return $term_data_set;
+    
+}
+
+
+
+/**
+ * función para obtener los equipos inscritos
+ * en una modalidad de la temporada activa
+ * recibe el id_Modalidad_Juego_Temporada
+ * devuelve el resultado de la consulta para que
+ * se pueda procesar con db_fetch_object
+ * o db_fetch_array
+ */
+function get_user_not_affiliated_teams( $user ) {
+	db_set_active('eSM');
+		$teams = db_query('SELECT * FROM {Equipo} AS e INNER JOIN {Puntuacion} AS p ON e.nid_Equipo = p.nid_Equipo WHERE {id_Modalidad_Juego_Temporada} = %d ORDER BY Puntuacion DESC', $id_Modalidad_Juego_Temporada);
+	db_set_active('default');
+	
+	return $teams;
 }
