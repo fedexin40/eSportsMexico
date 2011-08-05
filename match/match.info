@@ -3,9 +3,5 @@ name = Desafíos
 description = Adds a content type which handles the ability to document individual matches within the league.
 core = 6.x
 package = eSM
-dependencies[] = date_popup
-
-; Information added by drupal.org packaging script on 2010-04-15
-version = "6.x-1.0-alpha3"
-core = "6.x"
-datestamp = "1271356807"
+dependencies[] = team
+dependencies[] = ranking

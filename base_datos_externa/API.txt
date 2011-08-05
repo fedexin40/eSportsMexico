@@ -89,3 +89,23 @@ Nombre:
 		$modalidad = term_is_active( $tid );
 		
 	?>
+	
+Nombre:
+	temporada_from_id_Modalidad_Juego_Temporada
+	
+	Descripción:
+	Obtiene la temporada a la que pertenece un id_Modalidad_Juego_Temporada dado.
+	
+	
+	Parámetros:
+	$id_Modalidad_Juego_Temporada.
+	
+	Valor de retorno:
+	Objeto con la temporada a la que pertenece el id_Modalidad_Juego_Temporada.
+	
+	Ejemplo:
+	<?php
+	
+		$modalidad = temporada_from_id_Modalidad_Juego_Temporada( $id_Modalidad_Juego_Temporada );
+		
+	?>

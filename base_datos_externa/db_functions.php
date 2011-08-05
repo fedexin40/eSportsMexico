@@ -100,49 +100,4 @@ function get_modalidades_juego_temporada_activas ( )
 }
 
 
-/*
- *  Función para verificar si un término pertenece al vocabulario definido para las modalidad
- *  y si dicha modalidad está activa en la temporada actual
- *  Regresa un objeto con la modalidad si está activa o NULL si no está activa
- */
-function term_is_active( $tid ) {
-	$Modalidad_Juego  = NULL;
-	$temporada_activa = temporada_activa( );
-	
-	db_set_active ('eSM');
-		$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {id_Modalidad_Juego_Temporada}, { Reglas } FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
-	db_set_active ('default');
-	
-	while ( $result = db_fetch_object( $modalidades_activas ) )
-	{
-		
-		
-		if ( $result->tid == $tid )
-		{
-			$Modalidad_Juego = $result;
-			break;
-		}
-		
-	}
-	
-	//drupal_set_message( $modalidad );
-	
-	return is_null( $Modalidad_Juego ) ? NULL : $Modalidad_Juego;
-}
-
-
-
-/*
- * Función para obtener la temporada activa
- * devuelve un objeto con todas las características de la temproada activa
- * o NULL si no existe temporada activa
- */
-function temporada_activa( ) {
-	$temporada_activa = NULL;
-	db_set_active ( 'eSM' );
-		$temporada_activa = db_fetch_object( db_query('SELECT * FROM {Temporada} WHERE {Estado} = %d', 1 ) );
-	db_set_active ( 'default' );
-	return $temporada_activa;
-}
-
 

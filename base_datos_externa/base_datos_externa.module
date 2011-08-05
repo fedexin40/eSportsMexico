@@ -449,8 +449,6 @@ function base_datos_externa_admin( ) {
 		
 		return $timestamp;
 	}
-<<<<<<< HEAD
-	
 /*
  *  Función para verificar si un término pertenece al vocabulario definido para las modalidad
  *  y si dicha modalidad está activa en la temporada actual
@@ -532,6 +530,22 @@ function get_modalidades_activas (){
         return NULL;
     }
 }
-=======
-	
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
+
+/**
+ * Función para obtener la modalidad a la que
+ * pertenece un id_Modalidad_Juego_Temporada específico
+ *
+ * @param
+ * 	id_Modalidad_Juego_Temporada
+ *
+ * @return
+ * 	NULL si no existe el id_Modalidad_Juego_Temporada
+ * 	Objeto Temporada con los datos de la temporada a la que pertenece el id_Modalidad_Juego_Temporada dado
+ */
+function temporada_from_id_Modalida_Juego_Temporada ($id_Modalidad_Juego_Temporada) {
+  db_set_active('eSM');
+    $result = db_fetch_object(db_query('SELECT * FROM {Temporada} AS t INNER JOIN {Modalidad_Juego_Temporada} AS mjt ON t.id_Temporada = mjt.id_Temporada WHERE mjt.id_Modalidad_Juego_Temporada = %d', $id_Modalidad_Juego_Temporada));
+  db_set_active('default');
+  
+  return $result;
+}

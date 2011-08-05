@@ -103,180 +103,77 @@ function ranking_theme() {
 }
 
 /**
- *	Función para mostrar la puntuación de una modalidad
+ *	Función para actualizar los puntos obtenidos por
+ *	los equipos participantes en un desafío
+ *	Hace el cálculo de puntos y llama a la función de actualizar ránking
+ *
+ *	@param
+ *		Objeto desafío con los siguientes atributos:
+ *			nid_Equipo_Local
+ *			nid_Equipo_Visitante
+ *			nid_Ganador
+ *			Puntuacion_Local
+ *			Puntuacion_Visitante
+ *		
  */
-function calcula_ranking_desafio ($Desafio) 
-	{
-		
-		$nid_EquipoLocal = $Desafio->nid_EquipoLocal;
-		$nid_EquipoVisitante = $Desafio->nid_EquipoVisitante;
-		
-		$ganador = $Desafio->ganador;
-		
-		$diferenciaPuntuacion = $Desafio->Puntuacion_Local - $Desafio->Puntuacion_Visitante;
-		
-		if( $diferenciaPuntuacion < 0 )
-			$diferenciaPuntuacion *= -1;
-
-		if( $ganador == $Desafio->nid_EquipoLocal )
-		{
-			
-			if ( $diferenciaPuntuacion == 0 )
-			{		
-					$puntuacion_ganador +=100;
-					$puntuacio_perdedor -=100;
-			}
-			else if ( $diferenciaPuntuacion < 99 )
-			{
-					$puntuacion_ganador += 90;
-					$perdedor_puntuacion -= 90;
-
-			}
-			else if ( $diferenciaPuntuacion < 199 )
-			{
-					$puntuacion_ganador += 80;
-					$perdedor_puntuacion -= 80;
-
-			}		
-			else if ( $diferenciaPuntuacion < 399 )
-			{
-					$puntuacion_ganador += 70;
-					$perdedor_puntuacion -= 70;
-
-			}		
-			else if ( $diferenciaPuntuacion < 599 )
-			{
-					$puntuacion_ganador += 60;
-					$perdedor_puntuacion -= 60;
-
-			}		
-			else if ( $diferenciaPuntuacion < 899 )
-			{
-					$puntuacion_ganador += 50;
-					$perdedor_puntuacion -= 50;
-
-			}
-			
-			else if ( $diferenciaPuntuacion < 1199 )
-			{
-					$puntuacion_ganador += 40;
-					$perdedor_puntuacion -= 40;
-
-			}		
-			else if ( $diferenciaPuntuacion < 1599 )
-			{
-					$puntuacion_ganador += 30;
-					$perdedor_puntuacion -= 30;
-
-			}		
-			else if ( $diferenciaPuntuacion < 1999 )
-			{
-					$puntuacion_ganador += 20;
-					$perdedor_puntuacion -= 20;
-
-			}
-			else if ( $diferenciaPuntuacion < 2499 )
-			{
-					$puntuacion_ganador += 10;
-					$perdedor_puntuacion -= 10;
-
-			}
-			
-			else if ( $diferenciaPuntuacion >= 2500 )
-			{
-				
-				$puntuacion_ganador += 1;
-				$perdedor_puntuacion -= 1;
-				
-			}
-			
-			actualizar_ranking( $nid_EquipoLocal, $puntuacion_ganador, 1, 1 );
-			actualizar_ranking( $nid_EquipoVisitante, $puntuacion_perdedor,1 );
-
-		}
-		
-		else
-		{
-			
-			if ( $diferenciaPuntuacion == 0 )
-			{		
-					$puntuacion_ganador -=100;
-					$perdedor_puntuacion +=100;
-			}
-			else if ( $diferenciaPuntuacion < 99 )
-			{
-					$puntuacion_ganador += 90;
-					$perdedor_puntuacion += 90;
-
-			}
-			else if ( $diferenciaPuntuacion < 199 )
-			{
-					$puntuacion_ganador -= 80;
-					$perdedor_puntuacion += 80;
-
-			}		
-			else if ( $diferenciaPuntuacion < 399 )
-			{
-					$puntuacion_ganador -= 70;
-					$perdedor_puntuacion += 70;
-
-			}		
-			else if ( $diferenciaPuntuacion < 599 )
-			{
-					$puntuacion_ganador -= 60;
-					$perdedor_puntuacion += 60;
-
-			}		
-			else if ( $diferenciaPuntuacion < 899 )
-			{
-					$puntuacion_ganador -= 50;
-					$perdedor_puntuacion += 50;
-
-			}
-			
-			else if ( $diferenciaPuntuacion < 1199 )
-			{
-					$puntuacion_ganador -= 40;
-					$perdedor_puntuacion += 40;
-
-			}		
-			else if ( $diferenciaPuntuacion < 1599 )
-			{
-					$puntuacion_ganador -= 30;
-					$perdedor_puntuacion += 30;
-
-			}		
-			else if ( $diferenciaPuntuacion < 1999 )
-			{
-					$puntuacion_ganador -= 20;
-					$perdedor_puntuacion += 20;
-
-			}
-			else if ( $diferenciaPuntuacion < 2499 )
-			{
-					$puntuacion_ganador -= 10;
-					$perdedor_puntuacion += 10;
-
-			}
-			
-			else if ( $diferenciaPuntuacion >= 2500 )
-			{
-				
-				$puntuacion_ganador -= 1;
-				$perdedor_puntuacion += 1;
-				
-			}
+function actualiza_ranking_desafio ($Desafio) {	
+	db_set_active('eSM');
+		$puntos_jugador_superior = db_query('SELECT * FROM {Puntos_Desafio_Jugador_Superior}');
+		$puntos_jugador_inferior = db_query('SELECT * FROM {Puntos_Desafio_Jugador_Inferior}');
+	db_set_active('default');
 	
-	
-			actualizar_ranking( $nid_EquipoVisitante, $puntuacion_ganador,1, 1 );
-			actualizar_ranking( $nid_EquipoLocal, $puntuacion_perdedor, 1 );
+	$diferenciaPuntuacion = $Desafio->Puntuacion_Local - $Desafio->Puntuacion_Visitante;
 			
+	if( $diferenciaPuntuacion < 0 ) {		//El Equipo Local es el de Puntuación Inferior
+		$diferenciaPuntuacion *= -1;
+		//Calculamos los puntos que gana/pierde el Equipo Local
+		while ($regla = db_fetch_array($puntos_jugador_inferior)) {
+			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
+				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Local)  {		//El Equipo Local es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Win'], 0, 1);
+				}
+				else {															//El Equipo Visitante es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
+				}
+			}
 		}
-		
-		
-		
-		
+		//Calculamos los puntos que gana/pierde el Equipo Visitante
+		while ($regla = db_fetch_array($puntos_jugador_superior)) {
+			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
+				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Visitante)  {		//El Equipo Visitante es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
+				}
+				else {															//El Equipo Local es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
+				}
+			}
+		}
 	}
+	else {									//El Equipo Visitante es el de Puntuación Inferior
+		//Calculamos los puntos que gana/pierde el Equipo Local
+		while ($regla = db_fetch_array($puntos_jugador_superior)) {
+			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
+				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Local)  {		//El Equipo Local es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Win'], 0, 1);
+				}
+				else {															//El Equipo Visitante es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
+				}
+			}
+		}
+		//Calculamos los puntos que gana/pierde el Equipo Visitante
+		while ($regla = db_fetch_array($puntos_jugador_inferior)) {
+			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
+				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Visitante)  {		//El Equipo Visitante es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
+				}
+				else {															//El Equipo Local es el ganador
+					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
+				}
+			}
+		}
+	}	
+}
 	
 	
 	
@@ -492,7 +389,10 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
         $puntuacion = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
     db_set_active('default');
     
-    $puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
+	if ($win == 1)
+		$puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
+	else 
+		$puntuacion->Puntuacion = $puntuacion->Puntuacion - $puntos;    //Actualiza los puntos del equipo
     
     if ($torneo == 0) {         //El partido es un desafío, hace la actualización de puntos y partidos jugados
         ++$puntuacion->PJ;      //Suma otro partido a los partidos jugados por el equipo

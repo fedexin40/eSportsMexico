@@ -427,13 +427,10 @@ function team_block( $op = 'list', $delta = 0 ){
                             $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
                         if (module_exists('ranking'))
                             $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
-<<<<<<< HEAD
+						    
 						$content[] = l(t('Reglas'), 'node/'. $modalidad->Reglas);
-=======
-                        $content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
-
->>>>>>> c074e9393b18280072dc7b0542dc7226227d61a9
-                        $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
+                        
+						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 					}
                     break;
                 
