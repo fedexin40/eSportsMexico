@@ -72,7 +72,8 @@ function team_menu(){
 	  'title' => 'Plantilla de Jugadores',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array( 'team_plantilla' ),
-	  'access arguments' => array( 'view team' ),
+      'access callback' => 'team_ver_plantilla',
+	  'access arguments' => array( 1 ),
 	  'type' => MENU_LOCAL_TASK,
 	  'file' => 'inc/team_plantilla.inc',
 	);
@@ -471,13 +472,30 @@ function team_admin_access($node) {
 	global $user;
 	$modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
 	
-	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid)){
+	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid) && ($node->type == 'team')){
 		return TRUE;
 	}
 	else {
 		return FALSE;
 	}
 }
+/**
+ * Función para decidir si debe o no aparecer la pestaña de plantilla
+ */
+function team_ver_plantilla($node) {
+	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
+	
+	global $user;
+	$modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
+	
+	if (($modalidad->Maximo_Jugadores > 1) && user_access('view team', $user) && ($node->type == 'team')){
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
+}
+
 /**
  * Función para decidir si el usuario tiene acceso a la pestaña de "Unirme a este Equipo"
  * Revisamos que la modalidad sea para un equipo de varios integrantes y que el usuario no sea el capitán
@@ -491,7 +509,7 @@ function unirme_equipo_access($node) {
 
     $tiene_equipo = tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada);
     
-	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid != $user->uid)){
+	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid != $user->uid) && ($node->type == 'team')){
         
         if (($tiene_equipo == AGENTE_LIBRE) || ($tiene_equipo == NO_REGISTRADO))
             return TRUE;
