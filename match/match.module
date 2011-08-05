@@ -373,6 +373,28 @@ function match_insert($node){
   
   //TODO: use this hook
   module_invoke_all( 'match_insert', $node );
+  
+  //Esta parte de la función notifica a los capitanes que les corresponde del desafío que se ha creado
+  
+  //Primero obtenemos los datos de los capitanes de los equipos  
+    $home_team = node_load(array('nid' => $node->home_team));
+    $away_team = node_load(array('nid' => $node->away_team));
+    
+    $home_capitan = user_load(array('uid' => $home_team->uid));
+    $away_capitan = user_load(array('uid' => $away_team->uid));
+        
+  switch ($node->Estado) {
+    case CREADO:        //Notifica al capitán del equipo visitante que el capitán del equipo local ha lanzado un reto contra él
+        rules_invoke_event('desafio_lanzado', $home_capitan, $away_capitan, $node);
+        
+        break;
+    case PROGRAMADO:    //Notifica a los capitanes de los dos equipos que se ha programado un partido entre ellos.
+        $userB = user_load(array('uid' => 1));
+        
+        rules_invoke_event('partido_programado', $home_capitan, $userB);
+        rules_invoke_event('partido_programado', $away_capitan, $userB);
+        break;
+  }
 }
 
 /**	NOT DONE
@@ -631,7 +653,48 @@ function match_theme($existing, $type, $theme, $path) {
     ),
   );
 }
-
+/**
+ * Implementation of hook_rules_event_info().
+ * Usado para notificar a los capitanes de los desafíos lanzados, aceptados, cancelados y programados
+ * @ingroup rules
+ */
+function match_rules_event_info() {
+  return array(
+    'desafio_lanzado' => array(
+      'label' => t('UserA ha desafiado al equipo de userB'),
+      'module' => 'Match',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que ha desafiado al equipo de userB.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, que ha sido desafiado por el equipo de UserA.')),
+        'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
+      ),
+    ),
+    'desafio_aceptado' => array(
+      'label' => t('UserA ha aceptado el desafio del equipo de userB'),
+      'module' => 'Match',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, ha aceptado el desafio del equipo de userB.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, ha solicitado enfrentar el equipo de UserA.')),
+      ),
+    ),
+    'desafio_cancelado' => array(
+      'label' => t('UserA ha rechazado el desafio del equipo de userB'),
+      'module' => 'Match',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, ha rechazado el desafio del equipo de userB.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, ha solicitado enfrentar el equipo de UserA.')),
+      ),
+    ),
+    'partido_programado' => array(
+      'label' => t('UserA tiene un partido programado'),
+      'module' => 'Match',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, capitan del equipo al que se le ha programado un partido por un torneo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, usuario del sistema que notifica a UserA del partido programado.')),
+      ),
+    ),
+  );
+}
 /**	NOT DONE
  * Implementation of hook_views_api()
  */
