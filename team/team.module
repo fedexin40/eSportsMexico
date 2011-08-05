@@ -691,3 +691,22 @@ function _team_get_plantilla($nid_Equipo) {
   
   return $jugadores;
 }
+/**
+ * Función para determinar si un usuario es capitán de un equipo determinado
+ *
+ * @param
+ *      $uid - El uid del usuario a verificar
+ *      $nid_Equipo - el nid del Equipo a verificar
+ *
+ * @return
+ *      TRUE - Si el usuario es el capitán del equipo
+ *      FALSE - Si el usuario no es capitán del equipo
+ */
+function team_user_is_team_capitan($uid, $nid_Equipo) {
+    $equipo = db_fetch_object(db_query('SELECT * FROM {node} WHERE nid = %d', $nid_Equipo));
+    
+    if ($equipo->uid == $uid)
+        return TRUE;
+    else
+        return FALSE;
+}

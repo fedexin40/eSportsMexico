@@ -19,3 +19,6 @@
 15 de julio 2011 - Agustín Cruz Lozano
     1. Ahora el team_load agrega un arreglo integrantes con los objetos de todos los integrantes al nodo
     2. Definida la ruta /user/%/myteams como una vista informativa de los equipos a los que pertenece el usuario
+    
+2 de agosto 2011 - Agustín Cruz Lozano
+    1. Añadida una función a la api para permitir conocer si un usuario es capitán de un equipo
