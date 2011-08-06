@@ -549,3 +549,42 @@ function temporada_from_id_Modalida_Juego_Temporada ($id_Modalidad_Juego_Tempora
   
   return $result;
 }
+
+/**
+ * Función para obtener los mapas de una modalidad
+ *
+ * @param
+ * 	id_Modalidad_Juego
+ *
+ * @return
+ * 	$mapas [id_Mapa] = Nombre
+ */
+function mapas_get_mapas_modalidad ($id_Modalidad_Juego) {
+  db_set_active('eSM');
+    $result = db_query('SELECT * FROM {Mapa} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego);
+  db_set_active('default');
+  
+  while ($mapa = db_fetch_object($result)) {
+    $mapas[$mapa->id_Mapa] = $mapa->id_Mapa;
+  }
+  return $mapas;
+}
+/**
+ * Función para obtener los modos de juego de una modalidad
+ *
+ * @param
+ * 	id_Modalidad_Juego
+ *
+ * @return
+ * 	$mapas [id_Mapa] = Nombre
+ */
+function modos_get_modos_modalidad ($id_Modalidad_Juego) {
+  db_set_active('eSM');
+    $result = db_query('SELECT * FROM {Modo_Juego} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego);
+  db_set_active('default');
+  
+  while ($modo = db_fetch_object($result)) {
+    $modos[$modo->id_Modo_Juego] = $modo->id_Modo_Juego;
+  }
+  return $modos;
+}

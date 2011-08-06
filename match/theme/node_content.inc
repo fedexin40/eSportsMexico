@@ -74,10 +74,10 @@ function theme_match_content($node) {
   $content['2'][] = $node->nid;
   $content['3'][] = 'Fecha del partido';
   $content['3'][] = format_date($node->Fecha_Inicio, 'large', '');
+  $content['4'][] = 'Número de rondas';
+  $content['4'][] = $node->Numero_Rondas;
   
   //Genera un espacio para separar los links
-  $content['4'][] = ' . ';
-  $content['4'][] = ' . ';
   $content['5'][] = array('data' => 'Acciones', 'class' => 'header');
   $content['5'][] = array('data' => ' ', 'class' => 'header');
   

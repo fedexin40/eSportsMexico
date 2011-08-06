@@ -385,6 +385,9 @@ function match_insert($node){
   //TODO: use this hook
   module_invoke_all( 'match_insert', $node );
   
+  //Asigna un conjunto de reglas para el match
+  _match_asignar_reglas($node->nid, $node->Numero_Rondas);
+  
   //Esta parte de la función notifica a los capitanes que les corresponde del desafío que se ha creado
   
   //Primero obtenemos los datos de los capitanes de los equipos  
@@ -1038,4 +1041,49 @@ function match_get_pruebas($nid_Reto) {
     }
     
     return $pruebas;
+}
+/**
+ * Función para obtener la modalidad de juego a la que pertenece un reto
+ *
+ * @param
+ *  nid_Reto
+ *
+ * @return
+ *  $pruebas[home_team] = 'link';
+ *  $pruebas[away_team] = 'link';
+ */
+function match_get_modalidad_juego($nid_Reto) {
+    db_set_active('eSM');
+        $result = db_fetch_array(db_query('SELECT {id_Modalidad_Juego } FROM {Modalidad_Juego_Temporada} AS mj INNER JOIN {Reto} AS r ON mj.id_Modalidad_Juego_Temporada = r.id_Modalidad_Juego_Temporada WHERE nid_Reto = %d', $nid_Reto));
+    db_set_active('default');
+    
+    return $result['id_Modalidad_Juego'];
+}
+/**
+ * Función para asignar las reglas de un partido
+ *
+ * @param
+ *  $nid_Reto: El nid_Reto al cual se le tienen que asignar
+ *  $numero_rondas: Cuantos conjuntos de reglas se deben asignar
+ */
+function _match_asignar_reglas ($nid_Reto, $numero_rondas) {
+    $modalidad_juego = match_get_modalidad_juego($nid_Reto);
+    
+    //Obtiene todos los mapas y modalidades de juego de la modalidad de juego
+    $mapas = mapas_get_mapas_modalidad($modalidad_juego);
+    $modos = modos_get_modos_modalidad($modalidad_juego);
+    
+    //Mezcla los mapas y modos para escoger en órden aleatorio
+    shuffle($mapas);
+    shuffle($modos);
+    
+    for($i = 1; $i <= $numero_rondas; $i++) {
+        //Obtien el primer elemento de cada uno de los arreglos de mapa y modo
+        $mapa_regla = array_shift($mapas);
+        $modo_regla = array_shift($modos);
+        
+        db_set_active('eSM');
+            db_query('INSERT INTO {Regla} (nid_Reto, id_Mapa, id_Modo_Juego) VALUES (%d, %d, %d)', $nid_Reto, $mapa_regla, $modo_regla);
+        db_set_active('default');
+    }
 }
