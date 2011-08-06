@@ -226,7 +226,7 @@ function match_load( $node ) {
   $node->Tipo = $reto->Tipo;
   $node->nid_Equipo_Local = $reto->nid_Equipo_Local;
   $node->nid_Equipo_Visitante = $reto->nid_Equipo_Visitante;
-  $node->Puntuacion__Inicial_Equipo_Local = $reto->Puntuacion_Inicial_Equipo_Local;
+  $node->Puntuacion_Inicial_Equipo_Local = $reto->Puntuacion_Inicial_Equipo_Local;
   $node->Puntuacion_Inicial_Equipo_Visitante = $reto->Puntuacion_Inicial_Equipo_Visitante;
   
   db_set_active('eSM');
@@ -416,7 +416,7 @@ function match_update($node){
   //update the extra details to database
     $fecha_inicio = strtotime($node->Fecha);
   db_set_active( 'eSM' );
-    db_query( "UPDATE { Reto } SET Numero_Rondas = %d, Fecha_Inicio = %d, Tipo = %d, Estado = %d)
+    db_query( "UPDATE { Reto } SET Numero_Rondas = %d, Fecha_Inicio = %d, Tipo = %d, Estado = %d
              WHERE nid_Reto = %d",
             $node->Numero_Rondas, $fecha_inicio, $node->Tipo, $node->Estado, $node->nid);
   db_set_active( 'default' );
@@ -492,6 +492,7 @@ function match_view($node, $teaser = FALSE, $page = FALSE){
  * Sets up the admin menu system for the matches.
  */
 function match_menu(){
+/*
   $items['matchadmin'] = array(
     'title' => 'Match Admin',
     'description' => t('View and enter pending results'),
@@ -513,8 +514,17 @@ function match_menu(){
     'access arguments' => array(1),
     'weight' => -10,
     'type' => MENU_DEFAULT_LOCAL_TASK,
+  );*/
+  $items['node/%node/aceptar'] = array(
+    'title' => 'Aceptar',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('match_aceptar_desafio'),
+    'access callback' => 'match_acept_match_access',
+    'access arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/aceptar_match.inc',
   );
-  $items['node/%node/edit/score'] = array(
+  $items['node/%node/reportar'] = array(
     'title' => 'Result',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('match_score_edit'),
@@ -523,7 +533,16 @@ function match_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/match.admin.inc',
   );
-	
+  $items['node/%node/pruebas'] = array(
+    'title' => 'Result',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('match_score_edit'),
+    'access callback' => 'match_report_access',
+    'access arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/match.admin.inc',
+  );
+	/*
   $items[ 'taxonomy/term/%/challenges' ] = array
 	(
     'title' => 'Tablero de desafíos',
@@ -566,40 +585,48 @@ function match_menu(){
     'access arguments' => array( 'create match' ),
     'type' => MENU_LOCAL_TASK,
     //'file' => 'inc/match.admin.inc',
-  );
+  );*/
 	
   return $items;
 }
 
-
-/**	NOT DONE
- *
- * Access argument for the node edit page - just return node access for updating the node
- */
-function match_edit_access( $node )
-{
-  return node_access( 'update', $node );
-}
-
-/**	NOT DONE
+/**	DONE
  *	Access argument for the node report score page -
  *	just return node access for users who have permission to report the match score
  */
-function match_report_access( ) {
+function match_report_access( $node ) {
   global $user;
   
+  //Revisa que el nodo sea del tipo match, en caso contrario devuelve falso
+  if ($node->type != 'match')
+    return FALSE;
+  
   //users who can administer matches can do anything.
-  if ( user_access( 'administer matches') )
+  if ( user_access( 'administer matches'))
     return TRUE;
   
   //Revisa que el usuario sea el capitán/creador de alguno de los dos equipos en el match
-  //$home_team = node_load( $node->home_team );
-  //$visitor_team = node_load( $node->visitor_team );
+  if ( team_user_is_team_capitan($user->uid, $node->home_team) || team_user_is_team_capitan($user->uid, $node->away_team))
+    return TRUE;
+  else
+    return FALSE;
+}
+/**	DONE
+ *	Access argument for the node report score page -
+ *	just return node access for users who have permission to report the match score
+ */
+function match_acept_match_access( $node ) {
+  global $user;
   
-  if ( $user->uid == $home_team->uid || $user->uid == $visitor_team->uid)
-      return TRUE;
-    
-  return FALSE;
+  //Revisa que el nodo sea del tipo match, en caso contrario devuelve falso
+  if ($node->type != 'match')
+    return FALSE;
+  
+  //Revisa que el usuario sea el capitán/creador del equipo retado
+  if (team_user_is_team_capitan($user->uid, $node->away_team))
+    return TRUE;
+  else
+    return FALSE;
 }
 
 /** DONE
@@ -989,4 +1016,26 @@ function team_challenges_binnacle( )
 	
 	return $form;
 	
+}
+/**
+ * Función para obtener las pruebas que han reportado para los partidos
+ *
+ * @param
+ *  nid_Reto
+ *
+ * @return
+ *  $pruebas[home_team] = 'link';
+ *  $pruebas[away_team] = 'link';
+ */
+function match_get_pruebas($nid_Reto) {
+    db_set_active('eSM');
+        $result = db_fetch_array(db_query('SELECT * FROM {Prueba} WHERE nid_Reto = %d', $nid_Reto));
+    db_set_active('default');
+    
+    if (is_array($result)) {
+        $pruebas['home_team'] = $result['Prueba_Jugador1'];
+        $pruebas['away_team'] = $result['Prueba_Jugador1'];
+    }
+    
+    return $pruebas;
 }

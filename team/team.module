@@ -218,7 +218,7 @@ function team_node_info() {
  * Implementation of hook_access()
  */
 function team_access($op, $node, $account){
-		if($op == 'view'){
+	if($op == 'view'){
 		return user_access('view team', $account);
 	}
 	
@@ -352,7 +352,7 @@ function team_load($node){
 		
 		$team_data = db_query('SELECT {Abreviacion}, {id_Modalidad_Juego_Temporada} FROM {Equipo} WHERE {nid_Equipo} = %d', $node->nid );
 		$team_i = db_query('SELECT * FROM {Integrantes_Equipo} WHERE {nid_Equipo} = %d AND {Estado} = %d', $node->nid, ACEPTADO );
-		$team_puntuacion = db_query('SELECT * FROM {Puntuacion} WHERE {nid_Equipo} = %d', $node->nid ); 
+		$team_puntuacion = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE {nid_Equipo} = %d', $node->nid )); 
 	db_set_active ( 'default' );
     
 	$team = db_fetch_array($team_data);
@@ -374,22 +374,13 @@ function team_load($node){
 	}
 	$node->Numero_Integrantes = $no_integrantes;
     $node->Integrantes = $integrantes;
-	/* 
-	while( $team_i = db_fetch_object($team_i) ) {
-		$jugador_result = db_query('SELECT *, FROM {Jugadores} WHERE {id_Jugador} = %d', $team_i->id_Jugador );
-		$jugador = db_fetch_object( $jugador_result );
-		
-		$node->jugador_arreglo = $jugador;
-	}
-	
-	while( $team_p = db_fetch_object($team_p) ) {
-		$jugador_result = db_query('SELECT * FROM {Jugadores} WHERE {id_Jugador} = %d', $pu );
-		$jugador = db_fetch_object( $jugador_result );
-		
-		$node->jugador_arreglo = $jugador;
-	}*/
-	//drupal_set_message($node);
 
+    $node->Racha = $team_puntuacion->Racha;
+    
+    if($team_puntuacion->PJ > 0)
+        $node->Victorias = $team_puntuacion->PG / $team_puntuacion->PJ;
+    else
+        $node->Victorias = 0;
 }
 /**
  * Implementación del hook_block()

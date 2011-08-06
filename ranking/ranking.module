@@ -471,3 +471,25 @@ function ranking_get_ranking_arreglo($id_Modalidad_Juego_Temporada) {
 	
 	return $result;
 }
+/**
+ * Funciónn para obtener la posición en el ránking de un equipo
+ *
+ * @param
+ *  nid_Equipo
+ *  id_Modalidad_Juego_Temporada
+ *
+ * @return
+ *  ranking
+ */
+function ranking_get_ranking_equipo ($nid_Equipo, $id_Modalidad_Juego_Temporada) {
+    //Obtiene el ranking de la modalidad
+    $ranking = ranking_get_ranking($id_Modalidad_Juego_Temporada);
+    
+	$posicion = 1;
+	while ($equipo = db_fetch_object($ranking)) {
+		if ($equipo->nid_Equipo == $nid_Equipo)
+            return $posicion;
+        
+        ++$posicion;
+	}
+}

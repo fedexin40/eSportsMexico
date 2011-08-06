@@ -3,7 +3,7 @@
 /**
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
-function team_solicitud($node) {
+function team_solicitud() {
   //Pasando las variables necesarias para procesar después de confirmar la acción
   $form[ 'nid_Equipo' ] = array
   (

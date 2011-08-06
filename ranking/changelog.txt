@@ -1,0 +1,8 @@
+Fecha: 5 de agosto 2011
+Autor: Agustín Cruz Lozano
+
+    Nombre: ranking_get_ranking_equipo
+    Función: Agregada función para saber el ránking de un equipo
+    Parámetros: nid_Equipo, id_Modalidad_Juego_Temporada
+    Regresa: la posición del equipo en el ránking de la Temporada
+    
