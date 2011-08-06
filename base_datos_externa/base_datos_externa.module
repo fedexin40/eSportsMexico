@@ -588,3 +588,35 @@ function modos_get_modos_modalidad ($id_Modalidad_Juego) {
   }
   return $modos;
 }
+/**
+ * Función para obtener los modos de juego de una modalidad
+ *
+ * @param
+ * 	id_Modalidad_Juego
+ *
+ * @return
+ * 	$mapas [id_Mapa] = Nombre
+ */
+function _mapas_get_mapas_nombre ($id_Mapa) {
+  db_set_active('eSM');
+    $result = db_fetch_array(db_query('SELECT * FROM {Mapa} WHERE id_Mapa = %d', $id_Mapa));
+  db_set_active('default');
+  
+  return $result['Nombre'];
+}
+/**
+ * Función para obtener los modos de juego de una modalidad
+ *
+ * @param
+ * 	id_Modalidad_Juego
+ *
+ * @return
+ * 	$mapas [id_Mapa] = Nombre
+ */
+function _modos_get_modos_nombre ($id_Modo_Juego) {
+  db_set_active('eSM');
+    $result = db_fetch_array(db_query('SELECT * FROM {Modo_Juego} WHERE id_Modo_Juego = %d', $id_Modo_Juego));
+  db_set_active('default');
+  
+  return $result['Nombre'];
+}

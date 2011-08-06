@@ -1087,3 +1087,27 @@ function _match_asignar_reglas ($nid_Reto, $numero_rondas) {
         db_set_active('default');
     }
 }
+/**
+ * Función para obtener todas las reglas asignadas a un partido
+ *
+ * @param
+ *  $nid_Reto: El nid_Reto al cual se le tienen que asignar
+ *
+ *  @return
+ *   $reglas: Arreglo con todas las reglas asignadas al partido
+ */
+function _match_obtener_reglas ($nid_Reto) {
+    //Obtiene todas las reglas asignadas al partido de la base de datos
+    db_set_active('eSM');
+        $result = db_query('SELECT * FROM {Regla} WHERE nid_Reto = %d', $nid_Reto);
+    db_set_active('default');
+    
+    $i = 0;
+    while ($regla = db_fetch_object($result)) {
+        ++$i;
+        $reglas[$i]['id_Mapa'] = $regla->id_Mapa;
+        $reglas[$i]['id_Modo_Juego'] = $regla->id_Modo_Juego;
+    }
+    
+    return $reglas;
+}
