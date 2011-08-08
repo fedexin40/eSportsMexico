@@ -38,7 +38,7 @@ function match_node_info() {
 * @return array - An array of valid permissions for the match module
 */
 function match_perm( ){
-    return array( 'administer matches', 'create match', 'edit own match', 'delete own match', 'enter own match results');
+    return array( 'administer matches', 'create match', 'edit own match', 'delete own match', 'enter results');
 }//end function match_perm()
 
 /** DONE
@@ -280,6 +280,15 @@ function match_validate($node, $form){
   if ($node->away_team == 0)
     form_set_error( $node->away_team, t('No se ha seleccionado uno de los equipos'));
     
+  //Checa que los equipos tengan el mínimo de jugadores necesarios para la modalidad
+  $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+  $local = node_load(array('nid' => $node->home_team));
+  $visitante = node_load(array('nid' => $node->away_team));
+  if ($local->Numero_Integrantes < $modalidad->Minimo_Jugadores)
+    form_set_error( $node->home_team, t('El equipo '. $local->title .' no tiene el minimo de jugadores necesarios.'));
+  if ($visitante->Numero_Integrantes < $modalidad->Minimo_Jugadores)
+    form_set_error( $node->away_team, t('El equipo '. $visitante->title .' no tiene el minimo de jugadores necesarios.'));
+    
   //Revisa que los desafíos estén programados con un mínimo de 10min de anticipació y un máximo de 15 días
   $fecha_incio = strtotime($node->Fecha);     //Obtiene la fecha de inicio en formato timestamp
   
@@ -301,11 +310,9 @@ function match_validate($node, $form){
   db_set_active('default');
   
   if ($partidos_local > 0) {
-    $local = node_load(array('nid' => $node->home_team));
     form_set_error($node->home_Team, t('El equipo '. $local->title .' tiene un desafio programado que entra en conflicto con este desafio.'));
   }
   if ($partidos_visitante > 0) {
-    $visitante = node_load(array('nid' => $node->away_team));
     form_set_error($node->away_team, t('El equipo '. $visitante->title .' tiene un desafio programado que entra en conflicto con este desafio.'));
   }
   
@@ -320,11 +327,9 @@ function match_validate($node, $form){
   db_set_active('default');
   
   if ($conflictos_local >= 3) {
-    $local = node_load(array('nid' => $node->home_team));
     form_set_error($node->home_team, t('El equipo '. $local->title .' ha acumulado demasiados desafios en conflicto y no puede aceptar mas desafios.'));
   }
   if ($conflictos_visitante >= 3) {
-    $visitante = node_load(array('nid' => $node->away_team));
     form_set_error($node->away_team, t('El equipo '. $visitante->title .' ha acumulado demasiados desafios en conflicto y no puede aceptar mas desafios.'));
   }
   
@@ -516,13 +521,13 @@ function match_menu(){
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );*/
   $items['node/%node/aceptar'] = array(
-    'title' => 'Aceptar',
+    'title' => t('Aceptar Desafio'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('match_aceptar_desafio'),
-    'access callback' => 'match_acept_match_access',
+    'page arguments' => array('match_aceptar'),
+    'access callback' => 'match_aceptar_access',
     'access arguments' => array(1),
     'type' => MENU_CALLBACK,
-    'file' => 'inc/aceptar_match.inc',
+    'file' => 'inc/match_aceptar.inc',
   );
   $items['node/%node/reportar'] = array(
     'title' => 'Result',
@@ -594,7 +599,7 @@ function match_menu(){
  *	Access argument for the node report score page -
  *	just return node access for users who have permission to report the match score
  */
-function match_report_access( $node ) {
+function match_report_access( $node ) {  
   global $user;
   
   //Revisa que el nodo sea del tipo match, en caso contrario devuelve falso
@@ -606,7 +611,7 @@ function match_report_access( $node ) {
     return TRUE;
   
   //Revisa que el usuario sea el capitán/creador de alguno de los dos equipos en el match
-  if ( team_user_is_team_capitan($user->uid, $node->home_team) || team_user_is_team_capitan($user->uid, $node->away_team))
+  if (team_user_is_team_capitan($user->uid, $node->nid_Equipo_Local) || team_user_is_team_capitan($user->uid, $node->nid_Equipo_Visitante))
     return TRUE;
   else
     return FALSE;
@@ -615,15 +620,16 @@ function match_report_access( $node ) {
  *	Access argument for the node report score page -
  *	just return node access for users who have permission to report the match score
  */
-function match_acept_match_access( $node ) {
+function match_aceptar_access( $node ) {
   global $user;
-  
+
   //Revisa que el nodo sea del tipo match, en caso contrario devuelve falso
   if ($node->type != 'match')
     return FALSE;
+
   
   //Revisa que el usuario sea el capitán/creador del equipo retado
-  if (team_user_is_team_capitan($user->uid, $node->away_team))
+  if ( team_user_is_team_capitan($user->uid, $node->nid_Equipo_Visitante))
     return TRUE;
   else
     return FALSE;

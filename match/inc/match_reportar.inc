@@ -106,10 +106,14 @@ function match_report(){
 function match_report_validate($form, $form_state){
   global $user;
   $node = node_load(arg(1));
+
+  //Revisa que el desafío esté en estado programado
+  if ($node->Estado != PROGRAMADO) 
+	form_set_error('home_team_nid', t('El desafio todavia no ha sido aceptado por el equipo contrario.'));
   
   //Revisa que esté en tiempo para reportar el resultado de un desafío
   if (($node->Fecha_Inicio + 60*60*3) < time() ) 
-	form_set_error('home_team_nid', t('Ya ha pasado el tiempo para reportar el resultado de este desafio'));
+	//form_set_error('home_team_nid', t('Ya ha pasado el tiempo para reportar el resultado de este desafio'));
 
   //Si se marcó la opción de reporte de mala conducta, revisa que se haya seleccionado un tipo de conducta
   if ($form_state['values']['conducta'] == TRUE && $form_state['values']['reporte_conducta'] == 0)

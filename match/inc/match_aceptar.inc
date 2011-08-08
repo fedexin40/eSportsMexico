@@ -3,13 +3,13 @@
  * Despliega una forma de confirmación para asegurarnos
  * de que no se ha pulsado el link de aceptar por error
  */
-function match_aceptar_desafio() {
-  return confirm_form($form, 'Seguro quieres aceptar este desafio?', 'node/'. arg(1), 'Una vez aceptado esta desafio no se podra cancelar ni cambiar las condiciones', 'Si, aceptar desafio', 'Cancel'); //Had better luck leaving off last param 'name'	
+function match_aceptar() {
+  return confirm_form($form, 'Seguro quieres aceptar este desafio?', 'node/'. arg(1), 'Una vez aceptado esta desafio no se podra cancelar ni cambiar las condiciones', 'Si, aceptar desafio', 'Cancel'); //Had better luck leaving off last param 'name'
 }
 /**
  * Valida que el desafio se pueda confirmar
  */
-function match_aceptar_desafio_validate($form, &$form_state) {
+function match_aceptar_validate($form, &$form_state) {
   global $user;
   $node = node_load(array('nid' => arg(1)));
   $away_team = node_load(array('nid' => $node->nid_Equipo_Visitante));
@@ -28,10 +28,10 @@ function match_aceptar_desafio_validate($form, &$form_state) {
  * 	- Actualiza el estado del desafío en la base de datos
  * 	- Envía notificaciones al capitán del equipo contrario
  */
-function match_aceptar_desafio_submit($form, &$form_state) {
+function match_aceptar_submit($form, &$form_state) {
 	//Revisa que no se hayan colocado errores en la forma
 	
-	if (is_array($errores = drupal_get_messages('error'))) {
+	if (count($errores = drupal_get_messages('error')) > 0) {
 		//Despliega los errores asignados a la forma
 		
 		foreach($errores['error'] AS $index => $error) {
