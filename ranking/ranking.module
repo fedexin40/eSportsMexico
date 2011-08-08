@@ -134,6 +134,7 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
 				else {															//El Equipo Visitante es el ganador
 					actualizar_ranking( $nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
 				}
+                break;
 			}
 		}
 		//Calculamos los puntos que gana/pierde el Equipo Visitante
@@ -145,6 +146,7 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
 				else {															//El Equipo Local es el ganador
 					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
 				}
+                break;
 			}
 		}
 	}
@@ -158,6 +160,7 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
 				else {															//El Equipo Visitante es el ganador
 					actualizar_ranking( $nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
 				}
+                break;
 			}
 		}
 		//Calculamos los puntos que gana/pierde el Equipo Visitante
@@ -167,8 +170,9 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
 					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
 				}
 				else {															//El Equipo Local es el ganador
-					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
+                    actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
 				}
+                break;
 			}
 		}
 	}	
@@ -392,6 +396,7 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
 		$puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
 	else 
 		$puntuacion->Puntuacion = $puntuacion->Puntuacion - $puntos;    //Actualiza los puntos del equipo
+
     
     if ($torneo == 0) {         //El partido es un desafío, hace la actualización de puntos y partidos jugados
         ++$puntuacion->PJ;      //Suma otro partido a los partidos jugados por el equipo
@@ -400,10 +405,6 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
             $puntuacion->Puntuacion = 0;
         
         if ($win == 0) {        //El equipo perdió el partido
-            if ($puntuacion >= 0) {
-                watchdog('ranking', 'Ha ocurrido un error al calcular los puntos del partido : '. $nid_Equipo, NULL, WATCHDOG_ERROR);
-                return;
-            }
             
             if($puntuacion->Racha > 0)
                 $puntuacion->Racha == 0;        //Resetea la racha a cero

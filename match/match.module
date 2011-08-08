@@ -1220,7 +1220,7 @@ function _match_end_match($nid_Reto, $nid_Ganador) {
       //Guarda los datos en Fin_Reto
       db_set_active('eSM');
         db_query('INSERT INTO {Fin_Reto}
-                 (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Ganador)
+                 (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Equipo_Ganador)
                  VALUES (%d, %d, %d, %d)',
                  $nid_Reto, $puntuacion_local, $puntuacion_visitante, $nid_Ganador);
       db_set_active('default');
