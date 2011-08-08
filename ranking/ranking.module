@@ -108,7 +108,6 @@ function ranking_theme() {
  *	Hace el cálculo de puntos y llama a la función de actualizar ránking
  *
  *	@param
- *		Objeto desafío con los siguientes atributos:
  *			nid_Equipo_Local
  *			nid_Equipo_Visitante
  *			nid_Ganador
@@ -116,35 +115,35 @@ function ranking_theme() {
  *			Puntuacion_Visitante
  *		
  */
-function actualiza_ranking_desafio ($Desafio) {	
+function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $nid_Ganador, $Puntuacion_Local, $Puntuacion_Visitante) {	
 	db_set_active('eSM');
 		$puntos_jugador_superior = db_query('SELECT * FROM {Puntos_Desafio_Jugador_Superior}');
 		$puntos_jugador_inferior = db_query('SELECT * FROM {Puntos_Desafio_Jugador_Inferior}');
 	db_set_active('default');
 	
-	$diferenciaPuntuacion = $Desafio->Puntuacion_Local - $Desafio->Puntuacion_Visitante;
+	$diferenciaPuntuacion = $Puntuacion_Local - $Puntuacion_Visitante;
 			
 	if( $diferenciaPuntuacion < 0 ) {		//El Equipo Local es el de Puntuación Inferior
 		$diferenciaPuntuacion *= -1;
 		//Calculamos los puntos que gana/pierde el Equipo Local
 		while ($regla = db_fetch_array($puntos_jugador_inferior)) {
 			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
-				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Local)  {		//El Equipo Local es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Win'], 0, 1);
+				if ($nid_Ganador == $nid_Equipo_Local)  {		//El Equipo Local es el ganador
+					actualizar_ranking( $nid_Equipo_Local, $regla['Puntos_Win'], 0, 1);
 				}
 				else {															//El Equipo Visitante es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
+					actualizar_ranking( $nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
 				}
 			}
 		}
 		//Calculamos los puntos que gana/pierde el Equipo Visitante
 		while ($regla = db_fetch_array($puntos_jugador_superior)) {
 			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
-				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Visitante)  {		//El Equipo Visitante es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
+				if ($nid_Ganador == $nid_Equipo_Visitante)  {		//El Equipo Visitante es el ganador
+					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
 				}
 				else {															//El Equipo Local es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
+					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
 				}
 			}
 		}
@@ -153,22 +152,22 @@ function actualiza_ranking_desafio ($Desafio) {
 		//Calculamos los puntos que gana/pierde el Equipo Local
 		while ($regla = db_fetch_array($puntos_jugador_superior)) {
 			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
-				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Local)  {		//El Equipo Local es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Win'], 0, 1);
+				if ($nid_Ganador == $nid_Equipo_Local)  {		//El Equipo Local es el ganador
+					actualizar_ranking( $nid_Equipo_Local, $regla['Puntos_Win'], 0, 1);
 				}
 				else {															//El Equipo Visitante es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
+					actualizar_ranking( $nid_Equipo_Local, $regla['Puntos_Loss'], 0, 0);
 				}
 			}
 		}
 		//Calculamos los puntos que gana/pierde el Equipo Visitante
 		while ($regla = db_fetch_array($puntos_jugador_inferior)) {
 			if ($diferenciaPuntuacion <= $regla['Diferencia_Puntos']) {
-				if ($Desafio->nid_Ganador == $Desafio->nid_Equipo_Visitante)  {		//El Equipo Visitante es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
+				if ($nid_Ganador == $nid_Equipo_Visitante)  {		//El Equipo Visitante es el ganador
+					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Win'], 0, 1);
 				}
 				else {															//El Equipo Local es el ganador
-					actualizar_ranking( $Desafio->nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
+					actualizar_ranking( $nid_Equipo_Visitante, $regla['Puntos_Loss'], 0, 0);
 				}
 			}
 		}
@@ -492,4 +491,17 @@ function ranking_get_ranking_equipo ($nid_Equipo, $id_Modalidad_Juego_Temporada)
         
         ++$posicion;
 	}
+}
+/**
+ * Función para obtener la puntuación de un equipo
+ *
+ * @param
+ *  nid_Equipo
+ */
+function _ranking_get_team_puntuacion ($nid_Equipo) {
+	db_set_active('eSM');
+		$result = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
+	db_set_active('default');
+	
+	return $result->Puntuacion;
 }

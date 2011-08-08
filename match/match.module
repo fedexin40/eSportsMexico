@@ -9,6 +9,12 @@
 //Defnie los tipos de reto que puede haber
   define ('DESAFIO', 0);
   define ('IS_TORNEO', 1);
+  
+//Defnie los estados de reporte de resultados
+  define ('INCOMPLETO', 0);
+  define ('VICTORIA', 1);
+  define ('DERROTA', 2);
+  define ('PROTESTA', 3);
 	
 /**	DONE
  * Implementation of hook_node_info()
@@ -228,15 +234,6 @@ function match_load( $node ) {
   $node->nid_Equipo_Visitante = $reto->nid_Equipo_Visitante;
   $node->Puntuacion_Inicial_Equipo_Local = $reto->Puntuacion_Inicial_Equipo_Local;
   $node->Puntuacion_Inicial_Equipo_Visitante = $reto->Puntuacion_Inicial_Equipo_Visitante;
-  
-  db_set_active('eSM');
-    $reglas = db_query('SELECT * FROM {Regla} WHERE nid_Reto = %d', $node->nid);
-  db_set_active('default');
-  
-  for ($i = 1; $i <= $reto->Numero_Rondas; $i++) {
-    $rules[$i] = db_fetch_object($reglas);
-  }
-  $node->reglas = $rules;
 
   if ($reto->Estado == COMPLETADO) {    //Si el estado del reto es completado entonces carga los datos adicionales de la tabla de Final_Reto
     db_set_active('eSM');
@@ -530,11 +527,11 @@ function match_menu(){
   $items['node/%node/reportar'] = array(
     'title' => 'Result',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('match_score_edit'),
+    'page arguments' => array('match_report'),
     'access callback' => 'match_report_access',
     'access arguments' => array(1),
     'type' => MENU_CALLBACK,
-    'file' => 'inc/match.admin.inc',
+    'file' => 'inc/match_reportar.inc',
   );
   $items['node/%node/pruebas'] = array(
     'title' => 'Result',
@@ -1110,4 +1107,137 @@ function _match_obtener_reglas ($nid_Reto) {
     }
     
     return $reglas;
+}
+/**
+ * Función para obtener el resultado reportado por un equipo en un desafio
+ *
+ * @param
+ *  nid_Reto
+ *  nid_Equipo
+ *
+ * @return
+ *  objeto con el resultado reportado por el equipo
+ *  NULL en caso de que el equipo no haya reportado nada todaví
+ */
+function _match_get_team_resultado ($nid_Reto, $nid_Equipo) {
+	db_set_active('eSM');
+		$reporte = db_fetch_object(db_query('SELECT * FROM {Reporte_Reto} WHERE nid_Reto = %d AND nid_Equipo = %d', $nid_Reto, $nid_Equipo));
+	db_set_active('default');
+    
+    return $reporte;
+}
+/**
+ * Función para verificar el estado de un desafio
+ *
+ * @param
+ *   nid_Reto
+ */
+function _match_check_match($nid_Reto) {
+  $reto = node_load($nid_Reto);
+  
+  $reporte_equipo_local = _match_get_team_resultado($nid_Reto, $reto->nid_Equipo_Local);
+  $reporte_equipo_visitante = _match_get_team_resultado($nid_Reto, $reto->nid_Equipo_Visitante);
+  
+  //Verifica si los dos equipos han reportardo su resultado
+  if(is_object($reporte_equipo_local) && is_object($reporte_equipo_visitante)) {
+    if (($reporte_equipo_local->Resultado == VICTORIA) && ($reporte_equipo_visitante->Resultado == DERROTA)) {
+      //Resultado coherente indicando que ganó el equipo local
+      $nid_Ganador = $reto->nid_Equipo_Local;
+    }
+    elseif (($reporte_equipo_local->Resultado == DERROTA) && ($reporte_equipo_visitante->Resultado == VICTORIA)) {
+      //Resultado coherente indicando que ganó el equipo visitante
+      $nid_Ganador = $reto->nid_Equipo_Visitante;
+    }
+    
+    //Si no hay un ganador definido, entonces el desafío debe ir al estado de conflicto
+    if ($nid_Ganador == 0) {
+      _match_update_match($nid_Reto, CONFLICTO);
+    }
+    else {
+      _match_end_match($nid_Reto, $nid_Ganador);
+    }
+  }
+}
+
+/**
+ * Función para actualizar el estado de un desafio
+ *
+ * @param
+ *   nid_Reto
+ *   Estado
+ */
+function _match_update_match($nid_Reto, $estado) {
+    db_set_active('eSM');
+      db_query('UPDATE {Reto} SET Estado = %d WHERE nid_Reto = %d', $estado, $nid_Reto);
+    db_set_active('default');
+    
+    //TODO: Ejectuar acciones o enviar notificaciones de acuerdo al estado del match
+}
+/**
+ * Función para poner un desafio en estado COMPLETADO
+ * calcula las nuevas puntuaciones de los equipos
+ * guarda el ganador del match en la tabla Fin_Reto
+ * llama a las funciones para actualizar el ránking o los brackets
+ *
+ * @param
+ *   nid_Reto
+ *   nid_Ganador
+ */
+function _match_end_match($nid_Reto, $nid_Ganador) {
+	$reto = node_load($nid_Reto);
+    
+    if ($reto->Tipo == IS_TORNEO) {
+      //Para los desafios de torneos, las puntuaciones finales son iguales a las puntuaciones iniciales
+      db_set_active('eSM');
+        db_query('INSERT INTO {Fin_Reto}
+                 (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Ganador)
+                 VALUES (%d, %d, %d, %d)',
+                 $nid_Reto, $reto->Puntuacion_Inicial_Equipo_Local, $reto->Puntuacion_Inicial_Equipo_Visitante, $nid_Ganador);
+      db_set_active('default');
+      
+      //Obtiene el torneo del que forma parte el desafio
+      db_set_active('eSM');
+        $Torneo = db_fetch_object(db_query('SELECT * FROM {Retos_Torneos} WHERE nid_Reto = %d', $nid_Reto));
+      db_set_active('default');
+      
+      //Actualiza los brackets del torneo
+      _torneo_update_bracket($Torneo->nid_Torneo, $nid_Ganador);
+    }
+    else {
+      //Calcula las puntuaciones finales para los dos equipos en base a la tabla definida en el ránking
+      _ranking_calcula_desafio($reto->nid_Equipo_Local, $reto->nid_Equipo_Visitante, $nid_Ganador, $reto->Puntuacion_Inicial_Equipo_Local, $reto->Puntuacion_Inicial_Equipo_Visitante);
+
+      //Obtiene las puntuaciones finales de cada equipo
+      $puntuacion_local = _ranking_get_team_puntuacion($reto->nid_Equipo_Local);
+      $puntuacion_visitante = _ranking_get_team_puntuacion($reto->nid_Equipo_Visitante);
+      
+      //Guarda los datos en Fin_Reto
+      db_set_active('eSM');
+        db_query('INSERT INTO {Fin_Reto}
+                 (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Ganador)
+                 VALUES (%d, %d, %d, %d)',
+                 $nid_Reto, $puntuacion_local, $puntuacion_visitante, $nid_Ganador);
+      db_set_active('default');
+    }
+    
+    //Actualiza el estado del reto a COMPLETADO
+    _match_update_match($nid_Reto, COMPLETADO);
+}
+/**
+ * Función para crear un reporte de mala conducta para un equipo
+ *
+ * @param
+ *  nid_Reto
+ *  nid_Equipo
+ *  Reporte:  0 => 'Seleccione una',
+              1 => 'Insultos o amenazas',
+              2 => 'Comentarios ofensivos',
+              3 => 'Juego sucio o trampas',
+ */
+function _match_crear_reporte_mala_conducta ($nid_Reto, $nid_Equipo, $conducta) {
+  db_set_active('eSM');
+    db_query('INSERT INTO {Reto_Conducta} (nid_Reto, nid_Equipo, Reporte, Estado) VALUES (%d, %d, %d, %d)', $nid_Reto, $nid_Equipo, $conducta, 0);
+  db_set_active('default');
+  
+  //TODO: Mandar un mensaje al coordinador deportivo para que revise el estado del reporte.
 }
