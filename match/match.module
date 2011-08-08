@@ -89,6 +89,7 @@ function match_access($op, $node, $account){
 function match_form( &$node, $form_state ) {
   $format = 'Y-m-d H:i';
   global $user;
+  
    
   if($node->Fecha_Inicio != '')
     $start_hour = format_date($node->Fecha_Inicio, 'small', $format);
@@ -219,8 +220,6 @@ function match_form( &$node, $form_state ) {
  * y la agrega al objeto de tipo nodo para su reproducción o manejo
  */
 function match_load( $node ) {
-	//Es necesario que los campos nid_Equipo_Local, nid_Equipo_Visitante, Puntuacion_Inicial_Equipo_Local, Puntuacion_Inicial_Equipo_Visitante
-	//sean por defecto 0
   db_set_active('eSM');
 	$reto = db_fetch_object(db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Inicio_Reto } AS { ir } ON { r.nid_Reto = ir.nid_Reto } WHERE { r.nid_Reto = %d }', $node->nid ) );
   db_set_active('default');
@@ -539,13 +538,13 @@ function match_menu(){
     'file' => 'inc/match_reportar.inc',
   );
   $items['node/%node/pruebas'] = array(
-    'title' => 'Result',
+    'title' => 'Envio de Pruebas',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('match_score_edit'),
+    'page arguments' => array('match_pruebas'),
     'access callback' => 'match_report_access',
     'access arguments' => array(1),
     'type' => MENU_CALLBACK,
-    'file' => 'inc/match.admin.inc',
+    'file' => 'inc/match_pruebas.inc',
   );
 	/*
   $items[ 'taxonomy/term/%/challenges' ] = array
@@ -1035,13 +1034,8 @@ function team_challenges_binnacle( )
  */
 function match_get_pruebas($nid_Reto) {
     db_set_active('eSM');
-        $result = db_fetch_array(db_query('SELECT * FROM {Prueba} WHERE nid_Reto = %d', $nid_Reto));
+        $pruebas = db_fetch_array(db_query('SELECT * FROM {Prueba} WHERE nid_Reto = %d', $nid_Reto));
     db_set_active('default');
-    
-    if (is_array($result)) {
-        $pruebas['home_team'] = $result['Prueba_Jugador1'];
-        $pruebas['away_team'] = $result['Prueba_Jugador1'];
-    }
     
     return $pruebas;
 }

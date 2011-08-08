@@ -85,8 +85,9 @@ function theme_match_content($node) {
   if (($node->Estado == CREADO) && $away_capitan) {
     $content['6'][] = l('Aceptar Desafio', 'node/'. $node->nid . '/aceptar');
   }
+  
   //Si el desafio está en estado programado despliega un link para reportar el resultado
-  if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 >= time())) {
+  if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
     $content['6'][] = l('Reportar Resultado', 'node/'. $node->nid . '/reportar');
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
@@ -101,9 +102,9 @@ function theme_match_content($node) {
   
   if (is_array($pruebas)) {
     $content['9'][] = 'Prueba del equipo '. $home_team->title .' : ';
-    $content['9'][] = l($pruebas['home_team'], $pruebas['home_team']);
+    $content['9'][] = l($pruebas['Prueba_Jugador_Local'], $pruebas['Prueba_Jugador_Local']);
     $content['10'][] = 'Prueba del equipo '. $away_team->title .' : ';
-    $content['10'][] = l($pruebas['away_team'], $pruebas['home_team']);
+    $content['10'][] = l($pruebas['Prueba_Jugador_Visitante'], $pruebas['Prueba_Jugador_Visitante']);
   }
   
   $rows['2'][] = theme('table', $header, $content);
