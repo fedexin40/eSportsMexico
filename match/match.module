@@ -653,6 +653,11 @@ function match_theme($existing, $type, $theme, $path) {
       'path' => drupal_get_path('module', 'match') .'/theme',
       'arguments' => array('node'),
     ),
+    'match_fivestar_static' => array(
+      'file' => 'fivestar.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('rating' => NULL, 'stars' => 5),
+    ),
   );
 }
 /**
@@ -723,12 +728,11 @@ function match_views_api() {
 function match_block($op = 'list', $delta = 0, $edit = array()){
   switch($op){
     case 'list':
-      $blockArray = array();
-      $blockArray[0]['info'] = t('View upcoming games');
-      $blockArray[1]['info'] = t('View latest results');
-      $blockArray[2]['info'] = t('Desafiar');
-      $blockArray[3]['info'] = t('Calificacion del equipo');
-      return $blockArray;
+      $block = array();
+      $block[0]['info'] = t('View upcoming games');
+      $block[1]['info'] = t('View latest results');
+      $block[2]['info'] = t('Desafiar');
+      $block[3]['info'] = t('Calificacion del equipo');
       break;
     case 'view':
       $block_content = '';
@@ -745,21 +749,23 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
           $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 1 ORDER BY {match}.match_time DESC LIMIT %d;", 3);
           $block['content'] = theme('match_block', $to_show);
           break;
-        case 1:
+        case 2:
           //Desafiar
           if ($content = _match_prepare_desafiar_link()) {
+            $block['subject'] = 'Desafiar';
             $block['content'] = l('Desafiar', $content);
           }
-        return $block;
           break;
-        case 1:
-          //Desafiar
-          $block['subject'] = t('Calificacion');
-          $block['content'] = _match_display_reputacion();
+        case 3:
+          //Desplegar la reputación del equipo
+          if (is_array($content = _match_display_reputation())) {
+            $block['subject'] = t('Reputacion');
+            //$block['content'] = t('Fivestar');
+            $block['content'] = theme('match_fivestar_static', $content['vote']['percent']['average'], 5, 'vote');
+          }
           break;
       }
       
-      return $block;
       break;
     case 'save':
       
@@ -768,6 +774,7 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
       
       break;
   }
+  return $block;
 }
 
 
@@ -1260,13 +1267,9 @@ function _match_crear_reporte_mala_conducta ($nid_Reto, $nid_Equipo, $conducta) 
 /**
  * Función para preparar el link para que los equipos se puedan desafiar entre ellos
  */
-function _match_prepare_desafiar_link() {
-    //Define la variable global $user
-    $link = 'Hola';
-    global $user;
-    
+function _match_prepare_desafiar_link() {  
     //Carga el nodo
-    if (arg(0) == 'node' && is_numeric(arg(0)))
+    if (arg(0) == 'node' && is_numeric(arg(1)))
         $node = node_load(arg(1));
         
     //Revisa que el nodo pertenezca a un equipo
@@ -1276,4 +1279,20 @@ function _match_prepare_desafiar_link() {
     }
     
     return $link;
+}
+/**
+ * Función para preparar el despliegue de la reputación del equipo
+ */
+function _match_display_reputation() {
+    //Carga el nodo
+    if (arg(0) == 'node' && is_numeric(arg(1)))
+        $node = node_load(arg(1));
+        
+    //Revisa que el nodo pertenezca a un equipo
+    if ($node->type == 'team') {
+        //Prepara el link para desafiar a este equipo
+        $vote = _votingapi_get_standard_results('team', $node->nid);
+    }
+    
+    return $vote;
 }
