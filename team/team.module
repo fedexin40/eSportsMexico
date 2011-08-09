@@ -426,7 +426,7 @@ function team_block( $op = 'list', $delta = 0 ){
                         if (module_exists('ranking'))
                             $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
 						    
-						$content[] = l(t('Reglas'), 'node/'. $modalidad->Reglas);
+						$content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
                         
 						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 					}
