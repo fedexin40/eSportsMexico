@@ -96,7 +96,7 @@ function match_form( &$node, $form_state ) {
   else
     $start_hour = format_date(time(), 'small', $format);
     
-  if ($node->Estado != CREADO) {
+  if (isset($node->Estado) && ($node->Estado != CREADO)) {
     drupal_set_message(t('No se pueden editar las opciones de este partido.'), 'error');
   }
   else {
@@ -716,7 +716,7 @@ function match_views_api() {
   );
 }
 
-/**	NOT DONE
+/**	DONE
  * Implementation of hook_block()
  * @return unknown_type
  */
@@ -726,6 +726,8 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
       $blockArray = array();
       $blockArray[0]['info'] = t('View upcoming games');
       $blockArray[1]['info'] = t('View latest results');
+      $blockArray[2]['info'] = t('Desafiar');
+      $blockArray[3]['info'] = t('Calificacion del equipo');
       return $blockArray;
       break;
     case 'view':
@@ -735,14 +737,28 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
           //upcoming games
           $block['subject'] = t('Upcoming Matches');
           $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 0 ORDER BY {match}.match_time ASC LIMIT %d;", 3);
+          $block['content'] = theme('match_block', $to_show);
           break;
         case 1:
           //latest results
           $block['subject'] = t('Latest Results');
           $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 1 ORDER BY {match}.match_time DESC LIMIT %d;", 3);
+          $block['content'] = theme('match_block', $to_show);
+          break;
+        case 1:
+          //Desafiar
+          if ($content = _match_prepare_desafiar_link()) {
+            $block['content'] = l('Desafiar', $content);
+          }
+        return $block;
+          break;
+        case 1:
+          //Desafiar
+          $block['subject'] = t('Calificacion');
+          $block['content'] = _match_display_reputacion();
           break;
       }
-      $block['content'] = theme('match_block', $to_show);
+      
       return $block;
       break;
     case 'save':
@@ -1240,4 +1256,24 @@ function _match_crear_reporte_mala_conducta ($nid_Reto, $nid_Equipo, $conducta) 
   db_set_active('default');
   
   //TODO: Mandar un mensaje al coordinador deportivo para que revise el estado del reporte.
+}
+/**
+ * Función para preparar el link para que los equipos se puedan desafiar entre ellos
+ */
+function _match_prepare_desafiar_link() {
+    //Define la variable global $user
+    $link = 'Hola';
+    global $user;
+    
+    //Carga el nodo
+    if (arg(0) == 'node' && is_numeric(arg(0)))
+        $node = node_load(arg(1));
+        
+    //Revisa que el nodo pertenezca a un equipo
+    if ($node->type == 'team') {
+        //Prepara el link para desafiar a este equipo
+        $link = 'node/add/match/'. $node->id_Modalidad_Juego_Temporada .'/'. $node->nid;
+    }
+    
+    return $link;
 }

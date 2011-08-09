@@ -525,20 +525,19 @@ function tiene_equipo($uid, $id_Modalidad_Juego_Temporada) {
 		$query = db_query('SELECT {Estado} FROM {Jugador} WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d', $uid, $id_Modalidad_Juego_Temporada);
 	db_set_active('default');
     
-	$count = 0;
 	
 	while ($result = db_fetch_array($query)) {
 	    if ($result['Estado'] == AGENTE_LIBRE) {
             ++$count;
 			return AGENTE_LIBRE;
 	    }
+        if ($result['Estado'] == TIENE_EQUIPO) {
+            ++$count;
+            return TIENE_EQUIPO;
+        }
 	}
-	if ($count == 0) {
-		return NO_REGISTRADO;
-	}
-	else {
-		return TIENE_EQUIPO;
-	}
+    
+	return NO_REGISTRADO;
 }
 /**
  * Función para obtener los datos de un jugador
