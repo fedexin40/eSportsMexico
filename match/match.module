@@ -491,34 +491,11 @@ function match_view($node, $teaser = FALSE, $page = FALSE){
 
   return $node;
 }
-/**	NOT DONE
+/**	DONE
  * Implementation of hook_menu()
  * Sets up the admin menu system for the matches.
  */
 function match_menu(){
-/*
-  $items['matchadmin'] = array(
-    'title' => 'Match Admin',
-    'description' => t('View and enter pending results'),
-    'page callback' => 'match_admin',
-    'access arguments' => array('administer matches'),
-    'file' => 'inc/match.admin.inc',
-  );
-  $items['admin/settings/matches'] = array(
-    'title' => 'Match Settings',
-    'description' => t('Set various options for match entry'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('match_settings'),
-    'access arguments' => array('administer matches'),
-    'file' => 'inc/match.admin.inc',
-  );
-  $items['node/%node/edit/match'] = array(
-    'title' => 'Match',
-    'access callback' => 'match_edit_access',
-    'access arguments' => array(1),
-    'weight' => -10,
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );*/
   $items['node/%node/aceptar'] = array(
     'title' => t('Aceptar Desafio'),
     'page callback' => 'drupal_get_form',
@@ -546,6 +523,55 @@ function match_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/match_pruebas.inc',
   );
+  $items[ 'node/%node/desafios' ] = array (
+    'title' => t('Desafios'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'team_lista_desafios' ),
+    'access callback' => 'match_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'inc/match_lista_desafios.inc',
+  );
+  $items[ 'node/%node/desafios/programados' ] = array (
+    'title' => t('Desafios Programados'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'team_lista_desafios' ),
+    'access callback' => 'match_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'inc/match_lista_desafios.inc',
+    'weight' => 0,
+  );
+  $items[ 'node/%node/desafios/confirmar' ] = array (
+    'title' => t('Desafios por Confirmar'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'team_lista_desafios' ),
+    'access callback' => 'match_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'inc/match_lista_desafios.inc',
+    'weight' => 1,
+  );
+  $items[ 'node/%node/desafios/conflicto' ] = array (
+    'title' => t('Desafios en Conflicto'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'team_lista_desafios' ),
+    'access callback' => 'match_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'inc/match_lista_desafios.inc',
+    'weight' => 2,
+  );
+  $items[ 'node/%node/desafios/terminados' ] = array (
+    'title' => t('Desafios Terminados'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'team_lista_desafios' ),
+    'access callback' => 'match_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'inc/match_lista_desafios.inc',
+    'weight' => 3,
+  );  
 	/*
   $items[ 'taxonomy/term/%/challenges' ] = array
 	(
@@ -564,29 +590,6 @@ function match_menu(){
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'indirect_match_form' ),
     'access callback' => 'match_report_access',
-    'type' => MENU_LOCAL_TASK,
-    //'file' => 'inc/match.admin.inc',
-  );
-	
-	$items[ 'node/%node/desafiar/' ] = array
-	(
-    'title' => 'Desafiar',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'direct_match_form' ),
-    //'access callback' => 'match_report_access',
-    'access arguments' => array( 'create match' ),
-    'type' => MENU_LOCAL_TASK,
-    //'file' => 'inc/match.admin.inc',
-  );
-	
-	
-	$items[ 'node/%node/desafios/' ] = array
-	(
-    'title' => 'Desafíos',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'team_challenges_binnacle' ),
-    //'access callback' => 'match_report_access',
-    'access arguments' => array( 'create match' ),
     'type' => MENU_LOCAL_TASK,
     //'file' => 'inc/match.admin.inc',
   );*/
@@ -634,6 +637,18 @@ function match_aceptar_access( $node ) {
     return FALSE;
 }
 
+/**
+ * Función para verificar quien tiene acceso a la lista de desafios
+ */
+function match_ver_lista_desafios_access($node) {
+  global $user;
+  
+  //Revisa que el nodo sea del tipo match, en caso contrario devuelve falso
+  if ($node->type != 'team')
+    return FALSE;
+  
+  return user_access('access content', $user);
+}
 /** DONE
  * Implementation of hook_form_FORM_ID_alter
  * This sets the default team correctly on the dropdown boxes on the generated form
@@ -657,6 +672,11 @@ function match_theme($existing, $type, $theme, $path) {
       'file' => 'fivestar.inc',
       'path' => drupal_get_path('module', 'match') .'/theme',
       'arguments' => array('rating' => NULL, 'stars' => 5),
+    ),
+    'match_lista_desafios' => array(
+      'file' => 'lista_desafios.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('form' => NULL),
     ),
   );
 }
@@ -909,142 +929,6 @@ function challenges_binnacle( )
 
 
 
-/**	ALMOST DONE
- *	Función que se encargará de mostrar la bitácora de desafíos creados para las modalidades
- *	y temporadas activas al momento
- */
-function team_challenges_binnacle( )
-{
-	
-	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
-	$date = '2011-12-31';
-	$format = 'Y-m-d H:i';
-	
-	$tid_Modalidad_Juego = arg( 2 );
-	$Temporada_Activa = temporada_activa(  );
-	
-	db_set_active( 'eSM' );
-		$Challenges_result_set = db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Modalidad_Juego_Temporada } AS { mjt } ON { r.id_Modalidad_Juego_Temporada = mjt.id_Modalidad_Juego_Temporada } INNER JOIN { Temporada } AS { t } ON { mjt.id_Temporada = t.id_Temporada } INNER JOIN { Modalidad_Juego } AS { mj } ON { mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego } WHERE { mj.tid = %d } AND { t.id_Temporada = %d } AND { r.Estado = %d }', $tid_Modalidad_Juego, $Temporada_Activa->id_Temporada, CREADO );
-	db_set_active( 'default' );
-
-	if ( $Challenges_result_set->num_rows )
-	{
-
-			/*$form[ 'Challenges_List' ] = array
-			(
-			
-				'#type' => 'fieldset',
-				'#title' => 'Lista de desafíos',
-				'#collapsible' => 'FALSE',
-				'#collapsed' => 'FALSE',
-			 
-			);*/		
-	
-		
-		
-		while( $Challenge = db_fetch_object( $Challenges_result_set ) )
-		{
-			
-
-
-			
-			$Fecha_Inicio = timestamp_to_string( $Challenge->Fecha_Inicio );
-			$Fecha_Fin = timestamp_to_string( $Challenge->Fecha_Fin );
-	
-			
-			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'id_Reto' ] = array
-			(
-				'#type' => 'item',
-				//'label' => t( 'Nombre' ),
-				//'#disabled' => 'TRUE',
-				//'size' => 17,
-				//'maxlength' => 17,
-				'#title' => t( 'Número de reto' ),
-				//'#required' => TRUE,
-				'#weight' => -8,
-				'#value' => $Challenge->id_Reto,
-			);
-			
-			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Inicio' ] = array (
-				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#disabled' => 'TRUE',
-				'#title' => 'Fecha de inicio',
-				'#default_value' => $Fecha_Inicio,
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-				'#size' => 17,
-				'#maxlength' => 17,
-			);
-	
-	
-			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Fecha_Fin' ] = array (
-				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#disabled' => 'TRUE',
-				'#title' => 'Fecha de inicio',
-				'#default_value' => $Fecha_Fin,
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-				'#size' => 17,
-				'#maxlength' => 17,
-			);
-	
-			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Estado' ] = array (
-				'#type' => 'item', 
-				'#title' => 'Estado',
-				'#value' => $Challenge->Estado,
-			);
-		
-		
-			$form[ 'Challenge_List' ][ $Challenge->id_Reto ][ 'Aceptar' ] = array
-			(
-				
-				'#type' => 'submit',
-				'#value' => t('Aceptar desafío'),
-				
-			);
-			
-		}	
-		
-		$form[ 'tid_Modalidad_Juego' ] = array
-		(		
-			'#type' => 'hidden',
-			'#value' => $tid_Modalidad_Juego,
-		);
-		
-		
-		
-		$form[ 'id_Temporada_Activa' ] = array
-		(		
-			'#type' => 'hidden',
-			'#value' => $Temporada_Activa,
-		);
-
-	}
-	
-	else
-	{
-		
-		$form[ 'Message' ] = array
-		(
-			
-			'#type' => 'item',
-			'#value' => t( 'No hay desafíos disponibles para esta modalidad' ),
-			
-		);
-		
-	}
-	
-	
-	return $form;
-	
-}
 /**
  * Función para obtener las pruebas que han reportado para los partidos
  *
@@ -1295,4 +1179,38 @@ function _match_display_reputation() {
     }
     
     return $vote;
+}
+/**
+ * Función para obtener una lista de los matches que coinciden con un criterio
+ *
+ * @param
+ *  nid_Equipo
+ *  $criterio
+ *
+ * @return
+ *  mysql object
+ */
+function _match_get_match_list ($nid_Equipo, $criterio) {
+  db_set_active('eSM');
+    $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+                      WHERE (ir.nid_Equipo_Local = %d OR ir.nid_Equipo_Visitante = %d) AND r.Estado = %d',
+                      $nid_Equipo, $nid_Equipo, $criterio);
+  db_set_active('default');
+  
+  return $query;
+}
+/**
+ * Función para obtener el resultado de un partido
+ * @param
+ *  nid_Reto
+ *
+ * @return
+ *  Objeto con el resulatdo de un partido
+ */
+function _match_get_resultado ($nid_Reto) {
+  db_set_active('eSM');
+    $resultado = db_fetch_object(db_query('SELECT * FROM {Fin_Reto} WHERE nid_Reto = %d', $nid_Reto));
+  db_set_active('default');
+  
+  return $resultado;
 }

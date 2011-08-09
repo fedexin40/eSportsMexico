@@ -28,9 +28,9 @@ function theme_match_content($node) {
     $content['2'][] = ' VS. ';
     $content['2'][] = '<a href="/node/'. $away_team->nid . '"'. theme('imagecache', 'match', (empty($away_team->field_logo[0]['filepath']) ? $field['widget']['default_image']['filepath'] : $away_team->field_logo[0]['filepath']), 'Match', 'Imágen de '. $away_team->title) . '</a>';
     //Despliega los nombres de los equipos como link al perfil de los mismos
-    $content['3'][] = '<a href="/node/'. $home_team->nid . '">'. $home_team->title . '</a>';
+    $content['3'][] = l($home_team->title, 'node/'. $home_team->nid );
     $content['3'][] = ' ';
-    $content['3'][] = '<a href="/node/'. $away_team->nid . '">'. $away_team->title . '</a>';
+    $content['3'][] = l($away_team->title, 'node/'. $away_team->nid );
     //Despliega el ránking de los equipos
     $content['4'][] = 'Ranking';
     $content['4'][] = ' ';
@@ -122,7 +122,7 @@ function theme_match_content($node) {
   
   //Si es un desafio completado pone el nombre del equipo ganador
   if ($node->Estado == COMPLETADO) {
-    if ($node->home_team == $node->ganador)
+    if ($node->nid_Equipo_Local == $node->ganador)
       $winner = $home_team;
     else
       $winner = $away_team;
