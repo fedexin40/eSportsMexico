@@ -337,7 +337,7 @@ function team_validate($node, $form) {
 	//Verifica si el jugador es un agente libre o no está registrado
 	if ($tiene_equipo == TIENE_EQUIPO) {
         form_set_error('id_Modalidad_Juego_Temporada', 'No puedes crear un equipo para esta modalidad porque ya perteneces a otro.</br>Abandona tu equipo actual para poder crear otro.');
-		dpm ('No puedes crear un equipo para esta modalidad porque ya perteneces a otro.</br>Abandona tu equipo actual para poder crear otro.', 'error');
+		//dpm ('No puedes crear un equipo para esta modalidad porque ya perteneces a otro.</br>Abandona tu equipo actual para poder crear otro.', 'error');
 		drupal_goto('user/' . $user->uid);
 	}
 }
@@ -381,6 +381,12 @@ function team_load($node){
         $node->Victorias = $team_puntuacion->PG / $team_puntuacion->PJ;
     else
         $node->Victorias = 0;
+}
+/**
+ * Implementación del hook_node_delete()
+ */
+function team_delete($node){
+
 }
 /**
  * Implementación del hook_block()
