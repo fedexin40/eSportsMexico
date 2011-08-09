@@ -977,6 +977,13 @@ function _match_asignar_reglas ($nid_Reto, $numero_rondas) {
     $mapas = mapas_get_mapas_modalidad($modalidad_juego);
     $modos = modos_get_modos_modalidad($modalidad_juego);
     
+    //Nos aseguramos de tener el mínimo de mapas y modalidades para el número de rondas
+    while (count($mapas) < $numero_rondas) {
+      $mapas = array_merge($mapas, $mapas);
+    }
+    while (count($modos) < $numero_rondas) {
+      $mapas = array_merge($modos, $modos);
+    }
     //Mezcla los mapas y modos para escoger en órden aleatorio
     shuffle($mapas);
     shuffle($modos);
