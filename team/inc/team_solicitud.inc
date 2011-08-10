@@ -20,20 +20,6 @@ function team_solicitud() {
       '#value' => t( 'Unirme' ),
   );
   return $form;
-  
-  /*
-  return confirm_form
-  (
-    $form,
-    t( '¿Quieres solicitar inscribirte a este equipo?' ), //message title
-    ( isset( $_GET[ 'destination' ] ) ? $_GET[ 'destination' ] : 'user' ),//redirect if cancelled
-    //t( '' ), //message description
-    t( '¿Estás seguro?' ),
-    t( 'Si' ), //confirm button text
-    t( 'No' ) //cancel button text
-  );*/
-
-
 }
 
 
@@ -54,61 +40,23 @@ function team_solicitud_validate( $form, &$form_state )
 
     db_set_active( 'eSM' );
 
-    $equipo_jugador = db_fetch_object
-    (
-      db_query
-      (
-        'SELECT
-            *
-          FROM
-            { Integrantes_Equipo }
-          AS
-            ie
-        INNER JOIN
-            { Jugador }
-          AS
-            j
-          ON
-            ie.{ id_Jugador } = j.{ id_Jugador }
-         WHERE
-            j.{ uid } = %d
-          AND
-            ie.{ Estado } = %d',
-        $user->uid,
-        ACEPTADO
-      )
-    );
-    db_set_active( 'default' );
-  
-  
-    if ( $equipo_jugador != NULL )
-    {
+    $equipo_jugador = tiene_equipo($user->uid, $team->id_Modalidad_Juego_Temporada);
+	
+    if ( $equipo_jugador == TIENE_EQUIPO ) {
 
-      //El jugador ya está activo en un equipo. Salir
-      drupal_set_message( 'No te puedes unir a este equipo porque ya estás activo en otro equipo.', 'error' );
-      //drupal_goto( 'taxonomy/term/'.$modalidad->tid );
+      //El jugador ya está activo en un equipo.
+      form_set_error('nid_Equipo', t('No te puedes unir a este equipo porque ya estás activo en otro equipo.'));
 
     }
     
     db_set_active( 'eSM' );
-
-<<<<<<< HEAD
-=======
-	db_set_active( 'eSM' );
-
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
-    $solicitud_realizada = db_fetch_object
-    (
-      db_query
-      (
-        'SELECT * FROM { Integrantes_Equipo } AS ie INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador } WHERE j.{ uid } = %d AND ie.{ Estado } = %d AND ie. { nid_Equipo } = %d',
-        $user->uid, SOLICITA, $team->nid
-      )
-    );
+	  $solicitud_realizada = db_fetch_object(db_query('SELECT * FROM { Integrantes_Equipo } AS ie INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador }
+													  WHERE j.{ uid } = %d AND ie.{ Estado } = %d AND ie. { nid_Equipo } = %d',
+        $user->uid, SOLICITA, $team->nid));
     db_set_active( 'default' );
 
   if (is_object($solicitud_realizada)) {
-    form_error($form, t('Ya has solicitado unirte a este equipo.'));
+    form_set_error('nid_Equipo', t('Ya has solicitado unirte a este equipo.'));
   }
 
 }
@@ -148,11 +96,6 @@ function team_solicitud_submit( $form, &$form_state )
       );
 
     db_set_active( 'default' );
-<<<<<<< HEAD
-=======
-    
-    //print_r($jugador);
->>>>>>> 1fac187354af676b4ded393d95667d41e5fc7a25
   
     if( $jugador->uid == 0 )
     {
@@ -193,10 +136,13 @@ function team_solicitud_submit( $form, &$form_state )
     db_set_active( 'eSM' );
       db_query ('INSERT INTO { Integrantes_Equipo } ( nid_Equipo, id_Jugador, Estado, Mensaje ) VALUES ( %d, %d, %d, "%s" )', $team->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['Mensaje']);
     db_set_active('default');
-    
+  
+  //Notifica al capitán del equipo utilizando el módulo rules para disparar una acción configurable
+  rules_invoke_event('solicitud_usuario', $user, user_load(array('uid' => $team->uid)), $team);
+  
   //set a message
   drupal_set_message( '¡Tu solicitud ha sido enviada con éxito!' );
-  drupal_goto( '/taxonomy/term/'.$modalidad->tid );
+  drupal_goto( 'node/'. $team->nid);
 
 
 }

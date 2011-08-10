@@ -21,6 +21,7 @@ function team_administrar(  )
  */
 function team_administrar_activos( )
 {
+  global $user;
   $equipo = node_load( arg( 1 ) );  //carga el objeto nodo o equipo
                 
   db_set_active( 'eSM' );  //Carga todos los jugadores activos en el equipo.
@@ -54,92 +55,106 @@ function team_administrar_activos( )
 
   db_set_active('default');
   
+  //Despliega los jugadores
+  $count = 0;
+  $checkboxes = array ();
+  
   //Despliega los jugadores 
-  while ( $jugador = db_fetch_object( $jugadores ) )
+  while ($jugador = db_fetch_object( $jugadores ) )
   {
-    $account = user_load( array( 'uid' => $jugador->uid ) );
-
-    $form[ $jugador->uid ][ 'nombre' ] = array (
-      '#value' => $account->name,
-    );
-
-    $form[ $jugador->uid ][ 'check' ] = array (
-      '#type' => 'checkbox',
-    );
-
+    if ($jugador->uid != $user->uid) {
+      ++ $count;
+      $account = user_load( array( 'uid' => $jugador->uid ) );
+      $form['Solicitudes'][ $jugador->id_Jugador ][ 'nombre' ] = array (
+        '#value' => $account->name,
+      );
+    
+      $form['Solicitudes'][ $jugador->id_Jugador ][ 'mensaje' ] = array (
+        '#value' => $jugador->Mensaje,
+      );
+      
+      $checkboxes[$jugador->id_Jugador] = '';
+    }
   }
-
-  $form[ 'submit' ] = array (
-    '#type' => 'submit',
-    '#value' => t( 'Expulsar jugadores seleccionados.' ),
-  );
-
-  $form[ 'nid_equipo' ] = array (
-    '#type' => 'hidden',
-    '#value' => $equipo->nid,
-  );
-
+  
+  if ($count == 0) {
+    $form['mensaje'] = array (
+      '#value' => t('Eres el único integrante de tu equipo en este momento.'),
+    );
+  }
+  else {
+    $form[ 'checkboxes' ] = array (
+      '#type' => 'checkboxes',
+      '#options' => $checkboxes,
+    );
+    $form[ 'submit' ] = array (
+      '#type' => 'submit',
+      '#value' => t( 'Expulsar Jugadores Seleccionados.' ),
+    );
+  
+    $form[ 'nid_equipo' ] = array (
+      '#type' => 'hidden',
+      '#value' => $equipo->nid,
+    );
+  }
+  
+  $form['#theme'] = 'team_solicitudes';
+  
   return $form;
-
 }
-
-
 /**
  * Submit para la la forma de jugadores activos
+ * expulsa a los jugadores seleccionados en la forma
  */
 function team_administrar_activos_submit( $form, $form_state )
 {
   global $user;
+  
+  $nid_Equipo = $form_state['values'][ 'nid_equipo' ];
+  $count = 0; //Contador para mostrar el número de jugadores expulsados
 
-  $nid_Equipo = $form_state[ 'nid_equipo' ];
-  $Equipo = node_load( $nid_Equipo );
-
-
-  db_set_active('eSM');
-  $Jugadores = db_query
-  (
-    'SELECT
-        *
-      FROM
-        { Jugador }
-      AS
-        j
-    INNER JOIN
-        { Integrantes_Equipo }
-      AS
-        ie
-      ON
-        j.{ id_Jugador } = ie.{ id_Jugador }
-    INNER JOIN
-        { Equipo }
-        AS
-          e
-        ON
-          ie.{ nid_Equipo } = e.{ nid_Equipo }
-      WHERE
-          e.{ nid_Equipo } = %d',
-    $nid_Equipo
-  );
-
-  while( $Jugador = db_fetch_object( $Jugadores ) )
-  {
-    db_query
-    (
-      'INSERT INTO
-          { Integrantes_Equipo }
-          ( nid_Equipo, id_Jugador, Estado )
-        VALUES
-          ( %d, %d, %d )',
-        $nid_Equipo,
-        $jugador->id_Jugador,
-        RECHAZADO
-    );
+  foreach( element_children($form_state['values']['checkboxes']) as $jugador )
+  { 
+    if ($form_state['values']['checkboxes'][$jugador] != 0) {
+      ++$count;
+      db_set_active('eSM');
+        db_query                                //Actualiza el estado del jugador en la tabla de los integrantes del equipo
+        (
+          'UPDATE
+              { Integrantes_Equipo }
+            SET
+              Estado = %d
+            WHERE 
+              nid_Equipo = %d AND id_Jugador = %d',
+            RECHAZADO,
+            $nid_Equipo,
+            $jugador
+        );
+        //Actualiza el estado de la tabla de jugador
+        db_query (
+            'UPDATE
+                { Jugador }
+            SET
+                Estado = %d
+            WHERE
+                id_Jugador = %d',
+            AGENTE_LIBRE,
+            $jugador
+        );
+      db_set_active('default');
+      
+      //Notifica al ususario que ha sido expulsado del equipo
+      rules_invoke_event('usuario_expulsado', $user, user_load(array('uid' => $jugador->uid)), node_load(array('nid' => $nid_Equipo)));
+    }
   }
-  db_set_active('default');  
-  
-  drupal_set_message( "Jugadores expulsados satisfactoriamente" );
-  drupal_goto( 'node/'.$Equipo->nid_Equipo );
-  
+
+  if ($count > 0) {
+    drupal_set_message( "Has expulsado ". $count ." jugadores." );
+    drupal_goto( 'node/'. $nid_Equipo .'/administrar/activos');
+  }
+  else {
+    drupal_set_message('No has seleccionado ningún jugador para expulsar.', 'error');
+  }
 }
 
 /**
@@ -211,6 +226,7 @@ function team_administrar_solicitudes( ) {
       '#type' => 'checkboxes',
       '#options' => $checkboxes,
     );
+    //TODO: Agregar un botón para rechazar las solicitudes
     $form[ 'submit' ] = array (
       '#type' => 'submit',
       '#value' => t( 'Aceptar Jugadores Seleccionados.' ),
@@ -257,7 +273,7 @@ function team_administrar_solicitudes_submit( $form, $form_state )
             $nid_Equipo,
             $jugador
         );
-        
+        //Actualiza el estado de la tabla de jugador
         db_query (
             'UPDATE
                 { Jugador }
@@ -269,6 +285,9 @@ function team_administrar_solicitudes_submit( $form, $form_state )
             $jugador
         );
       db_set_active('default');
+      
+      //Notifica al ususario que ha sido aceptado en el equipo
+      rules_invoke_event('usuario_aceptado', $user, user_load(array('uid' => $jugador->uid)), node_load(array('nid' => $nid_Equipo)));
     }
   }
 
@@ -278,7 +297,6 @@ function team_administrar_solicitudes_submit( $form, $form_state )
   }
   else {
     drupal_set_message('No has seleccionado ninguna solicitud para aprovar.', 'error');
-    //drupal_goto( 'node/'. $nid_Equipo .'/administrar/activos');
   }
 }
 
@@ -320,6 +338,7 @@ function team_administrar_invitados( ) {
 
   db_set_active( 'default' );
   
+  $count = 0;
   //Despliega los jugadores 
   while ( $jugador = db_fetch_object( $jugadores ) )
   {
@@ -327,12 +346,19 @@ function team_administrar_invitados( ) {
     $form[ $jugador->uid ][ 'nombre' ] = array (
       '#value' => $account->name,
     );
+    ++$count;
   }
 
   $form[ 'nid_equipo' ] = array (
     '#type' => 'hidden',
     '#value' => $equipo->nid,
   );
+  
+  if ($count == 0) {
+    $form['mensaje'] = array (
+      '#value' => t('No has invitado a ningun jugador'),
+    );
+  }
   
   return $form;
 

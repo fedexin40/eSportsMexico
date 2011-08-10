@@ -83,19 +83,25 @@ function invitar_usuario_validate($form, $form_state)
  * Función para crear la forma de invitación
  */
 function invitar_usuario_submit ($form, $form_state) {
-    
+    global $user;
     module_load_include( 'php', 'base_datos_externa', 'db_functions' );
     
     
     $equipo = $form_state['values']['nid_Equipo'];
+    $equipo = node_load(array('nid' => $equipo));
+    
     $id_Jugador = $form_state['values']['id_Jugador'];
+    $uid_Invitado = $form_state['values']['uid_invitado'];
     
     db_set_active('eSM');
-        db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado, Mensaje) VALUES (%d, %d, %d, "%s")', $equipo, $id_Jugador, INVITADO, $form_state['values']['Mensaje']);
+        db_query('INSERT INTO {Integrantes_Equipo} (nid_Equipo, id_Jugador, Estado, Mensaje) VALUES (%d, %d, %d, "%s")', $equipo->nid, $id_Jugador, INVITADO, $form_state['values']['Mensaje']);
     db_set_active('default');
+    
+    //Notifica al usuario que ha sido invitado a un equipo
+    rules_invoke_event('usuario_invitado', $user, user_load(array('uid' => $uid_Invitado)), $equipo);
     
     drupal_set_message(t('Tu invitacion se ha enviado correctamente.'));
 
-      $modalidad = get_modalidad_juego_temporada($equipo->id_Modalidad_Juego_Temporada);
+    $modalidad = get_modalidad_juego_temporada($equipo->id_Modalidad_Juego_Temporada);
     drupal_goto('/libres/'. $modalidad->tid .'/lista');
 }

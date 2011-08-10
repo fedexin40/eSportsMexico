@@ -117,7 +117,6 @@ function team_menu(){
 	  'access arguments' => array(1),
 	  'type' => MENU_LOCAL_TASK,
 	);
-
 	//MENÚ de agentes libres
 	$items [ 'libres/%' ] = array (
 	  'title' => 'Agentes Libres',
@@ -133,6 +132,15 @@ function team_menu(){
 	  'page arguments' => array('agente_libre_listar'),
 	  'access arguments' => array ('create team'),
 	  'file' => 'inc/agentes_libres.inc',
+	  'type' => MENU_CALLBACK,
+	);
+	//MENU que despliega la lsita de los equipos que todavía no están completos
+	$items [ 'equipos/%/disponibles' ] = array (
+	  'title' => 'Equipos en Formacion',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('equipos_disponibles_listar'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/equipos_disponibles.inc',
 	  'type' => MENU_CALLBACK,
 	);
     
@@ -394,14 +402,11 @@ function team_delete($node){
 function team_block( $op = 'list', $delta = 0 ){
 
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-
-	$tid = arg( 2 );
 	
     switch( $op ) {
         case 'list':
             $block = array();
             $block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-
             $block[ 1 ][ 'info' ] = t('Muestra los equipos a los que el jugador pertenece.');
 
             break;
@@ -410,33 +415,35 @@ function team_block( $op = 'list', $delta = 0 ){
             
             switch( $delta ) {
                 case 0:
-                    $block = array( );
-                    $modalidad = term_is_active( $tid );
-                    
-                    if ( ( (is_numeric( $tid ) && ( arg( 1 ) == 'term' ) ) && ( is_object( $modalidad ) ) ) ){
-                        $block[ 'subject' ] = 'Equipos';
-                        $content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-                        if (module_exists('match')) {
-                            $content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
-                            $content[] = l( t( 'Proximos Partidos' ), 'libres/'. $tid . '/lista' );
-                            $content[] = l( t( 'Ultimos Resultados' ), 'libres/'. $tid . '/lista' );
-                        }
-                        if ($modalidad->Maximo_Jugadores > 1)
-                            $content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
-                        if (module_exists('ranking'))
-                            $content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
-						    
-						$content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
-                        
+                    if (arg(1) == 'term' && is_numeric(arg(2)))
+						$tid = arg(2);
+					
+					if ((arg(0) == 'puntuacion' || arg(0) == 'libres' || arg(0) == 'equipos') && is_numeric(arg(1)))
+						$tid = arg(1);
+						
+					if (arg(0) == 'inscripcion' && is_numeric(arg(2)))
+						$tid = arg(2);
+						                    
+					if ( is_object( $modalidad = term_is_active( $tid )) ) {
+						$block[ 'subject' ] = 'Equipos';
+						$content[] = l( t( 'Principal' ), 'taxonomy/term/'.$tid );
+						$content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
+						if (module_exists('match')) {
+							$content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
+							$content[] = l( t( 'Proximos Partidos' ), 'libres/'. $tid . '/lista' );
+							$content[] = l( t( 'Ultimos Resultados' ), 'libres/'. $tid . '/lista' );
+						}
+						if ($modalidad->Maximo_Jugadores > 1) {
+							$content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
+							$content[] = l( t( 'Equipos en Formacion' ), 'equipos/'. $tid . '/disponibles' );
+						}
+						if (module_exists('ranking'))
+							$content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
+							
+						$content[] = l(t('Reglas'), 'node/'. $modalidad->Reglas);
+						
 						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 					}
-                    break;
-                
-                case 1:
-                    if ($equipos = get_user_teams(arg(1))) {
-                        $block['subject'] = t('Juegos en los que participa');
-                        $block['content'] = $equipos;
-                    }
                     break;
                 
                 case 1:
@@ -450,7 +457,7 @@ function team_block( $op = 'list', $delta = 0 ){
     
         case 'save':
                 
-                break;
+            break;
 
         case 'configure':
             
@@ -516,6 +523,80 @@ function unirme_equipo_access($node) {
     else {
         return FALSE;
     }
+}
+/**
+ * Implementation of hook_rules_event_info().
+ * Usado para:
+ * 		- notificar a los capitanes de las solicitudes de inscripción a su equipo, cuando un jugador decide salirse de su equipo
+ * 		- notificar a los usuarios de cuando los invitan a un equipo o rechazan sus solicitudes
+ * @ingroup rules
+ */
+function team_rules_event_info() {
+  return array(
+    'solicitud_usuario' => array(
+      'label' => t('UserA ha solicitado entrar al equipo de userB'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, el que ha solicitado unirse al equipo de userB.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, capitan del equipo al que UserA desea unirse.')),
+        'team' => array('type' => 'node', 'label' => t('Equipo al que userA quiere unirse.')),
+      ),
+    ),
+    'usuario_aceptado' => array(
+      'label' => t('UserA ha aceptado a userB como parte de su equipo'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que a aceptado a userB en su equipo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, usuario que ha sido aceptado en el equipo de UserA.')),
+        'team' => array('type' => 'node', 'label' => t('Equipo en el que UserB ha sido aceptado.')),
+      ),
+    ),
+    'usuario_expulsado' => array(
+      'label' => t('UserA ha expulsado a userB de su equipo'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que a expulsado a userB de su equipo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, usuario que ha sido expulsado del equipo de UserA.')),
+        'team' => array('type' => 'node', 'label' => t('Equipo del que UserB ha sido expulsado.')),
+      ),
+    ),
+    'usuario_rechazado' => array(
+      'label' => t('UserA ha rechazado la soclicitud de userB de formar parte de su equipo'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que ha rechazado la solicitud de userB de formar parte de su equipo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, usuario que ha sido rechazado por UserA.')),
+        'team' => array('type' => 'node', 'label' => t('Equipo del que UserB ha sido rechazado.')),
+      ),
+    ),
+    'usuario_invitado' => array(
+      'label' => t('UserA ha invitado a userB a formar parte de su equipo'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que ha invitado a userB a formar parte de su equipo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, que ha sido invitado al equipo de UserA.')),
+        'team' => array('type' => 'node', 'label' => t('Equipo al que UserB ha sido invitado.')),
+      ),
+    ),
+    'invitacion_aceptada' => array(
+      'label' => t('UserA ha aceptado la invitacion de formar parte del equipo de userB'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que ha aceptado la solicitud de userB de formar parte de su equipo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, que habia invitado a UserA.')),
+		'team' => array('type' => 'node', 'label' => t('Equipo en el que UserB ha aceptado participar.')),
+      ),
+    ),
+    'invitacion_rechazada' => array(
+      'label' => t('UserA ha rechazado la invitacion de userB de formar parte de su equipo'),
+      'module' => 'Team',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, que ha rechazado la invitacion de userB para formar parte de su equipo.')),
+        'userB' => array('type' => 'user', 'label' => t('UserB, que habia invitado a UserA a su equipo.')),
+		'team' => array('type' => 'node', 'label' => t('Equipo al que UserA había sido invitado.')),
+      ),
+    ),
+  );
 }
 /**
  * Función que permite conocer el estado de un jugador para una modalidad

@@ -67,11 +67,12 @@
     $count = 0;
     //Primero almacenaremos todos los equipos en nodos
     
-    while ( $team = db_fetch_object( $teams ) )
+    foreach ( $teams AS $index => $team )
     {
-      $team = node_load( array( 'nid' => $team->nid_Equipo) );
+      $team = node_load( array( 'nid' => $team['nid_Equipo']) );
       if ( $team->Numero_Integrantes < $modalidad->Maximo_Jugadores )
       {
+        $capitan = user_load(array('uid' => $team->uid));
         //Presentaremos una forma para cada equipo disponible
         $form[ 'equipos_disponibles' ][ $team->title ][ 'imagen' ] = array (
           '#value' => $team->imagen,
@@ -83,7 +84,7 @@
           '#value' => $team->abreviacion,
         );
         $form[ 'equipos_disponibles' ][ $team->title ][ 'capitan' ] = array (
-          '#value' => $team->uid,
+          '#value' => l($capitan->name, 'user/'. $capitan->uid),
         );
         $form[ 'equipos_disponibles' ][ $team->title ][ 'plazas' ] = array (
           '#value' => $modalidad->Maximo_Jugadores - $team->Numero_Integrantes,
