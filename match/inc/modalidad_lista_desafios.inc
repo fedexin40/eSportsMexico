@@ -1,17 +1,25 @@
 <?php
 /**
- * Función para mostrar la vista de los participantes y equipos registrados en un torneo
+ * This function is to display a list of matches
  */
-function torneo_resultados () {
-  //Obtiene el nid_Torneo de la barra de dirección
-  $nid_Torneo = arg(1);
+function modalidad_lista_desafios () {
+  $op = arg(2);
+  $tid = arg(1);
   
-  drupal_set_title ('Partidos Finalizados');
+  //Obtiene los datos de la modalidad con base en el tid que proporciona la ruta
+  $modalidad = term_is_active($tid);
   
-  //Obtiene la lista de retos
-  $retos = _match_torneo_get_match_list($nid_Torneo, COMPLETADO);
-  
-  $count = 0;
+  switch ($op) {
+    case 'proximos':
+      $op = 'programados';
+      $retos = _match_modalidad_get_match_list($modalidad->id_Modalidad_Juego_Temporada, PROGRAMADO);
+      break;
+    
+    case 'resultados':
+      $op = 'terminados';
+      $retos = _match_modalidad_get_match_list($modalidad->id_Modalidad_Juego_Temporada, COMPLETADO);
+      break;
+  }
   
   while( $reto = db_fetch_object( $retos ) ) {
       ++$count;
@@ -34,6 +42,19 @@ function torneo_resultados () {
           '#value' => format_date($reto->Fecha_Inicio, 'large'),
       );
       
+      if($reto->Tipo == IS_TORNEO) {
+        //Verifica si el desafío forma parte de un torneo o no
+        $form[ $count ][ 'Tipo' ] = array (
+            '#type' => 'item',
+            '#value' => t('Torneo'),
+        );
+      } else {
+        $form[ $count ][ 'Tipo' ] = array (
+            '#type' => 'item',
+            '#value' => t('Desafio'),
+        );
+      }
+      
       if($reto->Estado == COMPLETADO) {
         //Obtiene el resultado del desafio
         $resultado = _match_get_resultado($reto->nid_Reto);
@@ -52,11 +73,6 @@ function torneo_resultados () {
         }
       }
       
-      $form[ $count ][ 'Ronda' ] = array (
-          '#type' => 'item',
-          '#value' => l('Detalles', 'node/'. $reto->nid_Reto),
-      );
-      
       $form[ $count ][ 'Partido' ] = array (
           '#type' => 'item',
           '#value' => l('Detalles', 'node/'. $reto->nid_Reto),
@@ -65,10 +81,10 @@ function torneo_resultados () {
   
   if ($count == 0) {
       $form['Mensaje'] = array (
-          '#value' => t('No se han jugado partidos en este torneo.'),
+          '#value' => t('No existen desafios '. $op .'.'),
       );
   }
   
-  $form['#theme'] = 'torneo_lista_desafios';
+  $form['#theme'] = 'match_lista_desafios_modalidad';
   return $form;
 }

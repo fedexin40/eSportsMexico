@@ -418,7 +418,7 @@ function team_block( $op = 'list', $delta = 0 ){
                     if (arg(1) == 'term' && is_numeric(arg(2)))
 						$tid = arg(2);
 					
-					if ((arg(0) == 'puntuacion' || arg(0) == 'libres' || arg(0) == 'equipos') && is_numeric(arg(1)))
+					if ((arg(0) == 'puntuacion' || arg(0) == 'libres' || arg(0) == 'equipos' || arg(0) == 'desafios') && is_numeric(arg(1)))
 						$tid = arg(1);
 						
 					if (arg(0) == 'inscripcion' && is_numeric(arg(2)))
@@ -430,8 +430,8 @@ function team_block( $op = 'list', $delta = 0 ){
 						$content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
 						if (module_exists('match')) {
 							$content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
-							$content[] = l( t( 'Proximos Partidos' ), 'libres/'. $tid . '/lista' );
-							$content[] = l( t( 'Ultimos Resultados' ), 'libres/'. $tid . '/lista' );
+							$content[] = l( t( 'Proximos Partidos' ), 'desafios/'. $tid . '/proximos' );
+							$content[] = l( t( 'Ultimos Resultados' ), 'desafios/'. $tid . '/resultados' );
 						}
 						if ($modalidad->Maximo_Jugadores > 1) {
 							$content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );

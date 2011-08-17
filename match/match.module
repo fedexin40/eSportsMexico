@@ -571,7 +571,25 @@ function match_menu(){
     'type' => MENU_LOCAL_TASK,
     'file' => 'inc/match_lista_desafios.inc',
     'weight' => 3,
-  );  
+  );
+  $items[ 'desafios/%/proximos' ] = array (
+    'title' => t('Desafios Proximos'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'modalidad_lista_desafios' ),
+    'access callback' => 'modalidad_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/modalidad_lista_desafios.inc',
+  );
+  $items [ 'desafios/%/resultados' ] = array (
+    'title' => t('Ultimos Proximos'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'modalidad_lista_desafios' ),
+    'access callback' => 'modalidad_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/modalidad_lista_desafios.inc',
+  );
 	/*
   $items[ 'taxonomy/term/%/challenges' ] = array
 	(
@@ -638,7 +656,7 @@ function match_aceptar_access( $node ) {
 }
 
 /**
- * Función para verificar quien tiene acceso a la lista de desafios
+ * Función para verificar quien tiene acceso a la lista de desafios de un equipo
  */
 function match_ver_lista_desafios_access($node) {
   global $user;
@@ -646,6 +664,14 @@ function match_ver_lista_desafios_access($node) {
   //Revisa que el nodo sea del tipo match, en caso contrario devuelve falso
   if ($node->type != 'team')
     return FALSE;
+  
+  return user_access('access content', $user);
+}
+/**
+ * Función para verificar quien tiene acceso a la lista de desafios de una modalidad
+ */
+function modalidad_ver_lista_desafios_access($node) {
+  global $user;
   
   return user_access('access content', $user);
 }
@@ -675,6 +701,11 @@ function match_theme($existing, $type, $theme, $path) {
     ),
     'match_lista_desafios' => array(
       'file' => 'lista_desafios.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('form' => NULL),
+    ),
+    'match_lista_desafios_modalidad' => array(
+      'file' => 'lista_desafios_modalidad.inc',
       'path' => drupal_get_path('module', 'match') .'/theme',
       'arguments' => array('form' => NULL),
     ),
@@ -1194,11 +1225,53 @@ function _match_display_reputation() {
  * @return
  *  mysql object
  */
-function _match_get_match_list ($nid_Equipo, $criterio) {
+function _match_get_team_match_list ($nid_Equipo, $criterio) {
   db_set_active('eSM');
     $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
-                      WHERE (ir.nid_Equipo_Local = %d OR ir.nid_Equipo_Visitante = %d) AND r.Estado = %d',
+                      WHERE (ir.nid_Equipo_Local = %d OR ir.nid_Equipo_Visitante = %d) AND r.Estado = %d
+					  ORDER BY Fecha_Inicio DESC',
                       $nid_Equipo, $nid_Equipo, $criterio);
+  db_set_active('default');
+  
+  return $query;
+}
+/**
+ * Función para obtener una lista de los matches que coinciden con un criterio
+ *
+ * @param
+ *  nid_Equipo
+ *  $criterio
+ *
+ * @return
+ *  mysql object
+ */
+function _match_modalidad_get_match_list ($id_Modalidad_Juego_Temporada, $criterio) {
+  db_set_active('eSM');
+    $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+                      WHERE id_Modalidad_Juego_Temporada = %d AND r.Estado = %d
+					  ORDER BY Fecha_Inicio DESC',
+                      $id_Modalidad_Juego_Temporada, $criterio);
+  db_set_active('default');
+  
+  return $query;
+}
+/**
+ * Función para obtener una lista de los matches que coinciden con un criterio
+ *
+ * @param
+ *  nid_Equipo
+ *  $criterio
+ *
+ * @return
+ *  mysql object
+ */
+function _match_torneo_get_match_list ($nid_Torneo, $criterio) {
+  db_set_active('eSM');
+    $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+					  INNER JOIN {Retos_Torneos} AS rt ON r.nid_Reto = rt.nid_Reto
+                      WHERE nid_Torneo = %d AND r.Estado = %d
+					  ORDER BY Ronda DESC',
+                      $nid_Torneo, $criterio);
   db_set_active('default');
   
   return $query;

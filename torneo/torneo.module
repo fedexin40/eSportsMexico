@@ -48,7 +48,7 @@ function torneo_menu() {
 	'access callback' => '_torneo_menu_access',
     'access arguments' => array(1, 'ver torneos'),
     'type' => MENU_LOCAL_TASK,
-    'weight' => 20,
+    //'weight' => 20,
     'file' => 'inc/eliminatorias.inc',
   );
   if (module_exists('match')) {
@@ -195,6 +195,10 @@ function torneo_theme () {
         'participantes' => array (
             'arguments' => array ('form' => NULL),
             'file' => '/theme/participantes.inc',
+        ),
+        'torneo_lista_desafios' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/torneo_lista_desafios.inc',
         ),
     );
 }
@@ -350,12 +354,18 @@ function _torneo_create_matches($nid_Torneo) {
     $brackets = db_query('SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d ORDER BY Posicion ASC', $nid_Torneo, 1);
   db_set_active('default');
   
-  //TODO: Establecer el número de rondas como parámetro dentrol del torneo o modalidad
+  //TODO: Establecer el número de rondas como parámetro dentro del torneo o modalidad
   while ($home_team = db_fetch_object($brackets)) {
     $away_team = db_fetch_object($brackets);
-    //Si los dos son equipos se crea un match
+    
+	//Si los dos son equipos se crea un match
     if ($home_team->nid != 1 && $away_team->nid != 1) {
-      _torneo_create_match(1, $torneo->id_Modalidad_Juego_Temporada, format_date($torneo->Fecha_Inicio, 'small', ''), 3, $home_team->nid_Equipo, $away_team->nid_Equipo);
+      $node = _torneo_create_match(1, $torneo->id_Modalidad_Juego_Temporada, format_date($torneo->Fecha_Inicio, 'small', ''), 3, $home_team->nid_Equipo, $away_team->nid_Equipo);
+	  
+	  //Agrega el match a la tabla de Torneos_Equipos para poder desplegarlo en la vista de Detalles de Torneo
+	  db_set_active('eSM');
+		db_query('INSERT INTO {Retos_Torneos} (nid_Torneo, nid_Reto, Ronda) VALUES (%d, %d, %d)', $nid_Torneo, $node->nid, 1);
+	  db_set_active('deafult');
     }
   }
 }

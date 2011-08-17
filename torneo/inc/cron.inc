@@ -111,7 +111,7 @@ function _torneo_create_brackets($nid_Torneo) {
           db_set_active('eSM');
             db_query("INSERT INTO {Torneos_Brackets} (nid_Torneo, nid_Equipo, Ronda, Posicion)
                      VALUES (%d, %d, %d, %d)",
-                     $nid_Torneo, $team2['nid_Equip'], ($round+1), ceil( (float)$y / 2.0 ));
+                     $nid_Torneo, $team2['nid_Equipo'], ($round+1), ceil( (float)$y / 2.0 ));
           db_set_active('default');
         }
       }

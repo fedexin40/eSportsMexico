@@ -9,22 +9,22 @@ function team_lista_desafios () {
   switch ($op) {
     case 'confirmar':
       $op = 'por confirmar';
-      $retos = _match_get_match_list($nid_Equipo, CREADO);
+      $retos = _match_get_team_match_list($nid_Equipo, CREADO);
       break;
     
     case 'conflicto':
       $op = 'en conflicto';
-      $retos = _match_get_match_list($nid_Equipo, CONFLICTO);
+      $retos = _match_get_team_match_list($nid_Equipo, CONFLICTO);
       break;
     
     case 'terminados':
-      $retos = _match_get_match_list($nid_Equipo, COMPLETADO);
+      $retos = _match_get_team_match_list($nid_Equipo, COMPLETADO);
       break;
     
     case 'programados':
     default:
       $op = 'programados';
-      $retos = _match_get_match_list($nid_Equipo, PROGRAMADO);
+      $retos = _match_get_team_match_list($nid_Equipo, PROGRAMADO);
       break;
     
   }
