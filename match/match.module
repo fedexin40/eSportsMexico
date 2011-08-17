@@ -974,20 +974,24 @@ function _match_asignar_reglas ($nid_Reto, $numero_rondas) {
     $modalidad_juego = match_get_modalidad_juego($nid_Reto);
     
     //Obtiene todos los mapas y modalidades de juego de la modalidad de juego
-    $mapas = mapas_get_mapas_modalidad($modalidad_juego);
+    //$mapas = mapas_get_mapas_modalidad($modalidad_juego);
     $modos = modos_get_modos_modalidad($modalidad_juego);
     
+	//Verifica que el arreglo de modos de juego tenga un número de elementos igual o superior al número de rondas
+	while (count($modos) < $numero_rondas) {
+		$modos = array_merge($modos, $modos);
+	}
     //Mezcla los mapas y modos para escoger en órden aleatorio
-    shuffle($mapas);
+    //shuffle($mapas);
     shuffle($modos);
     
     for($i = 1; $i <= $numero_rondas; $i++) {
         //Obtien el primer elemento de cada uno de los arreglos de mapa y modo
-        $mapa_regla = array_shift($mapas);
+        //$mapa_regla = array_shift($mapas);
         $modo_regla = array_shift($modos);
         
         db_set_active('eSM');
-            db_query('INSERT INTO {Regla} (nid_Reto, id_Mapa, id_Modo_Juego) VALUES (%d, %d, %d)', $nid_Reto, $mapa_regla, $modo_regla);
+            db_query('INSERT INTO {Regla} (nid_Reto, id_Modo_Juego) VALUES (%d, %d)', $nid_Reto, $modo_regla);
         db_set_active('default');
     }
 }

@@ -9,3 +9,6 @@
     
 23 julio, 2011
     1. Verificar que is_capitan efectivamente devuelva un arreglo de objetos.
+    
+10 de agosto 2011
+    1. Hacer que el bloque de links para las temporadas funcione con el cache de bloques activado

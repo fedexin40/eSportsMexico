@@ -305,4 +305,57 @@ function _torneo_update_bracket($nid_Torneo, $nid_Equipo) {
 				 $nid_Torneo, $nid_Equipo, $newround, $newpos);
   db_set_active('default');
 }
-?>
+/**
+ * Función para crear un nodo de tipo match de manera automática
+ * @param
+ * 	$status: 1 para publicar el partido, 0 para no publicarlo
+ * 	$id_Modalidad_Juego_Temporada
+ * 	$fecha: en formato de texto no timestamp
+ * 	$numero_rondas
+ * 	$home_team y $away_team nid de los equipos visitante y local
+ *
+ * @return
+ * 	$node-> Objeto de tipo nodo con todos los datos del match
+ */
+function _torneo_create_match($status, $id_Modalidad_Juego_Temporada, $fecha, $numero_rondas, $home_team, $away_team) {
+  $node = new StdClass();
+  //Propiedades estándar de un nodo
+  $node->uid = 1;
+  $node->status = $status;
+  $node->type = 'match';
+  //Propiedades específicas del match
+  $node->Estado = 1;					//Marca al nodo en estado de programado
+  $node->id_Modalidad_Juego_Temporada = $id_Modalidad_Juego_Temporada;
+  $node->Fecha = $fecha;
+  $node->Numero_Rondas = $numero_rondas;
+  $node->Tipo = 1;						//Marca al nodo como de tipo torneo		
+  $node->home_team = $home_team;
+  $node->away_team = $away_team;
+  
+  node_save($node);
+  
+  return $node;
+}
+/**
+ * Función para crear los matches de un torneo
+ */
+function _torneo_create_matches($nid_Torneo) {
+  //Obtiene la fecha y hora de la primera ronda del torneo
+  db_set_active('eSM');
+    $torneo = db_fetch_object(db_query('SELECT * FROM {Torneos} WHERE nid_Torneo = %d', $nid_Torneo));
+  db_set_active('default');
+  
+  //Obtiene los brackets de la primera ronda del torneo
+  db_set_active('eSM');
+    $brackets = db_query('SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d ORDER BY Posicion ASC', $nid_Torneo, 1);
+  db_set_active('default');
+  
+  //TODO: Establecer el número de rondas como parámetro dentrol del torneo o modalidad
+  while ($home_team = db_fetch_object($brackets)) {
+    $away_team = db_fetch_object($brackets);
+    //Si los dos son equipos se crea un match
+    if ($home_team->nid != 1 && $away_team->nid != 1) {
+      _torneo_create_match(1, $torneo->id_Modalidad_Juego_Temporada, format_date($torneo->Fecha_Inicio, 'small', ''), 3, $home_team->nid_Equipo, $away_team->nid_Equipo);
+    }
+  }
+}

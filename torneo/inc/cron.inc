@@ -8,7 +8,7 @@ function _torneo_init_brackets () {
     $result = db_query('SELECT * FROM {Torneos} WHERE Estado = %d', FUTURO);
   db_set_active ('default');
   
-  $fecha_actual = strtotime( date( "Y-m-d H:i")) + 14400;//string_to_timestamp (date( "Y-m-d H:i" )) + 14400
+  $fecha_actual = strtotime( date( "Y-m-d H:i")) + 86400; //86400 segundos equivalen a 24 horas antes del inicio del torneo se crean los brackets
   
   while ($torneo = db_fetch_object($result)) {
     if ($fecha_actual >= $torneo->Fecha_Inicio) {
@@ -31,7 +31,7 @@ function _torneo_create_brackets($nid_Torneo) {
   $numTeams = torneo_get_total_participantes($nid_Torneo);
   
   if ($numTeams < 2 ) {     //El número de equipos participantes es menor a dos por lo tanto no se puede llevar a cabo el torneo
-                            //muestra un mensaje de error en el watchdog
+    watchdog('error', t('Se ha intentado crear los brackets para un torneo con solo un equipo inscrito.')); //muestra un mensaje de error en el watchdog
   }
   else {
     //Obtiene la lista de los equipos participantes en el torneo
@@ -115,6 +115,11 @@ function _torneo_create_brackets($nid_Torneo) {
           db_set_active('default');
         }
       }
+    }
+    
+    //Crea los partidos correspondientes si está habilitado el módulo match
+    if (module_exists('match')) {
+      _torneo_create_matches($nid_Torneo);
     }
   }
 }
