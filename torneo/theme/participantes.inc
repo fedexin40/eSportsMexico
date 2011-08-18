@@ -20,7 +20,7 @@ function theme_participantes ($form) {
         }
         else {
             $rows[] = $row;
-            $count = 1;
+            $count = 2;
             $row = array();
             $row[] = drupal_render($form['participantes'][$element]['nombre']);
         }

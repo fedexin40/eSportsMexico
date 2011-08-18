@@ -119,7 +119,7 @@ function _torneo_create_brackets($nid_Torneo) {
     
     //Crea los partidos correspondientes si está habilitado el módulo match
     if (module_exists('match')) {
-      _torneo_create_matches($nid_Torneo);
+      _torneo_create_matches($nid_Torneo, $numrounds, $bracketSize);
     }
   }
 }

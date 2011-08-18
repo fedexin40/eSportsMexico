@@ -67,7 +67,8 @@ function torneo_eliminatorias ($node) {
 		else {
           $team = node_load(array('nid' => $team_info['nid_Equipo']));
           
-          $data['Equipo'.$x] = array('data' => array('&nbsp;<a href="node/' . $team->nid . '">' . $team->title . '</a>&nbsp;'), 'class' => 'bracket', 'align' => 'center>');
+          //$data['Equipo'.$x] = array('data' => array('&nbsp;<a href="node/' . $team->nid . '">' . $team->title . '</a>&nbsp;'), 'class' => 'bracket', 'align' => 'center>');
+		  $data['Equipo'.$x] = array('data' => array('&nbsp;' . l($team->title, 'node/'. $team->nid ). '</a>&nbsp;'), 'class' => 'bracket', 'align' => 'center>');
 		}
 	    $middle=$lead+2;
 	  }

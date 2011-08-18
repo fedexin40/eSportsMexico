@@ -83,7 +83,7 @@ function torneo_admin_settings_form($form_state, $node = NULL, $node_type = NULL
       '#type' => 'date_select',
       '#title' => t('Fecha de Inicio del torneo'),
       '#description' => t('Selecciona la fecha y hora en la que inicia el torneo.'),
-      '#default_value' =>  format_date($settings->Fecha_Inicio, 'small', $format),//timestamp_to_string($settings->Fecha_Inicio),
+      '#default_value' =>  format_date($settings->Fecha_Inicio, 'custom', $format), //timestamp_to_string($settings->Fecha_Inicio),
       '#date_format' => $format,
       '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
       '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
@@ -95,7 +95,7 @@ function torneo_admin_settings_form($form_state, $node = NULL, $node_type = NULL
       '#type' => 'date_select',
       '#title' => t('Fecha de la Final'),
       '#description' => t('Selecciona la fecha y hora en la que se va a jugar la final si no sigue la secuencia de los primeros dias de juego.'),
-      '#default_value' => format_date($settings->Fecha_Final, 'small', $format),//timestamp_to_string($settings->Fecha_Final),
+      '#default_value' => format_date($settings->Fecha_Final, 'custom', $format),//timestamp_to_string($settings->Fecha_Final),
       '#date_format' => $format,
       '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
       '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.

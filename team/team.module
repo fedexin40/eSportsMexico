@@ -261,8 +261,10 @@ function team_form(&$node, $form_state) {
 
 
 	$modalidad = get_modalidad_juego_temporada( $id_Modalidad_Juego_Temporada );
-	 if ( ( $modalidad->Maximo_Jugadores == 1 ) && ( !isset( $node->title ) ) )
+	 if ( ( $modalidad->Maximo_Jugadores == 1 ) && ( !isset( $node->title ) ) ) {
 	  $node->title = $user->name;
+	  $form[ 'title' ][ '#disabled' ] = TRUE;
+	 }
 	
 	$form[ 'id_Modalidad_Juego_Temporada' ] = array
 	(
@@ -291,7 +293,7 @@ function team_form(&$node, $form_state) {
 	  '#title' => t( 'Abreviacion' ),
 	  '#description' => t('Ingresa el tag de tu equipo.'),
 	  '#required' => FALSE,	
-	  //'#default_value' => $node->abreviacion,
+	  '#default_value' => $node->abreviacion,
 	  '#weight' => -5,
 	);
 	// We want the body and filter elements to be adjacent. We could try doing
@@ -440,7 +442,7 @@ function team_block( $op = 'list', $delta = 0 ){
 						if (module_exists('ranking'))
 							$content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
 							
-						$content[] = l(t('Reglas'), 'node/'. $modalidad->Reglas);
+						$content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
 						
 						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
 					}

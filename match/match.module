@@ -92,9 +92,9 @@ function match_form( &$node, $form_state ) {
   
    
   if($node->Fecha_Inicio != '')
-    $start_hour = format_date($node->Fecha_Inicio, 'small', $format);
+    $start_hour = format_date($node->Fecha_Inicio, 'custom', $format);
   else
-    $start_hour = format_date(time(), 'small', $format);
+    $start_hour = format_date(time(), 'custom', $format);
     
   if (isset($node->Estado) && ($node->Estado != CREADO)) {
     drupal_set_message(t('No se pueden editar las opciones de este partido.'), 'error');
@@ -712,6 +712,15 @@ function match_theme($existing, $type, $theme, $path) {
   );
 }
 /**
+ * Implementation of hook_cron().
+ *
+ * Revisar que partidos llevan más de 3 horas de la fecha programada y todavía no se han reportado resultados
+ */
+function match_cron() {
+  module_load_include('inc', 'match', 'inc/cron');
+  _match_cron_task();
+}
+/**
  * Implementation of hook_rules_event_info().
  * Usado para notificar a los capitanes de los desafíos lanzados, aceptados, cancelados y programados
  * @ingroup rules
@@ -1079,6 +1088,7 @@ function _match_check_match($nid_Reto) {
   
   $reporte_equipo_local = _match_get_team_resultado($nid_Reto, $reto->nid_Equipo_Local);
   $reporte_equipo_visitante = _match_get_team_resultado($nid_Reto, $reto->nid_Equipo_Visitante);
+  $nid_Ganador = 0;
   
   //Verifica si los dos equipos han reportardo su resultado
   if(is_object($reporte_equipo_local) && is_object($reporte_equipo_visitante)) {
@@ -1132,7 +1142,7 @@ function _match_end_match($nid_Reto, $nid_Ganador) {
       //Para los desafios de torneos, las puntuaciones finales son iguales a las puntuaciones iniciales
       db_set_active('eSM');
         db_query('INSERT INTO {Fin_Reto}
-                 (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Ganador)
+                 (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Equipo_Ganador)
                  VALUES (%d, %d, %d, %d)',
                  $nid_Reto, $reto->Puntuacion_Inicial_Equipo_Local, $reto->Puntuacion_Inicial_Equipo_Visitante, $nid_Ganador);
       db_set_active('default');
@@ -1193,8 +1203,17 @@ function _match_prepare_desafiar_link() {
         
     //Revisa que el nodo pertenezca a un equipo
     if ($node->type == 'team') {
-        //Prepara el link para desafiar a este equipo
-        $link = 'node/add/match/'. $node->id_Modalidad_Juego_Temporada .'/'. $node->nid;
+		//Obtiene los datos de la modalidad
+		$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+		
+        //Revisa que el equipo tenga el mínimo de integrantes necesarios para la modalidad
+		if ($node->Numero_Integrantes >= $modalidad->Minimo_Jugadores) {
+			//Prepara el link para desafiar a este equipo
+			$link = 'node/add/match/'. $node->id_Modalidad_Juego_Temporada .'/'. $node->nid;
+		}
+		else {
+			$link = t('Este equipo no puede ser desafiado hasta que este completo.');
+		}
     }
     
     return $link;
