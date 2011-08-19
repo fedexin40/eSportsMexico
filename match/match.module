@@ -751,6 +751,7 @@ function match_rules_event_info() {
       'arguments' => array(
         'userA' => array('type' => 'user', 'label' => t('UserA, ha aceptado el desafio del equipo de userB.')),
         'userB' => array('type' => 'user', 'label' => t('UserB, ha solicitado enfrentar el equipo de UserA.')),
+		'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
       ),
     ),
     'desafio_cancelado' => array(
@@ -759,6 +760,7 @@ function match_rules_event_info() {
       'arguments' => array(
         'userA' => array('type' => 'user', 'label' => t('UserA, ha rechazado el desafio del equipo de userB.')),
         'userB' => array('type' => 'user', 'label' => t('UserB, ha solicitado enfrentar el equipo de UserA.')),
+		'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
       ),
     ),
     'partido_programado' => array(
@@ -767,6 +769,7 @@ function match_rules_event_info() {
       'arguments' => array(
         'userA' => array('type' => 'user', 'label' => t('UserA, capitan del equipo al que se le ha programado un partido por un torneo.')),
         'userB' => array('type' => 'user', 'label' => t('UserB, usuario del sistema que notifica a UserA del partido programado.')),
+		'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
       ),
     ),
   );

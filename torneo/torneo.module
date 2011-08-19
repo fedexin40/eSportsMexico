@@ -392,6 +392,9 @@ function _torneo_save_match($status, $id_Modalidad_Juego_Temporada, $fecha, $num
   $node->uid = 1;
   $node->status = $status;
   $node->type = 'match';
+  //Coments status
+  //0 - disabled; 1 - read only; 2 - read/write
+  $node->comment = 2;
   //Propiedades específicas del match
   $node->Estado = 1;					//Marca al nodo en estado de programado
   $node->id_Modalidad_Juego_Temporada = $id_Modalidad_Juego_Temporada;
