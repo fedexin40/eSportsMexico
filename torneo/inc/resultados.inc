@@ -38,7 +38,7 @@ function torneo_resultados () {
         //Obtiene el resultado del desafio
         $resultado = _match_get_resultado($reto->nid_Reto);
         
-        if ($resultado->nid_Gandor == $home_team->nid) {
+        if ($resultado->nid_Equipo_Ganador == $home_team->nid) {
           $form[ $count ][ 'Resultado' ] = array (
               '#type' => 'item',
               '#value' => l($home_team->title, 'node/' .$home_team->nid),
@@ -54,7 +54,7 @@ function torneo_resultados () {
       
       $form[ $count ][ 'Ronda' ] = array (
           '#type' => 'item',
-          '#value' => l('Detalles', 'node/'. $reto->nid_Reto),
+          '#value' => $reto->Ronda,
       );
       
       $form[ $count ][ 'Partido' ] = array (

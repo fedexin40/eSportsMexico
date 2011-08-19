@@ -51,7 +51,7 @@ function team_lista_desafios () {
         //Obtiene el resultado del desafio
         $resultado = _match_get_resultado($reto->nid_Reto);
         
-        if ($resultado->nid_Gandor == $nid_Equipo) {
+        if ($resultado->nid_Equipo_Ganador == $nid_Equipo) {
           $form[ $count ][ 'Resultado' ] = array (
               '#type' => 'item',
               '#value' => 'Victoria'

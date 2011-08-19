@@ -59,7 +59,7 @@ function modalidad_lista_desafios () {
         //Obtiene el resultado del desafio
         $resultado = _match_get_resultado($reto->nid_Reto);
         
-        if ($resultado->nid_Gandor == $home_team->nid) {
+        if ($resultado->nid_Equipo_Ganador == $home_team->nid) {
           $form[ $count ][ 'Resultado' ] = array (
               '#type' => 'item',
               '#value' => l($home_team->title, 'node/' .$home_team->nid),

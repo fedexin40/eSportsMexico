@@ -582,7 +582,7 @@ function match_menu(){
     'file' => 'inc/modalidad_lista_desafios.inc',
   );
   $items [ 'desafios/%/resultados' ] = array (
-    'title' => t('Ultimos Proximos'),
+    'title' => t('Ultimos Desafios'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'modalidad_lista_desafios' ),
     'access callback' => 'modalidad_ver_lista_desafios_access',
