@@ -81,6 +81,7 @@ function torneo_menu() {
     'access arguments' => array(1, 'administrar torneos', 'administrar resultados'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
+	'file' => 'inc/torneo_admin.inc',
   );
   $items['node/%node/admin/settings'] = array(
     'title' => t('Basic Settings'),
@@ -199,6 +200,10 @@ function torneo_theme () {
         'torneo_lista_desafios' => array (
             'arguments' => array ('form' => NULL),
             'file' => '/theme/torneo_lista_desafios.inc',
+        ),
+		'torneo_lista_desafios_conflicto' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/torneo_lista_desafios_conflicto.inc',
         ),
     );
 }

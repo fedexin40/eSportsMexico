@@ -148,9 +148,7 @@ function _torneo_ending_event() {
       $ronda_actual = db_fetch_array(db_query('SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d ORDER BY Ronda DESC LIMIT 1', $torneo->nid_Torneo));
     db_set_active('default');
     
-    dsm($ronda_actual);
-    
-    if($ronda_actual['ronda'] == $numrounds) 
+    if($ronda_actual['Ronda'] == $numrounds) 
       _torneo_finaliza_torneo($torneo->nid_Torneo);
   }
 }
