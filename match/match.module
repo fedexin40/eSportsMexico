@@ -143,7 +143,11 @@ function match_form( &$node, $form_state ) {
           $Equipo_Local = is_capitan($user->uid, $node->id_Modalidad_Juego_Temporada);
           
           if (is_null($Equipo_Local)) {
+			$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+			if (($modalidad->Minimo_Jugadores > 1) && (tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada) == TIENE_EQUIPO))
               drupal_set_message(t('Solo los capitanes de equipo pueden crear desafios.'), 'error');
+			else
+			  drupal_set_message(t('Necesitas inscribirte al ránking para poder empezar a desafiar.<br/>Para inscribirte al ranking haz click en este link: '. l('Click', 'taxonomy/term/'. $modalidad->tid)));
           }
           else {
               $node->home_team = $Equipo_Local->nid;
@@ -1161,6 +1165,14 @@ function _match_end_match($nid_Reto, $nid_Ganador) {
     else {
       //Calcula las puntuaciones finales para los dos equipos en base a la tabla definida en el ránking
       _ranking_calcula_desafio($reto->nid_Equipo_Local, $reto->nid_Equipo_Visitante, $nid_Ganador, $reto->Puntuacion_Inicial_Equipo_Local, $reto->Puntuacion_Inicial_Equipo_Visitante);
+	  
+	  //Avisa a los capitanes que se ha completado el reto y actualizado las puntuaciones
+	  $home_team = node_load(array('nid' => $reto->nid_Equipo_Local));
+	  $home_capitan = user_load(array('uid' => $home_team->uid));
+	  $away_team = node_load(array('nid' => $reto->nid_Equipo_Visitante));
+	  $away_capitan = user_load(array('uid' => $away_team->uid));
+	  rules_invoke_event('raking_actualizado_desafio', $home_team, $home_capitan, $reto);
+	  rules_invoke_event('raking_actualizado_desafio', $away_team, $away_capitan, $reto);
 
       //Obtiene las puntuaciones finales de cada equipo
       $puntuacion_local = _ranking_get_team_puntuacion($reto->nid_Equipo_Local);

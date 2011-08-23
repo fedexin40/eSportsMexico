@@ -429,3 +429,64 @@ function _torneo_create_matches($nid_Torneo, $numrounds, $bracketSize) {
 	}
   }
 }
+/**
+ * Función para finalizar un torneo
+ * @param
+ * 	$nid_Torneo: id del torneo a finalizar
+ */
+function _torneo_finaliza_torneo($nid_Torneo) {
+  //Obtiene los datos del evento
+  $torneo = node_load(array('nid' => $nid_Torneo));
+  $settings = get_settings_torneo($nid_Torneo);
+  
+  //Si es un MasterCup obtiene la lista de participantes
+  //y le da formato para pasarla a la función para
+  //actualizar el ránking de los equipos
+  if($settings->Tipo == MASTER_CUP) {
+	$participantes = torneo_get_participantes($nid_Torneo);
+	$equipos = array();
+	
+	while ($equipo = db_fetch_object($participantes)) {
+	  db_set_active('eSM');
+		$detalles_equipo = db_fetch_array(db_query('SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND nid_Equipo = %d ORDER BY Ronda DESC LIMIT 1', $nid_Torneo, $equipo->nid_Equipo));
+	  db_set_active('default');
+	  
+	  //Arma el arreglo para pasar a la función de actualizar ránking
+	  $equipos[$detalles_equipo['nid_Equipo']]['nid_Equipo'] = $detalles_equipo['nid_Equipo'];
+	  $equipos[$detalles_equipo['nid_Equipo']]['ronda'] = $detalles_equipo['Ronda'];
+	  
+	  //Avisa a los capitanes de los torneos que se ha actualizado el ránking
+	  $team = node_load(array('nid' => $detalles_equipo['nid_Equipo']));
+	  $capitan = user_load(array('uid' => $team->uid));
+	  rules_invoke_event('ranking_actualizado_torneo', $team, $capitan, $torneo);
+	}
+	
+	_ranking_calcula_torneo($equipos);
+  }
+  
+  //Actualiza los badges de los equipos y jugadores
+  //si el torneo está marcado para hacerlo
+  if(module_exists('user_badges')) {
+	db_set_active('eSM');
+	  $badges = db_fetch_object(db_query('SELECT * FROM {Torneos_Badges} WHERE nid_Torneo = %d', $nid_Torneo));
+	db_set_active('default');
+	
+	//Si se han asignado badges a otorgar por este torneo
+	if (is_object($badges)) {
+	  _torneo_update_badges ($nid_Torneo, $badges);
+	}
+  }
+  
+  //Actualiza el estado del torneo a pasado
+  _torneo_update_estado($nid_Torneo, PASADO);
+}
+/**
+ * Función para actualizar las medallas de los equipos participantes en un torneo
+ * @param
+ * 	$nid_Torneo
+ * 	$badges
+ *
+ */
+function _torneo_update_badges($nid_Torneo, $badges) {
+  
+}

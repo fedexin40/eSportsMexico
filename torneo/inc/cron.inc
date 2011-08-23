@@ -127,5 +127,30 @@ function _torneo_create_brackets($nid_Torneo) {
  * Función para finalizar los torneos
  */
 function _torneo_ending_event() {
+  //Selecciona todos los torneos en estado activo para ver si se terminaron
+  db_set_active ('eSM');
+    $result = db_query('SELECT * FROM {Torneos} WHERE Estado = %d', PRESENTE);
+  db_set_active ('default');
   
+  while ($torneo = db_fetch_object($result)) {
+	$numero_equipos = torneo_get_total_participantes($torneo->nid_Torneo);
+    
+    //Encuentra el número de rondas necesarias
+	//para realizar el torneo.
+    $bracketSize = 2;
+    $numrounds = 2;
+    while($numero_equipos > $bracketSize) {
+      $numrounds++;
+      $bracketSize = $bracketSize * 2;
+    }
+    //Encuentra si se han llevado a cabo todas las rondas del torneo
+    db_set_active('eSM');
+      $ronda_actual = db_fetch_array(db_query('SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d ORDER BY Ronda DESC LIMIT 1', $torneo->nid_Torneo));
+    db_set_active('default');
+    
+    dsm($ronda_actual);
+    
+    if($ronda_actual['ronda'] == $numrounds) 
+      _torneo_finaliza_torneo($torneo->nid_Torneo);
+  }
 }

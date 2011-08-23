@@ -718,8 +718,8 @@ function get_user_teams($uid) {
                                     <div class = "left_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
                                     <div class = "datos_equipo">
                                         <ul>
-                                            <li>'. $modalidad->Nombre .'</li>
-                                            <li>'. $equipo->title .'</li>
+                                            <li>'. l($modalidad->Nombre, 'taxonomy/term/'. $modalidad->tid) .'</li>
+                                            <li>'. l($equipo->title, 'node/'. $equipo->nid) .'</li>
                                             <li>'. $ranking .'</li>
                                             <li>'. $division .'</li>
                                         </ul>

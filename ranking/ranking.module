@@ -103,6 +103,33 @@ function ranking_theme() {
 }
 
 /**
+ * Implementation of hook_rules_event_info().
+ * Usado para notificar a los capitanes que su ránking ha sido actualizado
+ * @ingroup rules
+ */
+function ranking_rules_event_info() {
+  return array(
+    'ranking_actualizado_desafio' => array(
+      'label' => t('Puntuacion del equipo actualizada por un desafio'),
+      'module' => 'Ranking',
+      'arguments' => array(
+        'equipo' => array('type' => 'node', 'label' => t('Equipo al que pertenece el usuario')),
+        'user' => array('type' => 'user', 'label' => t('Capitan del equipo.')),
+		'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
+      ),
+    ),
+    'ranking_actualizado_torneo' => array(
+      'label' => t('Puntuacion del equipo actualizada por un torneo'),
+      'module' => 'Ranking',
+      'arguments' => array(
+        'equipo' => array('type' => 'node', 'label' => t('Equipo al que pertenece el usuario.')),
+        'user' => array('type' => 'user', 'label' => t('Capitan del equipo.')),
+        'torneo' => array('type' => 'node', 'label' => t('Detalles del torneo.')),
+      ),
+    ),
+  );
+}
+/**
  *	Función para actualizar los puntos obtenidos por
  *	los equipos participantes en un desafío
  *	Hace el cálculo de puntos y llama a la función de actualizar ránking
@@ -181,206 +208,53 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
 	
 	
 	
-	/**
-	 *	Función para calcular el ranking luego de un desafío
-	 *	@Param 
-	 *	$equipos -- Arreglo con los equipos integrantes del torneo
-	 *		que contiene:
-	 *	equipos[ $Lugar ] = nid_Equipo donde:
-	 *	$Lugar es la posición que ocupa el equipo dentro del torneo
-	 *	$nid_Equipo es el nid del Equipo
-	 */
-	function calcula_ranking_torneo( $equipos )
-	{
-		
-		
-		$numero_Equipos = sizeof( $equipos );
-		
-		if( $numero_Equipos < 64 )
-		{
-			for( $i = 1; $i < $numero_Equipos; $i++ )
-			{
-					
-				if ( i == 1 )
-					actualizar_ranking( $equipos[ i ], 1600, 0, 1 );
-					
-				else if ( i < 2 )
-					actualizar_ranking( $equipos[ i ], 1100, 0, 0 );
-
-				else if ( i < 4 )
-					actualizar_ranking( $equipos[ i ], 700, 0, 0 );
-
-				else if ( i < 8 )
-					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
-
-				else if ( i < 16 )
-					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
-				
-				else if ( i < 32 )
-					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
-				
-				else if ( i < 64 )
-					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
-				
-
-			}
-			
-		}
-
-		else if( $numero_Equipos < 128 )
-		{
-			for( $i = 1; $i < $numero_Equipos; $i++ )
-			{
-					
-				if ( i == 1 )
-					actualizar_ranking( $equipos[ i ], 1900, 0, 1 );
-					
-				else if ( i < 2 )
-					actualizar_ranking( $equipos[ i ], 1400, 0, 0 );
-
-				else if ( i < 4 )
-					actualizar_ranking( $equipos[ i ], 1100, 0, 0 );
-
-				else if ( i < 8 )
-					actualizar_ranking( $equipos[ i ], 700, 0, 0 );
-
-				else if ( i < 16 )
-					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
-				
-				else if ( i < 32 )
-					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
-				
-				else if ( i < 64 )
-					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
-
-				else if ( i < 128 )
-					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
-
-			}
-			
-		}
-
-
-		else if( $numero_Equipos < 256 )
-		{
-			for( $i = 1; $i < $numero_Equipos; $i++ )
-			{
-					
-				if ( i == 1 )
-					actualizar_ranking( $equipos[ i ], 2200, 0, 1 );
-					
-				else if ( i < 2 )
-					actualizar_ranking( $equipos[ i ], 1700, 0, 0 );
-
-				else if ( i < 4 )
-					actualizar_ranking( $equipos[ i ], 1400, 0, 0 );
-
-				else if ( i < 8 )
-					actualizar_ranking( $equipos[ i ], 1100, 0, 0 );
-
-				else if ( i < 16 )
-					actualizar_ranking( $equipos[ i ], 500, 0, 0 );
-				
-				else if ( i < 32 )
-					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
-				
-				else if ( i < 64 )
-					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
-
-				else if ( i < 128 )
-					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
-				
-				else if ( i < 256 )
-					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+/**
+ *	Función para calcular el ranking luego de un desafío
+ *	@Param 
+ *	$equipos -- Arreglo con los equipos integrantes del torne que contiene:
+ *		Indice $i -> Identificador arbitrario
+ *		$equipos [$i]['nid_Equipo'] es el nid del Equipo
+ *		$equipos [$i]['ronda']
+ */
+function _ranking_calcula_torneo( $equipos ) {
+	db_set_active('eSM');
+		$resultado = db_query('SELECT * FROM {Puntuacion_Torneos} ORDER BY Inscritos ASC');
+	db_set_active('default');
 	
-
-			}
-			
-		}
-
-		else if( $numero_Equipos < 512 )
-		{
-			for( $i = 1; $i < $numero_Equipos; $i++ )
-			{
-					
-				if ( i == 1 )
-					actualizar_ranking( $equipos[ i ], 2500, 0, 1 );
-					
-				else if ( i < 2 )
-					actualizar_ranking( $equipos[ i ], 2000, 0, 0 );
-
-				else if ( i < 4 )
-					actualizar_ranking( $equipos[ i ], 1700, 0, 0 );
-
-				else if ( i < 8 )
-					actualizar_ranking( $equipos[ i ], 1400, 0, 0 );
-
-				else if ( i < 16 )
-					actualizar_ranking( $equipos[ i ], 600, 0, 0 );
-				
-				else if ( i < 32 )
-					actualizar_ranking( $equipos[ i ], 500, 0, 0 );
-				
-				else if ( i < 64 )
-					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
-
-				else if ( i < 128 )
-					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
-				
-				else if ( i < 256 )
-					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
+	$numero_equipos = sizeof( $equipos );
 	
-				else if ( i < 512 )
-					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
+	while($tabla_puntuacion = db_fetch_array($resultado)) {
+		if ($numero_equipos <= $tabla_puntuacion['Inscritos'])
+			break;
+	}
 	
-
-			}
+	//Encuentra el número de rondas necesarias
+	//para realizar el torneo.
+    $bracketSize = 2;
+    $numrounds = 2;
+    while($numero_equipos > $bracketSize) {
+      $numrounds++;
+      $bracketSize = $bracketSize * 2;
+    }
+	
+	//Recorre todos los brackets para ver que equipos llegaron a cada ronda
+	$win = 0;
+	for ($ronda = 1; $ronda <= $numrounds; $ronda++) {
+		if ($ronda == $numrounds)
+			$win = 1;
 			
+		//Recorre todo el arreglo de participantes para encontrar
+		//los equipos que llegaron hasta la ronda actual en $ronda
+		foreach($equipos as $i => $equipo) {
+		  if ($equipo['ronda'] == $ronda) {
+			actualizar_ranking($equipo['nid_Equipo'], $tabla_puntuacion[$bracketSize], 1, $win) ;
+		  }
 		}
 		
-		else if( $numero_Equipos < 1024 )
-		{
-			for( $i = 1; $i < $numero_Equipos; $i++ )
-			{
-					
-				if ( i == 1 )
-					actualizar_ranking( $equipos[ i ], 2800, 0, 1 );
-					
-				else if ( i < 2 )
-					actualizar_ranking( $equipos[ i ], 2300, 0, 0 );
-
-				else if ( i < 4 )
-					actualizar_ranking( $equipos[ i ], 2000, 0, 0 );
-
-				else if ( i < 8 )
-					actualizar_ranking( $equipos[ i ], 1700, 0, 0 );
-
-				else if ( i < 16 )
-					actualizar_ranking( $equipos[ i ], 700, 0, 0 );
-				
-				else if ( i < 32 )
-					actualizar_ranking( $equipos[ i ], 600, 0, 0 );
-				
-				else if ( i < 64 )
-					actualizar_ranking( $equipos[ i ], 500, 0, 0 );
-
-				else if ( i < 128 )
-					actualizar_ranking( $equipos[ i ], 400, 0, 0 );
-				
-				else if ( i < 256 )
-					actualizar_ranking( $equipos[ i ], 300, 0, 0 );
-	
-				else if ( i < 512 )
-					actualizar_ranking( $equipos[ i ], 200, 0, 0 );
-	
-				else if ( i < 1024 )
-					actualizar_ranking( $equipos[ i ], 100, 0, 0 );
-					
-			}
-			
-		}		
-		return $form;
-	}	
+		//Divide entre 2 el tamaño del bracket para la siguiente ronda
+		$bracketSize  = $bracketSize / 2;
+	}
+}	
 /**
  * Función para actualizar el ranking de un equipo
  * Recibe el nind_Equipo, Puntación a sumar, Win (1) /Loss (0)
@@ -391,14 +265,14 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
     db_set_active('eSM');
         $puntuacion = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
     db_set_active('default');
-    
-	if ($win == 1)
-		$puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
-	else 
-		$puntuacion->Puntuacion = $puntuacion->Puntuacion - $puntos;    //Actualiza los puntos del equipo
 
-    
     if ($torneo == 0) {         //El partido es un desafío, hace la actualización de puntos y partidos jugados
+		
+		if ($win == 1)
+			$puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
+		else 
+			$puntuacion->Puntuacion = $puntuacion->Puntuacion - $puntos;    //Actualiza los puntos del equipo
+		
         ++$puntuacion->PJ;      //Suma otro partido a los partidos jugados por el equipo
         
         if($puntuacion->Puntuacion < 0)     //Asegura que la puntuación nunca vaya a bajar de cero.
@@ -419,7 +293,10 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
             ++$puntuacion->Racha;   //Incrementa la racha del jugador
         }
     }
-    else {
+    elseif ($torneo == 1) {
+		
+		$puntuacion->Puntuacion = $puntuacion->Puntuacion + $puntos;    //Actualiza los puntos del equipo
+		
         if ($puntos < 0 ) {
             watchdog('ranking', 'Ha ocurrido un error al calcular los puntos del partido : '. $nid_Equipo, NULL, WATCHDOG_ERROR);
             return;
