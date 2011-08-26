@@ -62,6 +62,53 @@ function torneo_signup_theme () {
     );
 }
 /**
+ * Función para añadir validación y sólo registrar a los equipos inscritos en el ránking
+ */
+function torneo_signup_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE || strpos($form_id, 'uc_catalog_buy_it_now_form') !== FALSE) {
+    $node = $form['#parameters']['2'];
+    if (isset($node->signup) && $node->signup == 1) {
+      $form['#validate'][] = 'torneo_uc_signup_product_add_to_cart_form_validate';
+    }
+  }
+}
+/**
+ * Función para confirmar que sólo los jugadores que estén inscritos en el ránking puedan registrarse a los torneos
+ */
+function torneo_uc_signup_product_add_to_cart_form_validate($form, &$form_state) {
+  global $user;
+  $node = node_load($form_state['values']['nid']);
+  
+  $count = 0;
+  
+  foreach($node->taxonomy as $index => $term) {
+	if($modalidad = term_is_active($term->tid)) {
+	  ++$count;
+	  
+	  if(tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada) != TIENE_EQUIPO)
+		 $message = t('Para registrarte a este torneo primero debes inscribirte en el ranking');
+		
+	  else {
+		$team = _team_get_user_team_modalidad($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
+		
+		if($team->Numero_Integrantes < $modalidad->Minimo_Jugadores)
+		  $message = t('Tu equipo no tiene el minimo de jugadores necesarios para inscribirse a este torneo');
+	  }
+	}
+  }
+  
+  //Si el contador sigue en cero significa que no está asociada ninguna modalidad con este nodo
+  if($count == 0)
+	$message = t('Este torneo no tiene asociada una modalidad valida y por tanto no te puedes inscribir.');
+  
+  //Si hay un mensaje significa que la validación falló
+  if ($message)
+	form_set_error('qty', $message);
+  
+  //Llama a la validación original
+  uc_signup_product_add_to_cart_form_validate($form, &$form_state);
+}
+/**
  * Función para verificar si un usuario tiene acceso a la pestaña de usuarios pendientes
  */
 function _torneo_signup_menu_access($node, $menu_type = 'node') {

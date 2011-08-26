@@ -789,3 +789,24 @@ function team_user_is_team_capitan($uid, $nid_Equipo) {
     else
         return FALSE;
 }
+/**
+ * Función para obtener el equipo al que pertenece un usaurio en una modaldiad
+ *
+ * @param
+ * 	$uid
+ * 	$id_Modalidad_Juego_Temporada
+ *
+ * @return
+ * 	object con los datos del equipo
+ */
+function _team_get_user_team_modalidad ($uid, $id_Modalidad_Juego_Temporada) {
+	db_set_active('eSM');
+		$equipo = db_fetch_array(db_query('SELECT e.nid_Equipo FROM {Equipo} AS e
+										  INNER JOIN {Integrantes_Equipo} AS ie ON e.nid_Equipo = ie.nid_Equipo
+										  INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
+										  WHERE e.id_Modalidad_Juego_Temporada = %d AND uid = %d',
+										  $id_Modalidad_Juego_Temporada, $uid));
+	db_set_active('default');
+	
+	return node_load(array('nid' => $equipo['nid_Equipo']));
+}

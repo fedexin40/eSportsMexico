@@ -81,7 +81,6 @@ function torneo_menu() {
     'access arguments' => array(1, 'administrar torneos', 'administrar resultados'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
-	'file' => 'inc/torneo_admin.inc',
   );
   $items['node/%node/admin/settings'] = array(
     'title' => t('Basic Settings'),

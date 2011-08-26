@@ -459,7 +459,7 @@ function term_is_active( $tid ) {
 	$temporada_activa = temporada_activa();
 	
 	db_set_active ('eSM');
-	$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {id_Modalidad_Juego_Temporada}, {reglas} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
+	$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {Minimo_Jugadores}, {id_Modalidad_Juego_Temporada}, {reglas} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
 	db_set_active ('default');
 	
 	while ( $result = db_fetch_object($modalidades_activas) ) {
