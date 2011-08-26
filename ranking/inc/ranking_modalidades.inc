@@ -13,10 +13,12 @@ function mostrar_puntuacion(  ) {
 	
 	$count = 0;
 	//Primero mostraremos todos los equipos
-	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) )
-	{
+	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) ) {
+	  $Equipo = node_load($Puntuacion->nid_Equipo);
+	  
+	  if($Equipo->Numero_Integrantes >= $modalidad->Minimo_Jugadores) {
 		++$count;
-		$Equipo = node_load($Puntuacion->nid_Equipo);
+		
 		$actividad = get_actividad($Equipo->nid);
 		
 		if ($Puntuacion->PJ > 0)
@@ -84,7 +86,7 @@ function mostrar_puntuacion(  ) {
 			'#type' => 'item',
 			'#value' => $Puntuacion->Racha
 		);
-		
+	  }
 	}
 	
 	if ($count == 0) {
