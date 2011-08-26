@@ -13,10 +13,12 @@ function mostrar_puntuacion(  ) {
 	
 	$count = 0;
 	//Primero mostraremos todos los equipos
-	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) )
-	{
+	while( $Puntuacion = db_fetch_object( $Puntuacion_result ) ) {
+	  $Equipo = node_load($Puntuacion->nid_Equipo);
+	  
+	  if($Equipo->Numero_Integrantes >= $modalidad->Minimo_Jugadores) {
 		++$count;
-		$Equipo = node_load($Puntuacion->nid_Equipo);
+		
 		$actividad = get_actividad($Equipo->nid);
 		
 		if ($Puntuacion->PJ > 0)
@@ -84,7 +86,7 @@ function mostrar_puntuacion(  ) {
 			'#type' => 'item',
 			'#value' => $Puntuacion->Racha
 		);
-		
+	  }
 	}
 	
 	if ($count == 0) {
@@ -100,11 +102,13 @@ function mostrar_puntuacion(  ) {
  * Función para saber la actividad reciente de un equipo
  */
 function get_actividad($nid_Equipo) {
-	db_set_active('eSM');
+    db_set_active('eSM');
+	$time = db_fetch_array(db_query('SELECT (max( Fecha_Inicio )) AS numdays FROM { Reto } AS r
+					INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+					WHERE ((ir.nid_Equipo_Local = %d OR ir.nid_Equipo_Visitante = %d) && r.Estado = %d)',
+					$nid_Equipo, $nid_Equipo, COMPLETADO));
+    db_set_active( 'default' );
 	
-		$time = db_fetch_array( db_query( 'SELECT ( max( Fecha_Inicio ) ) AS { numdays } FROM { Reto } AS { r } INNER JOIN { Inicio_Reto } AS { ir } ON { r.nid_Reto = ir.nid_Reto } WHERE ( ir.nid_Equipo_Local = %d } OR  { ir.nid_Equipo_Visitante = %d } )', $nid_Equipo, $nid_Equipo ) );
-	
-	db_set_active( 'default' );
     $matches = time( ) - $time[ 'numdays' ];
     $image_path = drupal_get_path('module', 'ranking') . '/images/';
 	
