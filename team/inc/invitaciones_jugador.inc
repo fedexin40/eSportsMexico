@@ -41,9 +41,12 @@ function administrar_invitaciones( ) {
 			WHERE		
 					ie.{ Estado }	= %d
 				AND
-					j.{ uid } = %d',
+					j.{ uid } = %d
+				AND
+					e.{ Estado } = %d',
 			INVITADO,
-			$user->uid
+			$user->uid,
+			ACTIVO
 		);
 
 	db_set_active(  'default' );

@@ -14,7 +14,9 @@ function equipos_usuario() {
     
     foreach($modalidades_activas as $indice => $modalidad) {
         db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
-            $result = db_query('SELECT {nid_Equipo} FROM {Equipo} WHERE id_Modalidad_Juego_Temporada = %d', $modalidad->id_Modalidad_Juego_Temporada);
+            $result = db_query('SELECT {nid_Equipo} FROM {Equipo}
+                               WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d',
+                               $modalidad->id_Modalidad_Juego_Temporada, ACTIVO);
         db_set_active('default');
         
         while ($equipo = db_fetch_object($result)) {

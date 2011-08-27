@@ -6,7 +6,9 @@
 //y devuelve un arreglo con los datos de todos los equipos inscritos
 function get_equipos( $id_Modalidad_Juego_Temporada ) {
     db_set_active('eSM');
-        $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo} WHERE {id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
+        $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo}
+			    WHERE {id_Modalidad_Juego_Temporada} = %d AND {Estado} = %d',
+			    $id_Modalidad_Juego_Temporada, ACTIVO));
     db_set_active('default');
     
     $equipos = array( );

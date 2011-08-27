@@ -11,6 +11,10 @@ include ( "db_functions.php" );
 * @return help = text for the path
 */
 
+// Define los estados para los equipos
+  define( 'ACTIVO', 0 );
+  define( 'ELIMINADO', 4 );
+
 // Define los estados para la variable de agentes libres
   define( 'PENDIENTE', 3 );
   define( 'TIENE_EQUIPO', 2 );
@@ -396,7 +400,19 @@ function team_load($node){
  * Implementación del hook_node_delete()
  */
 function team_delete($node){
-
+	//Marcar el equipo como eliminado (Estado = 4)
+	db_set_active('eSM');
+		db_query('UPDATE {Equipo} SET Estado = %d WHERE nid_Equipo = %d', ELIMINADO, $node->nid);
+	db_set_active('default');
+	
+	//Regresar a todos los jugadores a estado de NO_REGISTRADO
+	$plantilla = _team_get_plantilla($node->nid);
+	
+	while ($jugador = db_fetch_object($plantilla)) {
+		db_set_active('eSM');
+			db_query('UPDATE {Jugador} SET Estado = %d WHERE id_Jugador = %d', NO_REGISTRADO, $jugador->id_Jugador);
+		db_set_active('default');
+	}
 }
 /**
  * Implementación del hook_block()
@@ -478,8 +494,16 @@ function team_admin_access($node) {
 	global $user;
 	$modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
 	
-	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid) && ($node->type == 'team')){
-		return TRUE;
+	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid) && ($node->type == 'team')) {
+		//Obtiene el estado del equipo para ver si está activo
+		db_set_active('eSM');
+			$team = db_fetch_object(db_query('SELECT * FROM {Equipo} WHERE nid_Equipo = %d', $node->nid));
+		db_set_active('default');
+		
+		if ($team->Estado == ACTIVO)
+			return TRUE;
+		else
+			return FALSE;
 	}
 	else {
 		return FALSE;
@@ -611,7 +635,9 @@ function team_rules_event_info() {
  */
 function tiene_equipo($uid, $id_Modalidad_Juego_Temporada) {
 	db_set_active('eSM');
-		$query = db_query('SELECT {Estado} FROM {Jugador} WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d', $uid, $id_Modalidad_Juego_Temporada);
+		$query = db_query('SELECT {Estado} FROM {Jugador}
+				  WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d AND Estado = %d',
+				  $uid, $id_Modalidad_Juego_Temporada, ACTIVO);
 	db_set_active('default');
     
 	
@@ -650,7 +676,10 @@ function get_jugador($uid, $id_Modalidad_Juego_Temporad) {
  */
 function get_teams($id_Modalidad_Juego_Temporada) {
 	db_set_active('eSM');
-		$teams = db_query('SELECT * FROM {Equipo} AS e INNER JOIN {Puntuacion} AS p ON e.nid_Equipo = p.nid_Equipo WHERE {id_Modalidad_Juego_Temporada} = %d ORDER BY Puntuacion DESC', $id_Modalidad_Juego_Temporada);
+		$teams = db_query('SELECT * FROM {Equipo} AS e INNER JOIN {Puntuacion} AS p ON e.nid_Equipo = p.nid_Equipo
+				  WHERE {id_Modalidad_Juego_Temporada} = %d AND Estado = %d
+				  ORDER BY Puntuacion DESC',
+				  $id_Modalidad_Juego_Temporada, ACTIVO);
 	db_set_active('default');
 	
 	return $teams;
@@ -694,7 +723,9 @@ function get_user_teams($uid) {
     
     foreach($modalidades_activas as $indice => $modalidad) {
         db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
-            $result = db_query('SELECT {nid_Equipo} FROM {Equipo} WHERE id_Modalidad_Juego_Temporada = %d', $modalidad->id_Modalidad_Juego_Temporada);
+            $result = db_query('SELECT {nid_Equipo} FROM {Equipo}
+			       WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d',
+			       $modalidad->id_Modalidad_Juego_Temporada, ACTIVO);
         db_set_active('default');
         
         while ($equipo = db_fetch_object($result)) {
