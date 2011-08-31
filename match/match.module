@@ -143,11 +143,11 @@ function match_form( &$node, $form_state ) {
           $Equipo_Local = is_capitan($user->uid, $node->id_Modalidad_Juego_Temporada);
           
           if (is_null($Equipo_Local)) {
-			$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
-			if (($modalidad->Minimo_Jugadores > 1) && (tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada) == TIENE_EQUIPO))
+	    $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+	    if (($modalidad->Minimo_Jugadores > 1) && (tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada) == TIENE_EQUIPO))
               drupal_set_message(t('Solo los capitanes de equipo pueden crear desafios.'), 'error');
-			else
-			  drupal_set_message(t('Necesitas inscribirte al ránking para poder empezar a desafiar.<br/>Para inscribirte al ranking haz click en este link: '. l('Click', 'taxonomy/term/'. $modalidad->tid)));
+	    else
+	      drupal_set_message(t('Necesitas inscribirte al ránking para poder empezar a desafiar.<br/>Para inscribirte al ranking haz click en este link: '. l('Click', 'taxonomy/term/'. $modalidad->tid)));
           }
           else {
               $node->home_team = $Equipo_Local->nid;
@@ -269,6 +269,10 @@ function match_load( $node ) {
  * @param Array $form
  */
 function match_validate($node, $form){
+  //Revisa que estén configurados los modos de juego de la modalidad o muestra un mensaje de error correspondiente
+  $modos = modos_get_modos_modalidad($modalidad_juego);
+  if (!is_array($modos))
+    form_set_error($node->id_Modalidad_Juego_Temporada, t('Las reglas para esta modalidad no estan correctamente definidas.<br/>Por favor contacta a un administrador'));
   
   //Revisa que el partido tenga una temporada válida
   if (!isset($node->id_Modalidad_Juego_Temporada))

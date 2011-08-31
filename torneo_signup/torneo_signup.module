@@ -157,13 +157,20 @@ function _torneo_signup_menu_access($node, $menu_type = 'node') {
  * 	
  */
 function _torneo_signup_esta_inscrito($uid, $nid_Torneo) {
-  
+  //Revisa si el usuario se ha inscrito por el proceso normal
   $query = db_fetch_array(db_query("SELECT ucl.sid, ucl.uid, sl.nid FROM {uc_signup_log} ucl INNER JOIN {signup_log} sl ON sl.sid = ucl.sid WHERE sl.nid = %d AND type = 1 AND ucl.uid = %d", $nid_Torneo, $uid));
   
   if (is_array($query))
 	return TRUE;
-  else
-	return FALSE;
+  else {
+	//Revisa si por alguna razón el usuario ha sido registrado por un administrador
+	$query = db_fetch_array(db_query("SELECT nid FROM {signup_log} WHERE nid = %d AND uid = %d", $nid_Torneo, $uid));
+	
+	if (is_array($query))
+	  return TRUE;
+	else
+	  return FALSE;
+  }
 }
 /**
  * Función para revisar si un equipo está o no inscrito a un torneo

@@ -636,20 +636,18 @@ function team_rules_event_info() {
 function tiene_equipo($uid, $id_Modalidad_Juego_Temporada) {
 	db_set_active('eSM');
 		$query = db_query('SELECT {Estado} FROM {Jugador}
-				  WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d AND Estado = %d',
-				  $uid, $id_Modalidad_Juego_Temporada, ACTIVO);
+				  WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
+				  $uid, $id_Modalidad_Juego_Temporada);
 	db_set_active('default');
     
 	
 	while ($result = db_fetch_array($query)) {
-	    if ($result['Estado'] == AGENTE_LIBRE) {
-            ++$count;
-			return AGENTE_LIBRE;
-	    }
-        if ($result['Estado'] == TIENE_EQUIPO) {
-            ++$count;
-            return TIENE_EQUIPO;
-        }
+	    if ($result['Estado'] == AGENTE_LIBRE) 
+		return AGENTE_LIBRE;
+	    
+	    if ($result['Estado'] == TIENE_EQUIPO) 
+		return TIENE_EQUIPO;
+	    
 	}
     
 	return NO_REGISTRADO;

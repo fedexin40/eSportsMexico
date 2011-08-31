@@ -1,9 +1,19 @@
 <?php
 /**
+ * Función para llamar a las funciones de cron para el módulo match
+ */
+function _match_cron_task () {
+  //Llama a la función para cerrar los partidos que no tengan resultado reportado
+  _match_cron_reportes ();
+  
+  //Llama a la función para cancelar los partidos que no se hayan aceptado
+  _match_cron_cancelar_desafios_no_aceptados ();
+}
+/**
  * Función para propagar los resultados en los desafíos con más de X horas de programados
  * y para los que todavía no se hayan reportado resultados de los dos participantes
  */
-function _match_cron_task () {
+function _match_cron_reportes () {
   //Define el tiempo máximo de duración de los partidos en espera de reporte de resultado
   $horas = 3; //Cambiar el valor de esta variable para cambiar el número de horas de tolerancia para el reporte de resultados
   
@@ -51,5 +61,26 @@ function _match_cron_task () {
     else {
       _match_end_match($reto->nid_Reto, $nid_Ganador);
     }
+  }
+}
+/**
+ * Función para cancelar de manera automática los desafíos no aceptados antes de 5min de la hora de inicio
+ */
+function _match_cron_cancelar_desafios_no_aceptados () {
+  //Define el tiempo máximo de duración de los partidos en espera de reporte de resultado
+  $minutos = 5; //Cambiar el valor de esta variable para cambiar el número de horas de tolerancia para el reporte de resultados
+  
+  $fecha = time() + ($minutos * 60);
+  
+  //Obtiene una lista de los desafíos que todavía no han sido aceptados
+  db_set_active('eSM');
+    $retos = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+                         WHERE Estado = %d AND Fecha_Inicio <= %d', CREADO, $fecha);
+  db_set_active('default');
+  
+  while ($reto = db_fetch_object($retos)) {
+    db_set_active('eSM');
+      db_query('UPDATE {Reto} SET Estado = %d WHERE nid_Reto = %d', CANCELADO, $reto->nid_Reto);
+    db_set_active('default');
   }
 }
