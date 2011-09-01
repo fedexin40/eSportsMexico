@@ -10,10 +10,10 @@ function theme_equipos_pendientes ($form) {
     
     $header = array(t('Equipo'), t('No. Jugadores Inscritos'));
     $rows = array();
-    $row = array();
     $count = 1;
     
     foreach (element_children($form['pendientes']) as $element)   {
+        $row = array();
         $row[] = drupal_render($form['pendientes'][$element]['Nombre']);
         $row[] = drupal_render($form['pendientes'][$element]['Inscritos']);
         $rows[] = $row;
