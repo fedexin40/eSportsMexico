@@ -1,721 +1,443 @@
 <?php
-// $Id$
-
 /**
  *	@file
  *	Form callbacks for Temporada table
  */
-	
+/**
+ * Page callback function for listing the rows from Temporada existing in the table
+ * as the name in the file, and inserting in it too.
+ */
+function temporada_admin(  ) {
+	db_set_active( 'eSM' );
+		$result_set_Temporada = db_query( "SELECT * FROM {Temporada}" );	
+	db_set_active( 'default' );
 
-	/**
-	 * Page callback function for listing the rows from Temporada existing in the table
-	 * as the name in the file, and inserting in it too.
-	 */
-	function temporada_admin(  ) {
-		// Creating the date/time element starts here
-		
-		// Provide a default date in the format YYYY-MM-DD HH:MM:SS.
-		$date = '2011-12-31';
+	$Existe_Temporada_Activa = 0;
 
-		// Provide a format using regular PHP format parts (see documentation on php.net).
-		// If you're using a date_select, the format will control the order of the date parts in the selector,
-		// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-		$format = 'Y-m-d';
-		
-		db_set_active( 'eSM' );
-		$result_set_Temporada = db_query( "SELECT * FROM {Temporada}" );
-		$result_set_array_Temporada = db_fetch_array( db_query( "SELECT * FROM {Temporada}" ) );		
-		db_set_active( 'default' );
-
-
-		$Existe_Temporada_Activa = 0;
-
-		while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
-			
-			if( $Temporada->Estado == 1 ) {
-				$Existe_Temporada_Activa = 1;
-				break;
-			}
+	while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
+		if( $Temporada->Estado == TEMPORADA_ACTIVA ) {
+			$Existe_Temporada_Activa = 1;
+			break;
 		}
+	}
+	
+	if( $Existe_Temporada_Activa == 1 ) {
+		drupal_goto('admin/base_datos_externa/temporada/listar');
+	}
+	else {
+		//No hay temporadas activas en la base de datos
+		db_set_active( 'eSM' );		
+			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE Estado <> %d", TEMPORADA_CERRADA );
+		db_set_active( 'default' );
 		
-		$form[ 'Estado_Temporadas' ] = array(
-			'#type' => 'fieldset',
-			'#title' => t( 'Estado de las temporadas' ),
-			//'#collapsible' => 'TRUE',
-			'#collapsed' => 'FALSE',
+		$output = '<p>No existe ninguna temporada activa actualemente.</p><p>Activa una temporada o crea una temporada nueva utilizando los enlaces de esta página</p>';
+		$output .= '<fieldset class="collapsible"><legend>Temporadas Disponibles</legend>';
 		
-		);
-		
-		
-		if( $Existe_Temporada_Activa == 1 ) {
+		$count = 0;
+		while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
+			$count++;
+			$row = array();
+			$row[] = $Temporada->Nombre;
+			$row[] = timestamp_to_string( $Temporada->Fecha_Inicio );
+			$row[] = timestamp_to_string( $Temporada->Fecha_Fin );
+			$row[] = l( t( 'Activar' ), 'admin/base_datos_externa/temporada/activar/'.$Temporada->id_Temporada);
+			$rows[] = $row;
+		}
 
-			
-			db_set_active( 'eSM' );
-			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE {Temporada.Estado} = %d", 1 );
-			$result_set_array_Temporada = db_fetch_array( db_query( "SELECT * FROM {Temporada}" ) );		
-
-			db_set_active( 'default' );
-			
-			$Temporada = db_fetch_object( $result_set_Temporada );
-			
-			//dpm( $Temporada );
-						
-			$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
-			$fecha_fin = timestamp_to_string( $Temporada->Fecha_Fin );
-			
-			$form[ 'Estado_Temporadas' ][ 'Listar_Temporada_Activa' ][ 'title' ] = array (
-				'#type' => 'item',
-				//'label' => t( 'Nombre' ),
-				//'#disabled' => 'TRUE',
-				//'size' => 17,
-				//'maxlength' => 17,
-				'#title' => t( 'Temporada activa' ),
-				//'#required' => TRUE,
-				'#weight' => -8,
-				'#value' => $Temporada->Nombre."\n",
-			);			
-			
-			$form[ 'Estado_Temporadas' ][ 'Listar_Temporada_Activa' ][ 'fecha_inicio' ] = array (
-				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#disabled' => 'TRUE',
-				'#title' => 'Fecha de inicio',
-				'#default_value' => $fecha_inicio,
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-				'#size' => 17,
-				'#maxlength' => 17,
-			);
-			
-			$form[ 'Estado_Temporadas' ][ 'Listar_Temporada_Activa' ][ 'fecha_fin' ] = array (
-				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#disabled' => 'TRUE',
-				'#title' => 'Fecha de finalización',
-				'#default_value' => $fecha_fin,
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-				'#size' => 17,
-				'#maxlength' => 17,
-			);
-						
-			$form[ 'Estado_Temporadas' ][ 'Listar_Temporada_Activa' ][ 'editar' ] = array (
-				'#value' => l( t( 'Editar' ), 'admin/base_datos_externa/temporadas/'.$Temporada->id_Temporada.'/editar' ),
-			);
-			
-			$form[ 'Estado_Temporadas' ][ 'Listar_Temporada_Activa' ][ 'desactivar' ] = array (
-				'#value' => l( t( 'Desactivar' ), 'admin/base_datos_externa/temporadas/'.$Temporada->id_Temporada.'/desactivar' ),
-			);
-
+		if ($count > 0) {
+			$header = array ('Nombre', 'Fecha de Inicio', 'Fecha Final', ' ');
+			$output .= theme('table', $header, $rows);
 		}
 		else {
-			
-			
-			db_set_active( 'eSM' );		
-				$result_set_Temporada = db_query( "SELECT * FROM {Temporada}" );
-			db_set_active( 'default' );
-			
-			
-			while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
-				$Temporada_Nombres[ $Temporada->id_Temporada ] = $Temporada->Nombre;			
-			}
-
-			$form[ 'Estado_Temporadas' ][ 'Establecer_temporada_activa' ][ 'Temporadas_Nombres' ]  = array (
-				
-				'#type' => 'select',
-				'#title' => t( 'No existe una temporada activa. Estas son las temporadas disponibles' ),
-				'#options' => $Temporada_Nombres,
-			);
-			
-			
-			$form[ 'Estado_Temporadas' ][ 'Establecer_temporada_activa' ][ 'submit' ] = array(
-			'#type' => 'submit',
-			'#value' => t( 'Activar' ),
-			);
-		}	
-	
+			$output .= '<p>No hay temporadas disponibles.</p>';
+		}
 		
-		return $form;
-	}
-	
-	
-	/**
-	 *	Implementación del hook submit
-	 *	para la tabla temporada
-	 */
-	function temporadas_admin_insertar_submit( $form, $form_state ) {
-		
-		
-		
-		//dpm( "temporadasinsertar" );
-		//$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'insertar' ][ 'fecha_inicio' ] );
-		//$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'insertar' ][ 'fecha_fin' ] );
-		
-		$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
-		$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
-		
-		
-
-		
-		
+		$output .= l( t( 'Añadir Temporada' ), 'admin/base_datos_externa/temporada/insertar');
+		$output .= '</fieldset>';
+	}	
+	return $output;
+}
+/**
+ * Despliega la información de la temporada activa
+ */
+function temporada_activa_listar () {
 		db_set_active( 'eSM' );
-		
-		db_query
-		( 
-			"INSERT INTO { Temporada } 
-			( 
-				Nombre, 
-				Fecha_Inicio, 
-				Fecha_Fin
-			) 
-				VALUES ( '%s', %d, %d )",
-
-				$form_state[ 'values' ][ 'title' ],
-				$temporada_inicio, 
-				$temporada_fin
-		);
-
-		
+			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE {Temporada.Estado} = %d", TEMPORADA_ACTIVA );
 		db_set_active( 'default' );
 		
-		drupal_set_message( "La temporada fué insertada satisfactoriamente" );
-		drupal_goto( "admin/base_datos_externa/temporadas" );
-		
-	}
-	
-
-	/**
-	 *	Función para editar una temporada
-	 */
-	function temporada_admin_editar( ) {
-		
-		
-		
-		
-		$date = '2011-12-31';
-
-		// Provide a format using regular PHP format parts (see documentation on php.net).
-		// If you're using a date_select, the format will control the order of the date parts in the selector,
-		// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-		$format = 'Y-m-d';
-		
-		
-		$id_Temporada = arg( 3 );
-		
-		
-		
-		db_set_active( 'eSM' );
-		$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE {Temporada.id_Temporada} = %d", $id_Temporada );
-		db_set_active( 'default' );
-		
-		
-		//Primero pondremos un listado de temporadas disponibles
 		$Temporada = db_fetch_object( $result_set_Temporada );
-		
+					
 		$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
 		$fecha_fin = timestamp_to_string( $Temporada->Fecha_Fin );
 		
+		$output = '<fieldset class="collapsible"><legend>Detalles</legend>';
+		$content[] = '<strong>Nombre:</strong> ' . $Temporada->Nombre;
+		$content[] = '<strong>Fecha de inicio:</strong> ' . $fecha_inicio;
+		$content[] = '<strong>Fecha de fin:</strong> ' . $fecha_fin;
 		
-		$form[ 'title' ] = array
-		(
+		$output .= theme('item_list', $content);
+					
+		$output .= l( t( 'Editar Detalles' ), 'admin/base_datos_externa/temporada/editar/'.$Temporada->id_Temporada);
+		$output .=  '<span> | </span>';
+		$output .= l( t( 'Cerrar Temporada' ), 'admin/base_datos_externa/temporada/desactivar/'.$Temporada->id_Temporada);
+		$output .=  '<span> | </span>';
+		$output .= l( t( 'Añadir Temporada' ), 'admin/base_datos_externa/temporada/insertar');
+		$output .= '</fieldset>';
+		
+		db_set_active( 'eSM' );
+			$modalidades = db_query( "SELECT * FROM {Modalidad_Juego_Temporada} AS mjt
+																											 INNER JOIN {Modalidad_Juego} AS mj
+																											 ON mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego
+																											 WHERE id_Temporada = %d",
+																											 $Temporada->id_Temporada);
+		db_set_active( 'default' );
+		$count = 0;
+		//Primero pondremos un listado de modalidades disponibles
+		while( $modalidad = db_fetch_object( $modalidades) ) {
+			$count++;
+			$row = array();
+			$row[] = $modalidad->Nombre;
+			$row[] = l( t( 'Desactivar Modalidad' ), 'admin/base_datos_externa/temporada/'. $Temporada->id_Temporada .'/modalidades/'. $modalidad->id_Modalidad_Juego .'/desactivar');
+			$rows[] = $row;
+		}
+		
+		$output .= '<fieldset class = "collapsible"><legend>Modalidades Activas</legend>';
+		if ($count > 0) {
+			$header = array ('Nombre', ' ');
+			$output .= theme('table', $header, $rows);
+		}
+		else {
+			$output .= '<p>No hay Modalidades Activas en la temporada.</p>';
+		}
+		$output .= l( t( 'Añadir Modalidad' ), 'admin/base_datos_externa/temporada/'. $Temporada->id_Temporada .'/modalidades'). '</fieldset>';
+	
+	return $output;
+}
+/**
+ *	Función para editar una temporada
+ */
+function temporada_admin_editar( ) {
+	$date = '2011-12-31';
+	// Provide a format using regular PHP format parts (see documentation on php.net).
+	// If you're using a date_select, the format will control the order of the date parts in the selector,
+	// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
+	$format = 'Y-m-d';
+	
+	$id_Temporada = arg( 4 );
+	
+	db_set_active( 'eSM' );
+		$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE {Temporada.id_Temporada} = %d", $id_Temporada );
+	db_set_active( 'default' );
+	$Temporada = db_fetch_object( $result_set_Temporada );
+	
+	$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
+	$fecha_fin = timestamp_to_string( $Temporada->Fecha_Fin );
+	
+	$form[ 'title' ] = array (
+		'#type' => 'textfield',
+		'#title' => t('Nombre'),
+		'#required' => TRUE,
+		'#weight' => -8,
+		'#default_value' => $Temporada->Nombre,
+	);
+	
+	$form[ 'fecha_inicio' ] = array (
+		'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+		'#title' => 'Selecciona la fecha de inicio',
+		'#default_value' => $fecha_inicio,
+		'#date_format' => $format,
+		'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+		'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+		'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+		'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+		);
+	
+	$form[ 'fecha_fin' ] = array (
+		'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+		'#title' => 'Selecciona la fecha de finalización',
+		'#default_value' => $fecha_fin,
+		'#date_format' => $format,
+		'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+		'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+		'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+		'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+	);
+	
+	$form[ 'id_Temporada' ] = array (
+		'#type' => 'hidden',
+		'#value' => $Temporada->id_Temporada,
+	);
+		
+	$form[ 'submit' ] = array (
+		'#type' => 'submit',
+		'#value' => t( 'Guardar' ),
+	);
+				
+	$form[ '#validate' ] = array( 'temporada_admin_insertar_validate' );
+	
+	return $form;
+}
+/**
+ *	Sumbit para la forma de edición
+ */
+function temporada_admin_editar_submit( $form, $form_state ) {
+	$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
+	$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
+	
+	db_set_active( 'eSM' );
+		db_query 	("UPDATE {Temporada} SET
+							Nombre = '%s', Fecha_Inicio = %d, Fecha_Fin = %d
+							WHERE id_Temporada = %d",
+							$form_state[ 'values' ][ 'title' ], $temporada_inicio, $temporada_fin, $form_state[ 'values' ][ 'id_Temporada' ]
+						);
+	db_set_active( 'default' );
+	
+	drupal_set_message('Se han guardado los cambios');
+	drupal_goto( "admin/base_datos_externa/temporada" );
+}
+/**
+ *	Lista las temporadas disponibles en la base de datos
+ */
+function temporadas_admin_listar( ) {
+	$output = '';
+	db_set_active( 'eSM' );
+		$temporada = db_fetch_object(db_query("SELECT * FROM {Temporada} WHERE Estado = %d LIMIT 1", TEMPORADA_ACTIVA));
+	db_set_active( 'default' );
+	
+	if(is_object($temporada)) {	//Si hay una temporada activa desplegamos su información
+		$header = array(t('Nombre'), t('Fecha Inicio'), t('Fecha Fin'));
+		$rows = array(array($temporada->Nombre, timestamp_to_string( $temporada->Fecha_Inicio ), timestamp_to_string( $temporada->Fecha_Inicio )));
+		$output .= '<fieldset class = "collapsible"><legend>Temporada Activa</legend>' . theme('table', $header, $rows) . '</fieldset>';
+	}
+	
+	//Primero pondremos un listado de las temporadas inactivas
+	db_set_active( 'eSM' );
+		$result_set_Temporada = db_query("SELECT * FROM {Temporada} WHERE Estado = %d ORDER BY Fecha_Inicio ASC", TEMPORADA_INACTIVA);
+	db_set_active( 'default' );	
+	$rows = array();
+	while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
+		$row = array();
+		$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
+		$fecha_fin = timestamp_to_string( $Temporada->Fecha_Fin );
+
+		$row[] = $Temporada->Nombre;			
+		$row[] = $fecha_inicio;
+		$row[] = $fecha_fin;
+		$row[] = l( t( 'Editar' ), 'admin/base_datos_externa/temporada/editar/'.$Temporada->id_Temporada);
+		$rows[] = $row;
+	}
+	
+	if(count($rows) > 0) {	//Si hay temporadas inactivas
+		$header = array(t('Nombre'), t('Fecha Inicio'), t('Fecha Fin'), ' ');
+		$output .= '<fieldset class = "collapsible"><legend>Temporada Activa</legend>' . theme('table', $header, $rows) . '</fieldset>';
+	}
+	
+	//Finalizamos con un listado de todas las temporadas pasadas
+	db_set_active( 'eSM' );
+		$result_set_Temporada = db_query("SELECT * FROM {Temporada} WHERE Estado = %d ORDER BY Fecha_Inicio DESC", TEMPORADA_CERRADA);
+	db_set_active( 'default' );	
+	$rows = array();
+	while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
+		$row = array();
+		$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
+		$fecha_fin = timestamp_to_string( $Temporada->Fecha_Fin );
+
+		$row[] = $Temporada->Nombre;			
+		$row[] = $fecha_inicio;
+		$row[] = $fecha_fin;
+		$row[] = l( t( 'Estadisticas' ), 'admin/base_datos_externa/temporada/stats/'.$Temporada->id_Temporada);
+		$rows[] = $row;
+	}
+	
+	if(count($rows) > 0) {	//Si hay temporadas inactivas
+		$header = array(t('Nombre'), t('Fecha Inicio'), t('Fecha Fin'), ' ');
+		$output .= '<fieldset class = "collapsible"><legend>Temporada Activa</legend>' . theme('table', $header, $rows) . '</fieldset>';
+	}
+	
+	return $output;
+}
+/**
+ *	Inserta una temporada en la base de datos
+ */
+function temporadas_admin_insertar ( ) {
+	// Creating the date/time element starts here
+	
+	// Provide a default date in the format YYYY-MM-DD HH:MM:SS.
+	$date = '2011-12-31';
+
+	// Provide a format using regular PHP format parts (see documentation on php.net).
+	// If you're using a date_select, the format will control the order of the date parts in the selector,
+	// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
+	$format = 'Y-m-d';
+	
+	$form[ 'insertar' ][ 'title' ] = array 	(
 			'#type' => 'textfield',
 			'#title' => t('Nombre'),
 			'#required' => TRUE,
 			'#weight' => -8,
-			'#default_value' => $Temporada->Nombre,
-		);
-		
-		
-		$form[ 'fecha_inicio' ] = array
-			(
+	);
+	
+	$form[ 'insertar' ][ 'fecha_inicio' ] = array (
 			'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
 			'#title' => 'Selecciona la fecha de inicio',
-			'#default_value' => $fecha_inicio,
+			'#default_value' => date( 'Y-m-d' ), 
 			'#date_format' => $format,
 			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
 			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
 			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
 			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-			);
-		
-		
-		$form[ 'fecha_fin' ] = array
-		(
+		);
+	
+	$form[ 'insertar' ][ 'fecha_fin' ] = array (
 			'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
 			'#title' => 'Selecciona la fecha de finalización',
-			'#default_value' => $fecha_fin,
 			'#date_format' => $format,
 			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
 			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
 			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
 			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+	);
+				
+		$form[ 'insertar' ][ 'submit' ] = array (
+		'#type' => 'submit',
+		'#value' => t( 'Insertar' ),
 		);
-		
-		
-		$form[ 'id_Temporada' ] = array(
-			'#type' => 'hidden',
-			'#value' => $Temporada->id_Temporada,
-		);
-			
-		/*$form[ 'id_Form' ] = array(
-			'#type' => 'hidden',
-			'#value' => $form->form_id,
-		);*/
-				
-		$form[ 'submit' ] = array(
-			'#type' => 'submit',
-			'#value' => t( 'Guardar' ),
-			
-		);
-				
-				
-				
-		$form[ '#validate' ] = array( 'temporada_admin_validate' );
-		
-		
-		return $form;
-		
-		
-	}
 	
-
-	/**
-	 *	Sumbit para la forma de edición
-	 */
-	function temporada_admin_editar_submit( $form, $form_state ) {
-		
-		$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
-
-		$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
-		
-		//dpm( "Hola" );
-		
-		db_set_active( 'eSM' );
-			
-		db_query
-		(
-			"UPDATE {Temporada}
-			SET
-			Nombre = '%s',
-			Fecha_Inicio = %d,
-			Fecha_Fin = %d
-			WHERE
-			id_Temporada = %d",
-			$form_state[ 'values' ][ 'title' ],
-			$temporada_inicio,
-			$temporada_fin,
-			$form_state[ 'values' ][ 'id_Temporada' ]
-		);
-				
-		db_set_active( 'default' );
-		
-		drupal_set_message( "La plataforma fué guardada satisfactoriamente" );
-		drupal_goto( "admin/base_datos_externa/temporadas" );
-		
-	}
+	return $form;
+}
+/**
+ *	Implementación del hook submit
+ *	para la tabla temporada
+ */
+function temporadas_admin_insertar_submit( $form, $form_state ) {
+	$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
+	$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
 	
+	db_set_active( 'eSM' );
+		db_query	("INSERT INTO { Temporada }
+							 (Nombre,  Fecha_Inicio,  Fecha_Fin) 
+								VALUES ( '%s', %d, %d )",
+								$form_state[ 'values' ][ 'title' ], $temporada_inicio, $temporada_fin
+							);
+	db_set_active( 'default' );
 	
-	/**
-	 * Función para validar:
-	 * La fecha de fin sea mayor que la fecha de inicio
-	 * La fecha de inicio sea mayor o igual que la fecha actual
-	 * La fechas de temporadas no abarquen periodos compartidos de tiempo
-	 */
-	function temporadas_admin_insertar_validate( $form, $form_state ) {
-		
+	drupal_set_message( "La temporada fué insertada satisfactoriamente" );
+	drupal_goto( "admin/base_datos_externa/temporada" );
+}
+/**
+ * Función para validar:
+ * La fecha de fin sea mayor que la fecha de inicio
+ * La fecha de inicio sea mayor o igual que la fecha actual
+ * La fechas de temporadas no abarquen periodos compartidos de tiempo
+ */
+function temporadas_admin_insertar_validate( $form, $form_state ) {
 		//Guardamos la fecha actual como timestamp
-		$fecha_actual = string_to_timestamp ( date( "Y-m-d" ) );
+	$fecha_actual = string_to_timestamp ( date( "Y-m-d" ) );
 
+		$fecha_inicio_forma = string_to_timestamp ( $form_state[ 'values' ][ 'fecha_inicio' ] );
+		$fecha_fin_forma = string_to_timestamp ( $form_state[ 'values' ][ 'fecha_fin' ] );			
+	//}
+	
+	//Validamos
+	if( intval( $fecha_fin_forma ) < intval( $fecha_inicio_forma ) ) {
+		form_set_error( 'fecha_fin', t( 'La fecha de fin debe ser mayor o igual que la fecha de inicio' ) );
+	}
+	else if( (integer)$fecha_inicio_forma < (integer)$fecha_actual ) {
+		form_set_error( 'fecha_inicio', t( 'La fecha de inicio debe ser mayor o igual que la fecha actual' ) );
+	}
+	else {
+		db_set_active( 'eSM' );
+		$result_set_Temporada = db_query( "SELECT * FROM {Temporada} ORDER BY Fecha_Inicio ASC" );
+		db_set_active( 'default' );
 		
-		//Asignamos fechas de inicio y final de acuerdo a la forma
-		/*if ( $form[ 'form_id' ][ '#id' ] == "edit-temporada-admin-list" ) {
-			$fecha_inicio_forma = string_to_timestamp ( $form_state[ 'values' ][ 'insertar' ][ 'fecha_inicio' ] );
-			$fecha_fin_forma = string_to_timestamp ( $form_state[ 'values' ][ 'insertar' ][ 'fecha_fin' ] );			
-		}
-		else if ($form[ 'form_id' ][ '#id' ] == "edit-temporada-admin-list-edit" ) {*/
-			$fecha_inicio_forma = string_to_timestamp ( $form_state[ 'values' ][ 'fecha_inicio' ] );
-			$fecha_fin_forma = string_to_timestamp ( $form_state[ 'values' ][ 'fecha_fin' ] );			
-		//}
-		
-		
-		//Validamos
-		if( intval( $fecha_fin_forma ) < intval( $fecha_inicio_forma ) ) {
-			form_set_error( 'fecha_fin', t( 'La fecha de fin debe ser mayor o igual que la fecha de inicio' ) );
-		}
-		else if( (integer)$fecha_inicio_forma < (integer)$fecha_actual ) {
-			form_set_error( 'fecha_inicio', t( 'La fecha de inicio debe ser mayor o igual que la fecha actual' ) );
-		}
-		
-		else
-		{
-		
-			db_set_active( 'eSM' );
-			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} ORDER BY Fecha_Inicio ASC" );
-			db_set_active( 'default' );
-			
-			//Primero pondremos un listado de temporadas disponibles
-			while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
+		//Primero pondremos un listado de temporadas disponibles
+		while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
+				if( $Temporada->Estado == 2 )  								//Si las temporadas son futuras, no las valida
+					break;
+				$fecha_inicio = $Temporada->Fecha_Inicio;
+				$fecha_fin = $Temporada->Fecha_Inicio;
 				
-
-					if( $Temporada->Estado == 2 )  								//Si las temporadas son futuras, no las valida
-						break;
-					$fecha_inicio = $Temporada->Fecha_Inicio;
-					$fecha_fin = $Temporada->Fecha_Inicio;
-					
-					/*dpm( 'Fecha de inicio: '.$fecha_inicio.' para el id: '.$Temporada->id_Temporada );
-					dpm( 'Fecha de inicio en la forma: '.$fecha_inicio_forma );
-					dpm( 'Fecha de fin: '.$fecha_fin.' para el id: '.$Temporada->id_Temporada );
-					dpm( 'Fecha de fin en la forma: '.$fecha_fin_forma );*/
-					
-					
-					if( $fecha_inicio_forma <= $fecha_fin ) {
-						form_set_error( array( 'fecha_inicio', 'fecha_fin'  ), t( 'Las fechas entre temporadas no pueden solaparse' ) );
-						drupal_goto( "admin/base_datos_externa/temporadas" );
-					}
-				if( $Temporada->Estado == 0 ) {																							//Si la temporada es pasada
-					form_set_error( array( 'fecha_inicio', 'fecha_fin'  ), t( 'Las fechas pasadas no se puden editar' ) );
-						drupal_goto( "admin/base_datos_externa/temporadas" );
+				if( $fecha_inicio_forma <= $fecha_fin ) {
+					form_set_error( array( 'fecha_inicio', 'fecha_fin'  ), t( 'Las fechas entre temporadas no pueden solaparse' ) );
 				}
-				
-			}			
-		}
-	}
-	
-	
-	
-	
-	/**
-	 *	Refresca el estado de las tablas
-	 */
-	function refresh_status( ) {
-		$fecha_actual = string_to_timestamp ( date( "Y-m-d" ) );
-		if( $fecha_actual >= $temporada_inicio && $fecha_actual <= $temporada_fin )
-		{
-			$estado = 1;
-		}
-		else {
-			$estado = 2;
-		}
-	}
-	
-	
-	
-	/**
-	 *	Introduce en la tabla de temporada la información
-	 */
-	function temporada_admin_submit( $form, $form_state ) {
-	
-		
-		
-		$id_Temporada = $form_state[ 'values' ][ 'Temporadas_Nombres' ];
-				
-		db_set_active( 'eSM' );
-			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} ORDER BY Fecha_Inicio ASC" );
-		db_set_active( 'default' );
-			
-		//Primero pondremos un listado de temporadas disponibles
-		while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
-			if( $Temporada->Estado == 1 ) {
-				
-				$activaAnterior = $Temporada->id_Temporada;
-				db_set_active( 'eSM' );
-		
-					db_query
-					(
-						"UPDATE {Temporada}
-						SET
-						Estado = %d
-						WHERE
-						id_Temporada = %d",
-						0,
-						$activaAnterior
-					);
-		
-				db_set_active( 'default' );
+			if( $Temporada->Estado == TEMPORADA_CERRADA ) {																							//Si la temporada es pasada
+				form_set_error( array( 'fecha_inicio', 'fecha_fin'  ), t( 'Las temporadas pasadas no se puden editar' ) );
 			}
-		}
-				
-
-		db_set_active( 'eSM' );
-		db_query
-		(
-			"UPDATE
-			{ Temporada }
-			SET
-			{ Estado } =  %d
-			WHERE
-			{ Temporada.id_Temporada} = %d",
-			1,
-			$id_Temporada
-		);
-				
-		db_set_active( 'default' );
-		
-		
-		drupal_set_message( "La plataforma fué activada satisfactoriamente" );
-		drupal_goto( "admin/base_datos_externa/temporadas" );
-		
+		}			
 	}
-	
-	
-	
-	
-	/**
-	 *	Confirma la operación de activación de temporada
-	 */
-	function temporada_activa_admin_confirmacion_operacion( ) {
-				
-		//dpm( "Hola" );
-		$options = array( "Si", "No" );
-			
+}
+/**
+ *	Confirmación de la operación de cierre de la temporada
+ */
+function temporada_admin_desactivar( ) {
+	return confirm_form (
+		$form,
+		t('¿Realmente quieres cerrar la temporada actual?'),
+		isset($_GET['destination']) ? $_GET['destination'] : "admin/base_datos_externa/temporada",
+		t('Los cambios no se pueden deshacer'),
+		t('Si'),
+		t('Cancelar')
+	);
+}
+/**
+ *	Introduce en la tabla de temporada la información
+ */
+function temporada_admin_desactivar_submit( ) {
+	$id_Temporada = arg( 4 );
 
-			
-		$form[ 'Confirmar_Activa' ][ 'title' ]  = array (
-			'#type' => 'title',
-			//'label' => t( 'Nombre' ),
-			//'#disabled' => 'TRUE',
-			//'size' => 17,
-			//'maxlength' => 17,
-			'#title' => t( '¿Estás seguro?' ),
-			//'#required' => TRUE,
-			'#weight' => -8,
-		);
-
-		$form[ 'Confirmar_Activa' ][ 'Si' ] = array
-		(
-			'#value' => l( t( 'Si' ), 'admin/base_datos_externa/temporadas/confirmar_activa' ),
-		);
-
-		$form[ 'Confirmar_Activa' ][ 'No' ] = array
-		(
-			'#value' => l( t( 'No' ), 'admin/base_datos_externa/temporadas/' ),
-		);
-		
-		
-	}
+	db_set_active( 'eSM' );
+		db_query ("UPDATE { Temporada }
+							SET { Estado } =  %d
+							WHERE { Temporada.id_Temporada} = %d",
+							TEMPORADA_CERRADA, $id_Temporada
+							);			
+	db_set_active( 'default' );
+	//TODO: Establecer una serie de acciones a realizar cuando se cierra la temporada
+	drupal_set_message( "Has cerrado la temporada." );
+	drupal_goto( "admin/base_datos_externa/temporada" );		
+}
+/**
+ *	Formulario para confirmar la activación de una temporada
+ */
+function temporada_admin_activar( ) {
+	return confirm_form (
+		$form,
+		t('¿Realmente quieres activar la temporada seleccionada?'),
+		isset($_GET['destination']) ? $_GET['destination'] : "admin/base_datos_externa/temporada",
+		t(' '),
+		t('Si'),
+		t('Cancelar')
+	);
+}
+/**
+ *	Activa una temporada
+ */
+function temporada_admin_activar_submit( ) {
+	$id_Temporada = arg( 4 );
 	
+	db_set_active( 'eSM' );
+		db_query ("UPDATE { Temporada }
+							SET { Estado } =  %d
+							WHERE { Temporada.id_Temporada} = %d",
+							TEMPORADA_ACTIVA, $id_Temporada
+							);			
+	db_set_active( 'default' );
 	
-	/**
-	 *	Página de confirmación de la operación de activación
-	 */
-	function temporada_admin_confirmar_activa( ) {
-		drupal_set_message( "La temporada fué insertada satisfactoriamente" );
-		drupal_goto( "admin/base_datos_externa/temporadas" );
-	}
+	drupal_set_message( "La temporada ha sido activada corrrectamente." );
+	drupal_goto( "admin/base_datos_externa/temporada" );
+}
+/**
+ *	Página de confirmación de la operación de activación
+ */
+function temporada_admin_activar_validate( ) {
+	$id_Temporada = arg( 4 );
 	
+	db_set_active( 'eSM' );
+		$result = db_result(db_query ("SELECT count(*) FROM {Temporada}
+							WHERE { Estado } = %d",
+							TEMPORADA_ACTIVA));			
+	db_set_active( 'default' );
 	
-	
-	
-	
-	/**
-	 *	Lista las temporadas disponibles en la base de datos
-	 */
-	function temporadas_admin_listar( ) {
-		
-		// Creating the date/time element starts here
-		
-		// Provide a default date in the format YYYY-MM-DD HH:MM:SS.
-		$date = '2011-12-31';
-
-		// Provide a format using regular PHP format parts (see documentation on php.net).
-		// If you're using a date_select, the format will control the order of the date parts in the selector,
-		// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-		$format = 'Y-m-d';
-		
-		
-		/*$form[ 'listar' ] = array(
-			'#type' => 'fieldset',
-			'#disabled' => TRUE,
-			'#title' => t( 'Listar' ),
-			'#collapsible' => 'TRUE',
-			'#collapsed' => 'FALSE',
-		);*/
-		
-		
-		db_set_active( 'eSM' );
-			$result_set_Temporada = db_query( "SELECT * FROM {Temporada}" );
-			$result_set_array_Temporada = db_fetch_array( db_query( "SELECT * FROM {Temporada}" ) );		
-		db_set_active( 'default' );
-		
-		
-		//Primero pondremos un listado de temporadas disponibles
-		while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
-		
-			$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
-			$fecha_fin = timestamp_to_string( $Temporada->Fecha_Fin );
-			
-
-			$form[ 'listar' ][ $Temporada->id_Temporada ][ 'title' ] = array (
-				'#type' => 'item',
-				//'label' => t( 'Nombre' ),
-				'#disabled' => 'TRUE',
-				//'size' => 17,
-				//'maxlength' => 17,
-				'#title' => t( 'Nombre' ),
-				//'#required' => TRUE,
-				'#weight' => -8,
-				'#value' => $Temporada->Nombre."\n",
-			);			
-			
-			$form[ 'listar' ][ $Temporada->id_Temporada ][ 'fecha_inicio' ] = array (
-				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#disabled' => 'TRUE',
-				'#title' => 'Fecha de inicio',
-				'#default_value' => $fecha_inicio,
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-				'#size' => 17,
-				'#maxlength' => 17,
-			);
-			
-			$form[ 'listar' ][ $Temporada->id_Temporada ][ 'fecha_fin' ] = array (
-				'#type' => 'date_text', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#disabled' => 'TRUE',
-				'#title' => 'Fecha de finalización',
-				'#default_value' => $fecha_fin,
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-				'#size' => 17,
-				'#maxlength' => 17,
-			);
-			
-			
-			$form[ 'listar' ][ $Temporada->id_Temporada ][ 'editar' ] = array (
-				'#value' => l( t( 'Editar' ), 'admin/base_datos_externa/temporadas/'.$Temporada->id_Temporada.'/editar' ),
-			);
-			
-		}
-		
-		return $form;
-	}
-	
-	
-	/**
-	 *	Inserta una temporada en la base de datos
-	 */
-	function temporadas_admin_insertar ( ) {
-		// Creating the date/time element starts here
-		
-		// Provide a default date in the format YYYY-MM-DD HH:MM:SS.
-		$date = '2011-12-31';
-
-		// Provide a format using regular PHP format parts (see documentation on php.net).
-		// If you're using a date_select, the format will control the order of the date parts in the selector,
-		// rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-		$format = 'Y-m-d';
-		
-		
-		
-		
-		//Un nuevo fieldset para insertar nuevas temporadas	
-		/*$form[ 'insertar' ] = array(
-			'#type' => 'fieldset',
-			'#disabled' => TRUE,
-			'#title' => t( 'Insertar' ),
-			'#collapsible' => 'TRUE',
-			'#collapsed' => 'TRUE',
-		);*/
-		
-		
-		$form[ 'insertar' ][ 'title' ] = array
-		(
-				'#type' => 'textfield',
-				'#title' => t('Nombre'),
-				'#required' => TRUE,
-				'#weight' => -8,
-				//'#default_value' => $node->title,
-		);
-		
-		$form[ 'insertar' ][ 'fecha_inicio' ] = array
-			(
-				'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#title' => 'Selecciona la fecha de inicio',
-				'#default_value' => date( 'Y-m-d' ), 
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-			);
-		
-		$form[ 'insertar' ][ 'fecha_fin' ] = array
-		(
-				'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-				'#title' => 'Selecciona la fecha de finalización',
-				//'#default_value' => $node->fecha_fin, 
-				'#date_format' => $format,
-				'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-				'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-				'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-				'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-		);
-		
-					
-			$form[ 'insertar' ][ 'submit' ] = array(
-			'#type' => 'submit',
-			'#value' => t( 'Insertar' ),
-			);
-		
-		return $form;
-	}
-	
-	
-	/**
-	 *	Introduce en la tabla de temporada la información
-	 */
-	function temporada_admin_desactivar( ) {
-	
-		$id_Temporada = arg( 3 );
-
-		db_set_active( 'eSM' );
-		db_query
-		(
-			"UPDATE
-			{ Temporada }
-			SET
-			{ Estado } =  %d
-			WHERE
-			{ Temporada.id_Temporada} = %d",
-			0,
-			$id_Temporada
-		);
-				
-		db_set_active( 'default' );
-		
-		drupal_set_message( "La plataforma fué desactivada satisfactoriamente" );
-		drupal_goto( "admin/base_datos_externa/temporadas" );		
-		
-	}
-	
-	
-	/**
-	 *	Confirmación de la operación de inserción
-	 *	con la sobreescritura de confirm
-	 */
-	function temporadas_admin_editar_confirm(&$form_state, $doctor) {
-		$form['Temporada_Activa'] = array(
-			'#type' => 'value',
-			'#value' => $doctor,
-		);
-	 
-		return confirm_form
-		(
-			$form,
-			t('¿Estás seguro?'),
-			isset($_GET['destination']) ? $_GET['destination'] : "admin/base_datos_externa/temporadas",
-			t('Esta acción es muy importante'),
-			t('Seguir'),
-			t('Cancelar')
-		);
-		
-	}
+	if ($result <> 0)
+		form_set_error(NULL, t('Ya existe una temporada activa.'));
+}

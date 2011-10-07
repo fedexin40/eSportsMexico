@@ -5,6 +5,7 @@
     define( 'CANCELADO', 2 );
     define( 'COMPLETADO', 3 );
     define( 'CONFLICTO', 4 );
+    define( 'ELIMINADO', 5 );
     
 //Defnie los tipos de reto que puede haber
   define ('DESAFIO', 0);
@@ -269,11 +270,6 @@ function match_load( $node ) {
  * @param Array $form
  */
 function match_validate($node, $form){
-  //Revisa que estén configurados los modos de juego de la modalidad o muestra un mensaje de error correspondiente
-  $modos = modos_get_modos_modalidad($modalidad_juego);
-  if (!is_array($modos))
-    form_set_error($node->id_Modalidad_Juego_Temporada, t('Las reglas para esta modalidad no estan correctamente definidas.<br/>Por favor contacta a un administrador'));
-  
   //Revisa que el partido tenga una temporada válida
   if (!isset($node->id_Modalidad_Juego_Temporada))
     form_set_error($node->id_Modalidad_Juego_Temporada, t('No has seleccionado una temporada validad para el partido.'));
@@ -295,6 +291,11 @@ function match_validate($node, $form){
     form_set_error( $node->home_team, t('El equipo '. $local->title .' no tiene el minimo de jugadores necesarios.'));
   if ($visitante->Numero_Integrantes < $modalidad->Minimo_Jugadores)
     form_set_error( $node->away_team, t('El equipo '. $visitante->title .' no tiene el minimo de jugadores necesarios.'));
+	
+  //Revisa que estén configurados los modos de juego de la modalidad o muestra un mensaje de error correspondiente
+  $modos = modos_get_modos_modalidad($modalidad->id_Modalidad_Juego);
+  if (!is_array($modos))
+    form_set_error($node->id_Modalidad_Juego_Temporada, t('Las reglas para esta modalidad no estan correctamente definidas.<br/>Por favor contacta a un administrador'));
     
   //Revisa que los desafíos estén programados con un mínimo de 10min de anticipació y un máximo de 15 días
   $fecha_incio = strtotime($node->Fecha);     //Obtiene la fecha de inicio en formato timestamp
@@ -463,8 +464,18 @@ function match_delete($node){
     $Reto = db_fetch_object( db_query( "SELECT * FROM { Reto } AS { r } WHERE { r.nid_Reto } = %d ", $node->nid ) );
   db_set_active( 'default' );
   
+  db_set_active( 'eSM' );
+    db_query("DELETE FROM { Reto } WHERE nid_Reto = %d", $node->nid );
+    db_query('DELETE FROM {Inicio_Reto} WHERE nid_Reto = %d', $node->nid);
+    db_query('DELETE FROM {Fin_Reto} WHERE nid_Reto = %d', $node->nid);
+  db_set_active( 'default' );
+  
   if ($Reto->Tipo == IS_TORNEO) {
-    watchdog('error', t('Se ha intentado borrar un desafio de un torneo.')); 
+    db_set_active('eSM');
+	db_query('DELETE FROM {Retos_Torneos} WHERE nid_Reto = %d', $node->nid);
+    db_set_active('default');
+    
+    watchdog('error', t('Se ha borrado un desafio programado dentro de un torneo.')); 
   }
   else {
     //Si es un reto completado actualizamos la tabla para restaurar los puntos como si el reto no hubiera existido.
@@ -472,12 +483,6 @@ function match_delete($node){
       //TODO: Actualizar el ránking del jugador haciendo la resta algebraica de puntos en su Puntuacion
       
     }
-    
-    db_set_active( 'eSM' );
-      db_query("DELETE FROM { Reto } WHERE nid_Reto = %d", $node->nid );
-      db_query('DELETE FROM {Inicio_Reto} WHERE nid_Reto = %d', $node->nid);
-      db_query('DELETE FROM {Fin_Reto} WHERE nid_Reto = %d', $node->nid);
-    db_set_active( 'default' );
   }
   
   module_invoke_all( 'match_delete', $node );
@@ -505,6 +510,7 @@ function match_view($node, $teaser = FALSE, $page = FALSE){
  * Sets up the admin menu system for the matches.
  */
 function match_menu(){
+  //Rutas para operaciones sobre desafíos
   $items['node/%node/aceptar'] = array(
     'title' => t('Aceptar Desafio'),
     'page callback' => 'drupal_get_form',
@@ -532,6 +538,8 @@ function match_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/match_pruebas.inc',
   );
+  
+  //Rutas para detalles de desafíos de cada equipo
   $items[ 'node/%node/desafios' ] = array (
     'title' => t('Desafios'),
     'page callback' => 'drupal_get_form',
@@ -581,45 +589,53 @@ function match_menu(){
     'file' => 'inc/match_lista_desafios.inc',
     'weight' => 3,
   );
-  $items[ 'desafios/%/proximos' ] = array (
+  
+  //Rutas para la sección de desafíos de cada modalidad
+  $items[ 'taxonomy/term/%/desafios' ] = array (
+    'title' => t('Tablero de desafios'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array( 'tablero_desafios' ),
+    'access callback' => 'modalidad_ver_lista_desafios_access',
+    'access arguments' => array( 1 ),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'inc/tablero.inc',
+  );
+  $items[ 'taxonomy/term/%/desafios/proximos' ] = array (
     'title' => t('Desafios Proximos'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'modalidad_lista_desafios' ),
     'access callback' => 'modalidad_ver_lista_desafios_access',
     'access arguments' => array( 1 ),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
     'file' => 'inc/modalidad_lista_desafios.inc',
   );
-  $items [ 'desafios/%/resultados' ] = array (
+  $items [ 'taxonomy/term/%/desafios/resultados' ] = array (
     'title' => t('Ultimos Desafios'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'modalidad_lista_desafios' ),
     'access callback' => 'modalidad_ver_lista_desafios_access',
     'access arguments' => array( 1 ),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
     'file' => 'inc/modalidad_lista_desafios.inc',
   );
-	/*
-  $items[ 'taxonomy/term/%/challenges' ] = array
-	(
-    'title' => 'Tablero de desafíos',
+  $items [ 'taxonomy/term/%/desafios/conflicto' ] = array (
+    'title' => t('Desafios en Conflicto'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'challenges_binnacle' ),
-    //'access callback' => 'matches_viewing',
-    'access arguments' => array( 'matches_viewing' ),
+    'page arguments' => array( 'modalidad_lista_desafios' ),
+    'access arguments' => array('administer matches'),
     'type' => MENU_LOCAL_TASK,
-    //'file' => 'inc/match.admin.inc',
+    'file' => 'inc/modalidad_desafios_conflicto.inc',
   );
-	
-  $items[ 'taxonomy/term/%/challenges/create' ] = array
-	(
-    'title' => 'Crear un desafío',
+
+  //Rutas para las acciones sobre el tablero de desafios
+  $items[ 'taxonomy/term/%/desafios/crear' ] = array (
+    'title' => 'Colocar un desafío en el tablero',
     'page callback' => 'drupal_get_form',
     'page arguments' => array( 'indirect_match_form' ),
     'access callback' => 'match_report_access',
     'type' => MENU_LOCAL_TASK,
-    //'file' => 'inc/match.admin.inc',
-  );*/
+    'file' => 'inc/colgar_tablero.inc',
+  );
 	
   return $items;
 }

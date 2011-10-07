@@ -8,10 +8,12 @@ function _torneo_init_brackets () {
     $result = db_query('SELECT * FROM {Torneos} WHERE Estado = %d', FUTURO);
   db_set_active ('default');
   
-  $fecha_actual = strtotime( date( "Y-m-d H:i")) + 86400; //86400 segundos equivalen a 24 horas antes del inicio del torneo se crean los brackets
+  //$fecha_actual = strtotime( date( "Y-m-d H:i")) + 86400; //86400 segundos equivalen a 24 horas antes del inicio del torneo se crean los brackets
   
   while ($torneo = db_fetch_object($result)) {
-    if ($fecha_actual >= $torneo->Fecha_Inicio) {
+    $signup = db_fetch_object(db_query("SELECT * FROM {signup} WHERE nid = %d", $torneo->nid_Torneo));
+    
+    if ($signup->status == 0) {
       _torneo_create_brackets($torneo->nid_Torneo);
       _torneo_update_estado($torneo->nid_Torneo, PRESENTE);
     }

@@ -217,7 +217,7 @@ function agente_libre_listar ( ) {
             foreach ($disponibilidad_dias as $dia => $valor) {
                 if ($valor == 1) {
                     $form['Jugadores_Libres'][$jugador->uid]['Dias'][$dia] = array (
-                        '#value' => $dia
+                        '#value' => substr($dia, 0, 2)
                     );
                 }
             }

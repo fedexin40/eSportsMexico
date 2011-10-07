@@ -1,20 +1,21 @@
 <?php
-	// $Id: plataforma.module,v 1.19 2011/06/25 18:38:26 alun Exp 
-	
-	/**
-	 * @file
-	 * This is an example outlining how a module can be used to display a
-	 * custom page at a given URL.
-	 */
-	/**
-	 * Implementation of hook_perm().
-	 *
-	 * Since the access to our new custom pages will be granted based on
-	 * special permissions, we need to define what those permissions are here.
-	 * This ensures that they are available to enable on the user role
-	 * administration pages.
-	 */
-	function base_datos_externa_perm( ) {
+		define('TEMPORADA_INACTIVA', 0);
+		define('TEMPORADA_ACTIVA', 1);
+		define('TEMPORADA_CERRADA', 2);
+/**
+ * @file
+ * This is an example outlining how a module can be used to display a
+ * custom page at a given URL.
+ */
+/**
+ * Implementation of hook_perm().
+ *
+ * Since the access to our new custom pages will be granted based on
+ * special permissions, we need to define what those permissions are here.
+ * This ensures that they are available to enable on the user role
+ * administration pages.
+ */
+function base_datos_externa_perm( ) {
 		return array(
 			'acceder a temporada',
 			'administrar bd',
@@ -22,433 +23,379 @@
 			'acceder a mapas',
 			'acceder a juegos',
 		);
-	}
+}
 /**
-		* Implementation of hook_menu().
-		*
-		* Since the access to our new custom pages will be granted based on
-		* special permissions, we need to define what those permissions are here.
-		* This ensures that they are available to enable on the user role
-		* administration pages.
+	* Implementation of hook_menu().
+	*
+	* Since the access to our new custom pages will be granted based on
+	* special permissions, we need to define what those permissions are here.
+	* This ensures that they are available to enable on the user role
+	* administration pages.
 */
-	function base_datos_externa_menu( ) {
-	global $user;
-	
-	$items = array( );
-	
-	
-	
+function base_datos_externa_menu( ) {
+  $items = array( );
+
   $items['admin/base_datos_externa'] = array(
-    'title' => 'Administrar base de datos externa',
-		'description' => t( 'Administrar base de datos externa' ),
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'base_datos_externa_admin' ),
-		'access arguments'	=> array( 'administer site configuration' ),
-	);
-
-	////////////////////TEMPORADA
-  $items[ 'admin/base_datos_externa/temporadas' ] = array
-	(
-    'title' => 'Temporadas',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'temporada_admin' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_temporadas.inc',
+    'title' => 'Administrar Liga',
+	'description' => t( 'Administrar las Temporadas, Modalidades, Equipos y mas...' ),
+	'page callback' => 'bd_admin_panel',
+	'access arguments'	=> array( 'administer site configuration' ),
+	'type' => MENU_NORMAL_ITEM,
+	'file' => 'inc/admin_panel.inc',
   );
-
-
-	//Una página para insetar la temporada
-  $items['admin/base_datos_externa/temporadas/insertar'] = array(
-    'title' => 'Insertar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'temporadas_admin_insertar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_temporadas.inc',
-  );
-	
-
-	//Una página para listar la temporada
-  $items['admin/base_datos_externa/temporadas/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'temporadas_admin_listar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_temporadas.inc',
-  );
-
-	//Otra página para editar temporadas
-	$items[ 'admin/base_datos_externa/temporadas/%/editar' ] = array
-	(
-		'title' => 'Editar temporada',
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'temporada_admin_editar' ),
-		'access arguments' => array( 'administrar bd' ),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_temporadas.inc',
-		//'parent' => 'admin/base_datos_externa/temporadas'		
-	);
-	
-	//Otra página para desactivar temporadas
-	$items[ 'admin/base_datos_externa/temporadas/%/desactivar' ] = array
-	(
-		'title' => 'Desactivar temporada',
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'temporada_admin_desactivar' ),
-		'access arguments' => array( 'administrar bd' ),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_temporadas.inc',
-		//'parent' => 'admin/base_datos_externa/temporadas'		
-	);
-	
-	//Confirmación
-	$items['admin/base_datos_externa/temporadas/confirmacion_operacion'] = array(
-    'title' => 'Confirmar operación',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'temporada_admin_confirm' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_temporadas.inc',
-  );
-	
+  
 	//////////////////////////////PLATAFORMAS
 	//Una página para listar e insertar plataformas
 	$items['admin/base_datos_externa/plataformas'] = array(
     'title' => 'Plataformas',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'plataforma_admin' ),
+		'description' => t('Perminet definir las plataformas de juego disponibles para la liga.'),
+		'page callback' => 'plataforma_admin',
 		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
+		'type' => MENU_NORMAL_ITEM,
 		'file' => 'inc/pages_plataformas.inc',
+		'weight' => -100,
   );
-
-
-	//Una página para listar la plataforma
-  $items['admin/base_datos_externa/plataformas/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'plataforma_admin_listar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_plataformas.inc',
-  );
-
 	//Inserta información en la tabla plataforma
   $items['admin/base_datos_externa/plataformas/insertar'] = array(
     'title' => 'Insertar',
     'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'plataforma_admin_insertar' ),
 		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
+		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_plataformas.inc',
   );
-	
 	//Otra página para editar plataformas
-	$items[ 'admin/base_datos_externa/plataformas/%/editar' ] = array(
+  $items[ 'admin/base_datos_externa/plataformas/%/editar' ] = array(
 		'title' => 'Editar plataforma',
 		'page_callback' => 'drupal_get_form',
 		'page arguments' => array( 'plataforma_admin_editar' ),
 		'access arguments' => array( 'administrar bd' ),
 		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_plataformas.inc',
-		//'parent' => 'admin/base_datos_externa/temporadas'
-		
-	);
-
-
-	//////////////////////MAPAS
-		$items['admin/base_datos_externa/mapas'] = array(
-    'title' => 'Mapas',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'mapa_admin' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_mapas.inc',
   );
 	
-	
-	//Una página para plistar los mapas
-  $items['admin/base_datos_externa/mapas/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'mapas_admin_listar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_mapas.inc',
-  );
-
-	//Inserta información en la tabla mapa
-  $items['admin/base_datos_externa/mapas/insertar'] = array(
-    'title' => 'Insertar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'mapas_admin_insertar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_mapas.inc',
-  );
-
-
-	//Otra página para editar mapas
-	$items[ 'admin/base_datos_externa/mapas/%/editar' ] = array(
-		'title' => 'Editar mapa',
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'mapa_admin_editar' ),
-		'access arguments' => array( 'administrar bd' ),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_mapas.inc',
-		//'parent' => 'admin/base_datos_externa/temporadas'
-		
-	);
-	
-	//////////////////////MODOS DE JEGO
-	$items['admin/base_datos_externa/modos_juego'] = array(
-    'title' => 'Modos de juego',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_admin' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_modos_juego.inc',
-  );
-	
-	
-	//Una página para plistar los modos de jugo
-  $items['admin/base_datos_externa/modos_juego/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_admin_listar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_modos_juego.inc',
-  );
-
-	//Inserta información en la tabla Modo_Juego
-  $items['admin/base_datos_externa/modos_juego/insertar'] = array(
-    'title' => 'Insertar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_admin_insertar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_modos_juego.inc',
-  );
-
-
-	//Otra página para editar modos de juego
-	$items[ 'admin/base_datos_externa/modos_juego/%/editar' ] = array(
-		'title' => 'Editar mapa',
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_admin_editar' ),
-		'access arguments' => array( 'administrar bd' ),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_modos_juego.inc',
-		//'parent' => 'admin/base_datos_externa/temporadas'
-		
-	);
-
 	/////////////////////////////////////MODALIDADES DE JUEGOS
 	//Una página para listar e insertar modalidades de juegos
-	$items['admin/base_datos_externa/modalidades_juegos'] = array(
-	'title' => 'Modalidades de los juegos',
-	'page callback' => 'drupal_get_form',
-	'page arguments' => array( 'modalidad_juego_admin' ),
-	'access arguments' => array( 'administrar bd' ),	
-	'type' => MENU_LOCAL_TASK,
-	'file' => 'inc/pages_modalidades_juegos.inc',
+	$items['admin/base_datos_externa/modalidades'] = array(
+		'title' => 'Modalidades',
+		'description' => t('Permite definir las modalidades de juego disponibles dentro de la liga'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'modalidad_juego_admin' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'inc/pages_modalidades_juegos.inc',
+		'weight' => -10,
 	);	
-	
-
-
 	//Una página para probar los botones de la modalidad de juego
-  $items['admin/base_datos_externa/modalidades_juegos/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidades_juegos_admin_listar' ),
+	$items['admin/base_datos_externa/modalidades/listar'] = array(
+		'title' => 'Listar',
+		'page callback' => 'modalidades_juegos_admin_listar',
 		'access arguments' => array( 'administrar bd' ),	
 		'type' => MENU_LOCAL_TASK,
 		'file' => 'inc/pages_modalidades_juegos.inc',
-  );
-
+	);
 	//Inserta información en la tabla modalidad de juego
-  $items['admin/base_datos_externa/modalidades_juegos/insertar'] = array(
-    'title' => 'Insertar',
-    'page callback' => 'drupal_get_form',
+	$items['admin/base_datos_externa/modalidades/insertar'] = array(
+		'title' => 'Insertar',
+		'page callback' => 'drupal_get_form',
 		'page arguments' => array( 'modalidades_juegos_admin_insertar' ),
 		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
+		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_modalidades_juegos.inc',
-  );
-	
-
-
-
+	);
 	//Otra página para editar modalidades de juegos
-	$items[ 'admin/base_datos_externa/modalidades_juegos/%/editar' ] = array(
+	$items[ 'admin/base_datos_externa/modalidades/%/editar' ] = array(
 		'title' => 'Editar modalidad de juego',
 		'page_callback' => 'drupal_get_form',
 		'page arguments' => array( 'modalidad_juego_admin_editar' ),
 		'access arguments' => array( 'administrar bd' ),
 		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_modalidades_juegos.inc',
-		
 	);
-
+	
+	////////////////////TEMPORADA
+  $items[ 'admin/base_datos_externa/temporada' ] = array (
+    'title' => 'Temporadas',
+		'description' => t('Permite administrar las fechas de inicio y fin de cada temporada y sus caracteristicas,'),
+    'page callback' => 'temporada_admin',
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'inc/pages_temporadas.inc',
+		'weight' => -7,
+  );
+	//Una página para listar la temporada
+  $items['admin/base_datos_externa/temporada/listar'] = array (
+    'title' => 'Temporada Activa',
+    'page callback' => 'temporada_activa_listar',
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'inc/pages_temporadas.inc',
+		'weight' => 1,
+  );
+	//Una página para insetar la temporada
+  $items['admin/base_datos_externa/temporada/historial'] = array (
+    'title' => 'Historial',
+    'page callback' => 'temporadas_admin_listar',
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'inc/pages_temporadas.inc',
+		'weight' => 2,
+  );
+	//Otra página para insertar temporadas
+	$items['admin/base_datos_externa/temporada/insertar'] = array (
+    'title' => 'Nueva Temporada',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'temporadas_admin_insertar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => 	MENU_CALLBACK,
+		'file' => 'inc/pages_temporadas.inc',
+	);
+	//Otra página para editar temporadas
+	$items['admin/base_datos_externa/temporada/editar/%'] = array (
+    'title' => 'Editar Temporada',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'temporada_admin_editar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => 	MENU_CALLBACK,
+		'file' => 'inc/pages_temporadas.inc',
+	);
+	//Otra página para desactivar temporadas
+	$items['admin/base_datos_externa/temporada/desactivar/%'] = array (
+    'title' => 'Cerrar Temporada',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'temporada_admin_desactivar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => 	MENU_CALLBACK,
+		'file' => 'inc/pages_temporadas.inc',
+	);
+	//Confirmación
+	$items['admin/base_datos_externa/temporada/activar/%'] = array(
+    'title' => 'Confirmar operación',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'temporada_admin_activar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_temporadas.inc',
+  );
 
 	/////////////////////////////MODALIDADES DE JUEGOS POR TEMPORADA
 	//Una página para listar e insertar modalidades de juegos por temporada
-	$items['admin/base_datos_externa/modalidades_juegos_temporadas'] = array(
+	$items['admin/base_datos_externa/temporada/%/modalidades'] = array(
     'title' => 'Modalidades de los juegos por temporadas',
     'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidad_juego_temporada_admin' ),
+		'page arguments' => array( 'modalidades_temporada' ),
 		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
+		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_modalidades_juegos_temporadas.inc',
   );	
-	
-
-
-	//Una página para probar los botones de la modalidad de juego por temporadas
-  $items['admin/base_datos_externa/modalidades_juegos_temporadas/listar'] = array(
-    'title' => 'Listar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidades_juegos_temporadas_admin_listar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_modalidades_juegos_temporadas.inc',
-  );
-
-	//Inserta información en la tabla modalidad de juego por temporadas
-  $items['admin/base_datos_externa/modalidades_juegos_temporadas/insertar'] = array(
-    'title' => 'Insertar',
-    'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidades_juegos_temporadas_admin_insertar' ),
-		'access arguments' => array( 'administrar bd' ),	
-		'type' => MENU_LOCAL_TASK,
-		'file' => 'inc/pages_modalidades_juegos_temporadas.inc',
-  );
-	
-
-
-
 	//Otra página para editar modalidades de juegos
-	$items[ 'admin/base_datos_externa/modalidades_juegos_temporadas/%/editar' ] = array(
-		'title' => 'Editar modalidad de juego por temporada',
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidad_juego_temporada_admin_editar' ),
-		'access arguments' => array( 'administrar bd' ),
-		'type' => MENU_CALLBACK,
-		'file' => 'inc/pages_modalidades_juegos_temporadas.inc',
-		
-	);
-	
-	
-	//Otra página para editar modalidades de juegos
-	$items[ 'admin/base_datos_externa/modalidades_juegos_temporadas/%/eliminar' ] = array(
+	$items[ 'admin/base_datos_externa/temporada/%/modalidades/%/desactivar' ] = array(
 		'title' => 'Eliminar modalidad de juego por temporada',
 		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'modalidad_juego_temporada_admin_eliminar' ),
+		'page arguments' => array( 'desactivar_modalidades_temporada' ),
 		'access arguments' => array( 'administrar bd' ),
 		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_modalidades_juegos_temporadas.inc',
-		
 	);
 	
+	//////////////////////MAPAS
+	//Una página para plistar los mapas
+  $items['admin/base_datos_externa/modalidades/%/editar/mapas'] = array(
+    'title' => 'Mapas',
+    'page callback' => 'mapas_admin_listar',
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'inc/pages_mapas.inc',
+  );
+	//Inserta información en la tabla mapa
+  $items['admin/base_datos_externa/modalidades/%/mapas/insertar'] = array(
+    'title' => 'Insertar',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'mapas_admin_insertar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_mapas.inc',
+  );
+	//Otra página para editar mapas
+	$items[ 'admin/base_datos_externa/modalidades/%/mapas/%/editar' ] = array(
+		'title' => 'Editar mapa',
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'mapa_admin_editar' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_mapas.inc',	
+	);
+	//Otra página para eliminar mapas
+	$items[ 'admin/base_datos_externa/modalidades/%/mapas/%/eliminar' ] = array(
+		'title' => 'Editar mapa',
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'mapa_admin_eliminar' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_mapas.inc',	
+	);
+	
+	//////////////////////MODOS DE JEGO
+	$items['admin/base_datos_externa/modalidades/%/modos'] = array(
+    'title' => 'Modos de juego',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'modos_juego_admin_listar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'inc/pages_modos_juego.inc',
+  );
+	//Inserta información en la tabla Modo_Juego
+  $items['admin/base_datos_externa/modalidades/%/modos/insertar'] = array(
+    'title' => 'Insertar',
+    'page callback' => 'drupal_get_form',
+		'page arguments' => array( 'modos_juego_admin_insertar' ),
+		'access arguments' => array( 'administrar bd' ),	
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_modos_juego.inc',
+  );
+	//Otra página para editar modos de juego
+	$items[ 'admin/base_datos_externa/modalidades/%/modos/%/editar' ] = array(
+		'title' => 'Editar mapa',
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'modos_juego_admin_editar' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_modos_juego.inc',
+	);
+	//Otra página para eliminar modos de juego
+	$items[ 'admin/base_datos_externa/modalidades/%/modos/%/eliminar' ] = array(
+		'title' => 'Editar mapa',
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'modos_juego_admin_eliminar' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_modos_juego.inc',
+	);
   return $items;
+}
+/**
+ * Implementación del hook_block()
+ */
+function base_datos_externa_block( $op = 'list', $delta = 0 ){
+	
+    switch( $op ) {
+        case 'list':
+            $block = array();
+            $block[ 0 ][ 'info' ] = t('Construye el submenú de secciones para cada modalidad.');
+            break;
+		
+        case 'view':
+            switch( $delta ) {
+                case 0:
+                    if (arg(1) == 'term' && is_numeric(arg(2)))
+						$tid = arg(2);
+						                    
+					if ( is_object( $modalidad = term_is_active( $tid )) ) {
+						$block[ 'subject' ] = 'Submenu modalidad';
+						$content[] = l( t( 'Principal' ), 'taxonomy/term/' . $tid );
+						
+						$content[] = l( t( 'Torneos' ), 'taxonomy/term/' . $tid . '/torneos');
+						if (module_exists('match')) 
+							$content[] = l( t( 'Desafios' ), 'taxonomy/term/' . $tid . '/desafios' );
+						
+						if (module_exists('team')) 
+							$content[] = l( t( 'Equipos' ), 'taxonomy/term/' . $tid . '/equipos' );
+							
+						$content[] = l(t('Comunidad'), 'taxonomy/term/' . $tid . '/muro');
+							
+						if (module_exists('ranking'))
+							$content[] = l( t( 'Ladderboard' ), 'taxonomy/term/' . $tid .'/ranking');
+						
+						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
+					}
+          break;
+        }
+			break;
+    
+        case 'save':
+                
+            break;
+
+        case 'configure':
+            
+            break;
+    }
+	return $block;
+
 }
 
 /**
- *	Aquí checaremos que exista un vocabulario en drupal para poder trabajar
- *	con él vocabulario_modalidades.
- *	vocabulario_modalidades es una variable guardada en la base de datos de
- *	drupal para asegurrnos de que se ligue el vocabulario con la modalidad
+ * Implementación del hoock theme
  */
-function base_datos_externa_admin( ) {
-	$vocabulario = variable_get('vocabulario_modalidades', NULL);
+function base_datos_externa_theme() {
+    return array (
+        'modalidades' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/modalidades.inc',
+        ),
+    );
+}
+/**
+ *	Convierte timestamp de y a tipo date
+ */
+function string_to_timestamp( $fecha ) {
 	
-	if ($vocabulario == NULL) {
-		$form[ 'warning' ] = array (
-			'#type' => 'item',
-			'#value' => 'No se ha definido ningún vocabulario para las modalidades.',
-		);
-		if (taxonomy_get_vocabularies()) {
-				$form[ 'warning' ] = array (
-					'#type' => 'item',
-					'#value' => 'Ya tienes vocabularios definidos en tu sitio de Drupal, puedes asociar uno de ellos a las modalidades en: '. l('Panel control modalidades', 'admin/base_datos_externa/modalidades_juegos'),
-				);
-		}
-	}
-	$form[ 'informacion' ] = array (
-		'#type' => 'item',
-		'#disabled' => FALSE,
-		'#value' => 'Panel de administración de las bases de datos',
-	);		
-			
-	return $form;
+	$user_timezone_name = date_default_timezone_name( TRUE );
+	//drupal_set_message('user timezone name = '. $user_timezone_name);
+
+	//$text_date = '2010-02-14';
 	
+	//drupal_set_message('start date = '. $fecha );
+
+	// Convert the user entered date into a PHP 5 DateTime object
+	$local_date = new DateTime( $fecha );
+
+	// Reformat the user entered date into an ISO date that date_make_date() will accept
+	$iso_date_string = date_format_date($local_date, 'custom', 'Y-m-d');
+	//drupal_set_message('iso date_string = '. $iso_date_string);
+
+	// Create a DateTime object with the user's timezone info
+	$utc_date = date_make_date($iso_date_string, $user_timezone_name, DATE_DATETIME );
+
+	// Change the timezone to UTC
+	date_timezone_set($utc_date, timezone_open('UTC'));
+
+	// Format the UTC version of the DateTime for use in node->save()
+	$utc_date_string = date_format_date($utc_date, 'custom', 'Y-m-d');
+	//drupal_set_message('utc date string = '. $utc_date_string);
+
+	// convert to timestamp
+	$timestamp = strtotime( $utc_date_string );
+	//drupal_set_message('timestamp = '. $timestamp );
+
+	return $timestamp;
 	
 }
 
-	/**
-	 *	Convierte timestamp de y a tipo date
-	 */
-	function string_to_timestamp( $fecha ) {
-		
-		$user_timezone_name = date_default_timezone_name( TRUE );
-		//drupal_set_message('user timezone name = '. $user_timezone_name);
-
-		//$text_date = '2010-02-14';
-		
-		//drupal_set_message('start date = '. $fecha );
-
-		// Convert the user entered date into a PHP 5 DateTime object
-		$local_date = new DateTime( $fecha );
-
-		// Reformat the user entered date into an ISO date that date_make_date() will accept
-		$iso_date_string = date_format_date($local_date, 'custom', 'Y-m-d');
-		//drupal_set_message('iso date_string = '. $iso_date_string);
-
-		// Create a DateTime object with the user's timezone info
-		$utc_date = date_make_date($iso_date_string, $user_timezone_name, DATE_DATETIME );
-
-		// Change the timezone to UTC
-		date_timezone_set($utc_date, timezone_open('UTC'));
-
-		// Format the UTC version of the DateTime for use in node->save()
-		$utc_date_string = date_format_date($utc_date, 'custom', 'Y-m-d');
-		//drupal_set_message('utc date string = '. $utc_date_string);
-
-		// convert to timestamp
-		$timestamp = strtotime( $utc_date_string );
-		//drupal_set_message('timestamp = '. $timestamp );
-
-		return $timestamp;
-		
-	}
-
-	/**
-	 *	Convierte de timestamp to string
-	 *	@param result set es el reultado de un query con la fecha en timestamp
-	 */
-	function timestamp_to_string( $result_set_timestamp ) {
-		//drupal.org/node/291799
-		//Convert back to string
-		
-		$user_timezone_name = date_default_timezone_name( TRUE );
-		
-		$new_timestamp = date( 'Y-m-d', $result_set_timestamp );
-		
-		// ok, so now get back to the user timezone
-		$type = DATE_DATETIME;
-		
-		$new_timestamp = date_make_date( $new_timestamp, 'UTC', $type );
-		
-		date_timezone_set( $new_timestamp, timezone_open( $user_timezone_name ) );
-		
-		$timestamp = date_format_date( $new_timestamp, 'custom', 'Y-m-d' );
-		
-		
-		return $timestamp;
-	}
+/**
+ *	Convierte de timestamp to string
+ *	@param result set es el reultado de un query con la fecha en timestamp
+ */
+function timestamp_to_string( $result_set_timestamp ) {
+	//drupal.org/node/291799
+	//Convert back to string
+	
+	$user_timezone_name = date_default_timezone_name( TRUE );
+	
+	$new_timestamp = date( 'Y-m-d', $result_set_timestamp );
+	
+	// ok, so now get back to the user timezone
+	$type = DATE_DATETIME;
+	
+	$new_timestamp = date_make_date( $new_timestamp, 'UTC', $type );
+	
+	date_timezone_set( $new_timestamp, timezone_open( $user_timezone_name ) );
+	
+	$timestamp = date_format_date( $new_timestamp, 'custom', 'Y-m-d' );
+	
+	
+	return $timestamp;
+}
 /*
  *  Función para verificar si un término pertenece al vocabulario definido para las modalidad
  *  y si dicha modalidad está activa en la temporada actual

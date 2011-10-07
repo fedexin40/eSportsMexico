@@ -3,8 +3,8 @@
  * This function is to display a list of matches
  */
 function modalidad_lista_desafios () {
-  $op = arg(2);
-  $tid = arg(1);
+  $op = arg(4);
+  $tid = arg(2);
   
   //Obtiene los datos de la modalidad con base en el tid que proporciona la ruta
   $modalidad = term_is_active($tid);
