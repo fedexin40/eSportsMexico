@@ -1,7 +1,4 @@
 <?php
-// $Id: leaguesite.module,v 1.21 2010/09/21 17:03:04 alun Exp $
-
-
 include ( "db_functions.php" );
 
 /**
@@ -26,8 +23,10 @@ include ( "db_functions.php" );
   define( 'SOLICITA', 2 );
   define( 'ACEPTADO', 3 );
   define( 'RECHAZADO', 4 );
-	 
 
+/**
+ * Implementation of hook_help()
+ */
 function team_help($path, $arg){
 	$output = '';
 	switch($path){
@@ -40,15 +39,13 @@ function team_help($path, $arg){
 	}
 	return $output;
 } //end function leaguesite_help()
-
-
 /**
 * Implementation of hook_perm()
 * Outlines permissions for this module.
 * @return array - An array of valid permissions for the leaguesite module
 */
 function team_perm(){
-	return array('create team', 'edit own team', 'delete own team', 'view team');
+	return array('create team', 'edit own team', 'delete own team', 'view team', 'admin team');
 }//end function leaguesite_perm()
 /**
  * Implementation of hook_menu()
@@ -56,20 +53,61 @@ function team_perm(){
  * @return unknown_type
  */
 function team_menu(){
-	$items [ 'inscripcion/%' ] = array (			
+	//////////////////////////////EQUIPOS
+	//Una página par administrar las opciones de los equipos
+        $items['admin/base_datos_externa/team'] = array(
+            'title' => t('Equipos'),
+            'description' => t('Permite definir el funcionamiento de los equipos en la liga.'),
+            'page callback' => 'team_admin',
+            'access arguments' => array( 'admin team' ),	
+            'type' => MENU_NORMAL_ITEM,
+            'file' => 'inc/admin_team.inc',
+            'weight' => -60,
+        );
+        //Función para crear la imagen del equipo
+        $items['admin/base_datos_externa/team/image'] = array(
+          'access arguments' => array('admin team'),
+          'page callback' => 'team_add_image_field',
+          'type' => MENU_CALLBACK,
+          'file' => 'inc/admin_team.inc',
+        );
+        
+        //Página para verificar si el usuario puede crear un equipo        
+	$items [ 'taxonomy/term/%/register' ] = array (			
 	  'title' => 'Inscripción',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array('inscripcion'),
 	  'access arguments' => array ('create team'),
 	  'file' => 'inc/inscripcion.inc',
+          'type' => MENU_CALLBACK,
 	);
-	$items [ 'inscripcion/multijugador/%' ] = array (
-	  'title' => 'Inscripción',
+        
+	//MENÚ para registrar un agente libre
+	$items [ 'taxonomy/term/%/free_agent/register' ] = array (
+	  'title' => 'Agentes Libres',
 	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('team_inscripcion'),
+	  'page arguments' => array('agente_libre'),
 	  'access arguments' => array ('create team'),
-	  'type' => MENU_LOCAL_TASK,
-	  'file' => 'inc/inscripcion.inc',
+	  'file' => 'inc/agentes_libres.inc',
+	  'type' => MENU_CALLBACK,
+	);
+	$items [ 'taxonomy/term/%/free_agent' ] = array (
+	  'title' => 'Agente Libre',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('agente_libre_listar'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/agentes_libres.inc',
+	  'type' => MENU_CALLBACK,
+	);
+        
+	//MENU que despliega la lsita de los equipos que todavía no están completos
+	$items [ 'equipos/%/disponibles' ] = array (
+	  'title' => 'Equipos en Formacion',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('equipos_disponibles_listar'),
+	  'access arguments' => array ('create team'),
+	  'file' => 'inc/equipos_disponibles.inc',
+	  'type' => MENU_CALLBACK,
 	);
 	//MENÚ para administrar equipos
 	$items['node/%node/plantilla'] = array(
@@ -120,32 +158,6 @@ function team_menu(){
 	  'access callback' => 'team_admin_access',
 	  'access arguments' => array(1),
 	  'type' => MENU_LOCAL_TASK,
-	);
-	//MENÚ de agentes libres
-	$items [ 'libres/%' ] = array (
-	  'title' => 'Agentes Libres',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('agente_libre'),
-	  'access arguments' => array ('create team'),
-	  'file' => 'inc/agentes_libres.inc',
-	  'type' => MENU_CALLBACK,
-	);
-	$items [ 'libres/%/lista' ] = array (
-	  'title' => 'Agente Libre',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('agente_libre_listar'),
-	  'access arguments' => array ('create team'),
-	  'file' => 'inc/agentes_libres.inc',
-	  'type' => MENU_CALLBACK,
-	);
-	//MENU que despliega la lsita de los equipos que todavía no están completos
-	$items [ 'equipos/%/disponibles' ] = array (
-	  'title' => 'Equipos en Formacion',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('equipos_disponibles_listar'),
-	  'access arguments' => array ('create team'),
-	  'file' => 'inc/equipos_disponibles.inc',
-	  'type' => MENU_CALLBACK,
 	);
     
 	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
@@ -217,11 +229,11 @@ function team_menu(){
  * Implementation of hook_node_info()
  */
 function team_node_info() {
-	return array(
+	return array (
 		'team' => array(
 			'name' => t('Equipo'),
 			'module' => 'team',
-			'description' => t("Un equipo para participar en el ránking de una modalidad."),
+			'description' => t("Team for a game ranking."),
 		)
 	);
 } 
@@ -246,6 +258,7 @@ function team_access($op, $node, $account){
 			return TRUE;
 		}
 	}
+	return FALSE;
 } 
 
 /**
@@ -418,50 +431,31 @@ function team_delete($node){
  * Implementación del hook_block()
  */
 function team_block( $op = 'list', $delta = 0 ){
-
-	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
     switch( $op ) {
         case 'list':
             $block = array();
             $block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-            $block[ 1 ][ 'info' ] = t('Muestra los equipos a los que el jugador pertenece.');
-
+            $block[ 1 ][ 'info' ] = t('Muestra los equipos activos los que el jugador pertenece.');
+	    $block[ 2 ][ 'info' ] = t('Muestra la plantilla del equipo.');
+            $block[ 3 ][ 'info' ] = t('Despliega la imagen del logo del equipo.');
             break;
 		
         case 'view':
-            
             switch( $delta ) {
                 case 0:
                     if (arg(1) == 'term' && is_numeric(arg(2)))
-						$tid = arg(2);
-					
-					if ((arg(0) == 'puntuacion' || arg(0) == 'libres' || arg(0) == 'equipos' || arg(0) == 'desafios') && is_numeric(arg(1)))
-						$tid = arg(1);
-						
-					if (arg(0) == 'inscripcion' && is_numeric(arg(2)))
-						$tid = arg(2);
-						                    
-					if ( is_object( $modalidad = term_is_active( $tid )) ) {
-						$block[ 'subject' ] = 'Equipos';
-						$content[] = l( t( 'Principal' ), 'taxonomy/term/'.$tid );
-						$content[] = l( t( 'Inscribete' ), 'inscripcion/'.$tid );
-						if (module_exists('match')) {
-							$content[] = l( t( 'Tablero de desafios' ), 'libres/'. $tid . '/lista' );
-							$content[] = l( t( 'Proximos Partidos' ), 'desafios/'. $tid . '/proximos' );
-							$content[] = l( t( 'Ultimos Resultados' ), 'desafios/'. $tid . '/resultados' );
-						}
-						if ($modalidad->Maximo_Jugadores > 1) {
-							$content[] = l( t( 'Agentes Libres' ), 'libres/'. $tid . '/lista' );
-							$content[] = l( t( 'Equipos en Formacion' ), 'equipos/'. $tid . '/disponibles' );
-						}
-						if (module_exists('ranking'))
-							$content[] = l( t( 'Puntuacion' ), 'puntuacion/'. $tid );
-							
-						$content[] = l(t('Reglas'), 'node/'. $modalidad->reglas);
-						
-						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
-					}
+                        $tid = arg(2);
+                                                    
+                    if ( is_object( $modalidad = term_is_active( $tid )) ) {
+                        $block[ 'subject' ] = 'Equipos';
+                        $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/register');
+                        if ($modalidad->Maximo_Jugadores > 1) {
+                                $content[] = l( t( 'Agentes Libres' ), 'taxonomy/term/'. $tid . '/free_agent' );
+                                $content[] = l( t( 'Look for Team' ), 'taxonomy/term/'. $tid . '/free_agent/register' );
+                        }
+                        
+                        $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
+                    }
                     break;
                 
                 case 1:
@@ -471,7 +465,9 @@ function team_block( $op = 'list', $delta = 0 ){
                     }
                     break;
                 }
-			break;
+                case 3:
+                    
+	    break;
     
         case 'save':
                 
@@ -481,7 +477,7 @@ function team_block( $op = 'list', $delta = 0 ){
             
             break;
     }
-	return $block;
+    return $block;
 
 }
 /**
