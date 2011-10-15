@@ -387,6 +387,28 @@ function ranking_get_ranking_equipo ($nid_Equipo, $id_Modalidad_Juego_Temporada)
 	}
 }
 /**
+ * Funciónn para obtener la división a la que pertenece un equipo
+ *
+ * @param
+ *  nid_Equipo
+ *  id_Modalidad_Juego_Temporada
+ *
+ * @return
+ *  division
+ */
+function ranking_get_division_equipo ($posicion) {
+  db_set_active('eSM');
+    $divisiones = db_query('SELECT * FROM {Puntuacion_Divisiones} ORDER BY Jugadores ASC');
+  db_set_active('default');
+  
+  while($division = db_fetch_object($divisiones)) {
+    if(!($posicion > $division->Jugadores))
+      return $division->Nombre;
+  }
+  
+  return $division->Nombre;
+}
+/**
  * Función para obtener la puntuación de un equipo
  *
  * @param

@@ -820,7 +820,6 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
       $block[0]['info'] = t('View upcoming games');
       $block[1]['info'] = t('View latest results');
       $block[2]['info'] = t('Desafiar');
-      $block[3]['info'] = t('Calificacion del equipo');
       break;
     case 'view':
       $block_content = '';
@@ -842,14 +841,6 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
           if ($content = _match_prepare_desafiar_link()) {
             $block['subject'] = 'Desafiar';
             $block['content'] = l('Desafiar', $content);
-          }
-          break;
-        case 3:
-          //Desplegar la reputación del equipo
-          if (is_array($content = _match_display_reputation())) {
-            $block['subject'] = t('Reputacion');
-            //$block['content'] = t('Fivestar');
-            $block['content'] = theme('match_fivestar_static', $content['vote']['percent']['average'], 5, 'vote');
           }
           break;
       }
@@ -1257,18 +1248,11 @@ function _match_prepare_desafiar_link() {
 /**
  * Función para preparar el despliegue de la reputación del equipo
  */
-function _match_display_reputation() {
-    //Carga el nodo
-    if (arg(0) == 'node' && is_numeric(arg(1)))
-        $node = node_load(arg(1));
-        
-    //Revisa que el nodo pertenezca a un equipo
-    if ($node->type == 'team') {
-        //Prepara el link para desafiar a este equipo
-        $vote = _votingapi_get_standard_results('team', $node->nid);
-    }
-    
-    return $vote;
+function _match_display_reputation($nid) {
+		//Prepara el link para desafiar a este equipo
+		$vote = _votingapi_get_standard_results('team', $nid);
+		
+		return theme('match_fivestar_static', $vote['vote']['percent']['average'], 5, 'vote');
 }
 /**
  * Función para obtener una lista de los matches que coinciden con un criterio

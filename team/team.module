@@ -735,6 +735,16 @@ function team_theme() {
               'picture_preset' => NULL,
             ),
         ),
+        'team_info' => array(
+            'template' => 'team_info',
+            'arguments' => array(
+              'modalidad' => NULL,
+              'team' => NULL,
+              'ranking' => NULL,
+              'division' => NULL,
+              'calificacion' => NULL,
+            ),
+        ),
     );
 }
 /**
@@ -931,6 +941,13 @@ function team_capitan_get_block() {
     return;
   }
   
+  //Load the node
+  $team = node_load(array('nid' => arg(1)));
+  
+  if (!($team->type == 'team')) {
+    return;
+  }
+  
   // If user pictures are enabled...
   if (variable_get('user_pictures', 0)) {
     //Obtiene los datos del capitán del equipo
@@ -978,78 +995,55 @@ function team_active_games_block() {
     
     //Obtiene todos los equipos activos en los que el jugador está registrado
     db_set_active('eSM');
-      $teams = db_query('SELECT {nid_Equipo} FROM {Equipo} AS e
+      $teams = db_query('SELECT e.nid_Equipo, e.id_Modalidad_Juego_Temporada FROM {Equipo} AS e
                         INNER JOIN {Integrantes_Equipo} AS ie ON e.nid_Equipo = ie.nid_Equipo
                         INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
                         WHERE j.uid = %d AND e.Estado = %d',
                         $uid, ACTIVO);
     db_set_active('default');
-    
-    while ($team = db_fetch_object($teams)) {
-      //Obtiene el ránking del equipo
-      $ranking = ranking_get_ranking_equipo($team->nid_Equipo, $modalidad->id_Modalidad_Juego_Temporada);
-    }
   }
   else {
     // We're on a node page so load the node.
     $node = $node = menu_get_object();
 
-    if (!($node->type] == 'team')) {
+    if (!($node->type == 'team')) {
       // Not a type we want to show on.
       return;
     }
     
     //Obtiene todas las modalidades en que el equipo está activo
     db_set_active('eSM');
-      $teams = db_query('SELECT {nid_Equipo} FROM {Equipo} AS e
-                        INNER JOIN {Integrantes_Equipo} AS ie ON e.nid_Equipo = ie.nid_Equipo
-                        INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
-                        WHERE j.uid = %d AND e.Estado = %d',
-                        $uid, ACTIVO);
+      $teams = db_query('SELECT nid_Equipo, id_Modalidad_Juego_Temporada FROM {Equipo} AS e
+                        WHERE e.nid_Equipo = %d AND e.Estado = %d',
+                        $node->nid, ACTIVO);
     db_set_active('default');
   }
   
-  return theme('menu_tree', theme('item_list', $content));
+  while ($team = db_fetch_object($teams)) {
+    //Obitne el tid de la modalidad
+    db_set_active('eSM');
+      $modalidad = db_fetch_object(db_query('SELECT * FROM {Modalidad_Juego} AS mj
+                                            INNER JOIN {Modalidad_Juego_Temporada} AS mjt ON mj.id_Modalidad_Juego = mjt.id_Modalidad_Juego
+                                            WHERE id_Modalidad_Juego_Temporada = %d', $team->id_Modalidad_Juego_Temporada));
+    db_set_active('default');
   
-
-  foreach($modalidades_activas as $indice => $modalidad) {
-      db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
-          $result = db_query('SELECT {nid_Equipo} FROM {Equipo}
-           WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d',
-           $modalidad->id_Modalidad_Juego_Temporada, ACTIVO);
-      db_set_active('default');
-      
-      while ($equipo = db_fetch_object($result)) {
-        //Si estamos en la vista de un equipo
-        if ($context) {
-          $equipo = node_load($equipo->nid_Equipo);
-        }
-        //Si estamos en la vista de un jugador
-        else {
-          //Carga el nodo equipo para obtener los jugadores inscritos en el equipo.
-        }
-
-          foreach($equipo->Integrantes as $indice => $jugador) {
-              if ($jugador->uid == $usuario->uid) {          //Revisa cada uno de los integrantes para saber si el jugador pertenece
-                //Calcula el ránking del equipo en la tabla
-                  
-                  
-                  $output .= '<div class = "fondo_juegos">
-                                <div class = "left_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
-                                <div class = "datos_equipo">
-                                    <ul>
-                                        <li>'. l($modalidad->Nombre, 'taxonomy/term/'. $modalidad->tid) .'</li>
-                                        <li>'. l($equipo->title, 'node/'. $equipo->nid) .'</li>
-                                        <li>Ránking: '. $ranking .'</li>
-                                        <li>Reputación: '. $division .'</li>
-                                        <li>'. $division .'</li>
-                                    </ul>
-                                </div>
-                                <div class = "right_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
-                              </div>';
-              }
-          }
-          
-      }
+    //Obtiene el ránking del equipo
+    $ranking = ranking_get_ranking_equipo($team->nid_Equipo, $team->id_Modalidad_Juego_Temporada);
+    
+    //Obtiene la división a la que pertenece un equipo
+    $division = ranking_get_division_equipo($ranking);
+    
+    //Si el módulo match está activo obitne la calificación del equipo
+    if (module_exists('match')) {
+      $calificacion = _match_display_reputation($team->nid_Equipo);
+    }
+    
+    //Obtiene el nodo del equipo
+    $team = node_load(array('nid' => $team->nid_Equipo));
+    
+    //Produce la salida del panel de equipo
+    $content[] = theme('team_info', $modalidad, $team, $ranking, $division, $calificacion);
   }
+    
+  return theme('menu_tree', theme('item_list', $content));
 }
