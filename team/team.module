@@ -10,6 +10,7 @@ include ( "db_functions.php" );
 
 // Define los estados para los equipos
   define( 'ACTIVO', 0 );
+  define( 'INACTIVO', 1 );
   define( 'ELIMINADO', 4 );
 
 // Define los estados para la variable de agentes libres
@@ -55,24 +56,24 @@ function team_perm(){
 function team_menu(){
 	//////////////////////////////EQUIPOS
 	//Una página par administrar las opciones de los equipos
-        $items['admin/base_datos_externa/team'] = array(
-            'title' => t('Equipos'),
-            'description' => t('Permite definir el funcionamiento de los equipos en la liga.'),
-            'page callback' => 'team_admin',
-            'access arguments' => array( 'admin team' ),	
-            'type' => MENU_NORMAL_ITEM,
-            'file' => 'inc/admin_team.inc',
-            'weight' => -60,
-        );
-        //Función para crear la imagen del equipo
-        $items['admin/base_datos_externa/team/image'] = array(
-          'access arguments' => array('admin team'),
-          'page callback' => 'team_add_image_field',
-          'type' => MENU_CALLBACK,
-          'file' => 'inc/admin_team.inc',
-        );
+  $items['admin/base_datos_externa/team'] = array(
+      'title' => t('Equipos'),
+      'description' => t('Permite definir el funcionamiento de los equipos en la liga.'),
+      'page callback' => 'team_admin',
+      'access arguments' => array( 'admin team' ),	
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'inc/admin_team.inc',
+      'weight' => -60,
+  );
+  //Función para crear la imagen del equipo
+  $items['admin/base_datos_externa/team/image'] = array(
+    'access arguments' => array('admin team'),
+    'page callback' => 'team_add_image_field',
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/admin_team.inc',
+  );
         
-        //Página para verificar si el usuario puede crear un equipo        
+  //Página para verificar si el usuario puede crear un equipo        
 	$items [ 'taxonomy/term/%/register' ] = array (			
 	  'title' => 'Inscripción',
 	  'page callback' => 'drupal_get_form',
@@ -108,16 +109,6 @@ function team_menu(){
 	  'access arguments' => array ('create team'),
 	  'file' => 'inc/equipos_disponibles.inc',
 	  'type' => MENU_CALLBACK,
-	);
-	//MENÚ para administrar equipos
-	$items['node/%node/plantilla'] = array(
-	  'title' => 'Plantilla de Jugadores',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array( 'team_plantilla' ),
-      'access callback' => 'team_ver_plantilla',
-	  'access arguments' => array( 1 ),
-	  'type' => MENU_LOCAL_TASK,
-	  'file' => 'inc/team_plantilla.inc',
 	);
 
 	//MENÚ para administrar equipos
@@ -430,16 +421,66 @@ function team_delete($node){
 /**
  * Implementación del hook_block()
  */
-function team_block( $op = 'list', $delta = 0 ){
+function team_block( $op = 'list', $delta = 0, $edit = array()) {
+  //Evita que el block con id no. 0 sea cacehable
+  $blocks[0]['cache'] = BLOCK_NO_CACHE;
+  
     switch( $op ) {
         case 'list':
-            $block = array();
-            $block[ 0 ][ 'info' ] = t('Despliega los links para inscribirse a las modalidades.');
-            $block[ 1 ][ 'info' ] = t('Muestra los equipos activos los que el jugador pertenece.');
-	    $block[ 2 ][ 'info' ] = t('Muestra la plantilla del equipo.');
-            $block[ 3 ][ 'info' ] = t('Despliega la imagen del logo del equipo.');
-            break;
-		
+          $block = array();
+          $block[ 0 ][ 'info' ] = t('Inscribirse a las modalidades.');
+          $block[ 1 ][ 'info' ] = t('Juegos en los que participa.');
+          $block[ 2 ][ 'info' ] = t('Plantilla del equipo.');
+          $block[ 3 ][ 'info' ] = t('Logo de equipo.');
+          $block[ 4 ][ 'info' ] = t('Capitan del equipo.');
+          return $block;
+
+        case 'configure':
+          if (module_exists('imagecache') && function_exists('imagecache_presets')) {
+            // Get all the imagecache presets on the site.
+            $options = array('' => '');
+            $presets = imagecache_presets();
+            foreach ($presets AS $preset) {
+              $options[$preset['presetname']] = $preset['presetname'];
+            }
+            
+            switch ($delta) {
+              case 2:
+                // Allow the user to choose a preset to use on roster block.
+                $form['team_block_roster_picture_preset'] = array(
+                  '#type' => 'select',
+                  '#title' => t('User picture preset'),
+                  '#options' => $options,
+                  '#description' => t('Imagecache preset to use for the team picture on this block. Leave blank to not use this feature.'),
+                  '#default_value' => variable_get('team_block_roster_picture_preset', ''),
+                );
+                break;
+              case 3:
+                // Allow the user to choose a preset to use on team image block.
+                $form['team_block_team_picture_preset'] = array(
+                  '#type' => 'select',
+                  '#title' => t('Team picture preset'),
+                  '#options' => $options,
+                  '#description' => t('Imagecache preset to use for the user picture on roster block. Leave blank to not use this feature.'),
+                  '#default_value' => variable_get('team_block_team_picture_preset', ''),
+                );
+                break;
+            }
+          }
+            
+          return $form;
+        
+        case 'save':
+          switch ($delta) {
+            case 2:
+              variable_set('team_block_roster_picture_preset', $edit['team_block_roster_picture_preset']);
+              return;
+            
+            case 3:
+              variable_set('team_block_team_picture_preset', $edit['team_block_team_picture_preset']);
+              return;
+          }
+          
         case 'view':
             switch( $delta ) {
                 case 0:
@@ -459,26 +500,31 @@ function team_block( $op = 'list', $delta = 0 ){
                     break;
                 
                 case 1:
-                    if ($equipos = get_user_teams(arg(1))) {
-                        $block['subject'] = t('Juegos en los que participa');
-                        $block['content'] = $equipos;
-                    }
-                    break;
-                }
-                case 3:
-                    
-	    break;
-    
-        case 'save':
+                  $block = array();
+                  $block['subject'] = t('Juegos en los que participa');
+                  $block['content'] = team_active_games_block();
+                  return $block;
+                  
+                case 2:
+                  $block = array();
+                  $block['subject'] = t('Team Roster');
+                  $block['content'] = team_roster_get_block();
+                  return $block;
                 
-            break;
-
-        case 'configure':
-            
-            break;
+                case 3:
+                  $block = array();
+                  $block['subject'] = t('Team Logo');
+                  $block['content'] = team_pane_get_block();
+                  return $block;
+                
+                case 4:
+                  $block = array();
+                  $block['subject'] = t('Team Capitan');
+                  $block['content'] = team_capitan_get_block();
+                  return $block;
+              }
+          break;
     }
-    return $block;
-
 }
 /**
  * Función para decidir si el usuario tiene accinseso a las pestañas de administración del equipo
@@ -505,23 +551,6 @@ function team_admin_access($node) {
 		return FALSE;
 	}
 }
-/**
- * Función para decidir si debe o no aparecer la pestaña de plantilla
- */
-function team_ver_plantilla($node) {
-	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
-	global $user;
-	$modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
-	
-	if (($modalidad->Maximo_Jugadores > 1) && user_access('view team', $user) && ($node->type == 'team')){
-		return TRUE;
-	}
-	else {
-		return FALSE;
-	}
-}
-
 /**
  * Función para decidir si el usuario tiene acceso a la pestaña de "Unirme a este Equipo"
  * Revisamos que la modalidad sea para un equipo de varios integrantes y que el usuario no sea el capitán
@@ -691,106 +720,33 @@ function team_theme() {
             'arguments' => array ('form' => NULL),
             'file' => '/theme/team_inscripcion.inc',
         ),
-        'team_plantilla' => array (
-            'arguments' => array ('form' => NULL),
-            'file' => '/theme/team_plantilla.inc',
-        ),
         'user_invitaciones' => array (
             'arguments' => array ('form' => NULL),
-            'file' => '/theme/user_invitaciones.inc',
+            'file' => 'erca/theme/user_invitaciones.inc',
         ),
         'team_solicitudes' => array (
             'arguments' => array ('form' => NULL),
             'file' => '/theme/team_solicitudes.inc',
         ),
+        'team_pane' => array(
+            'template' => 'team_pane',
+            'arguments' => array(
+              'team' => NULL,
+              'picture_preset' => NULL,
+            ),
+        ),
     );
-}
-/**
- * Función que devuelve en un arreglo todos los equipos a los que pertenece un usuario
- * recibe el uid del usuario que se quiere evaluar
- */
-function get_user_teams($uid) {
-    $usuario = user_load(array(uid => $uid));
-    
-    $modalidades_activas = get_modalidades_activas();   //Obtiene todas las modalidades activas en una temporada
-    $output = '';
-    
-    foreach($modalidades_activas as $indice => $modalidad) {
-        db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
-            $result = db_query('SELECT {nid_Equipo} FROM {Equipo}
-			       WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d',
-			       $modalidad->id_Modalidad_Juego_Temporada, ACTIVO);
-        db_set_active('default');
-        
-        while ($equipo = db_fetch_object($result)) {
-            $equipo = node_load($equipo->nid_Equipo);       //Carga el nodo equipo para obtener los jugadores inscritos en el equipo.
-
-            foreach($equipo->Integrantes as $indice => $jugador) {
-                if ($jugador->uid == $usuario->uid) {          //Revisa cada uno de los integrantes para saber si el jugador pertenece
-                    
-                    $lista_equipos = get_teams($equipo->id_Modalidad_Juego_Temporada);     //Calcula el ránking del equipo en la tabla
-                    $ranking = 1;
-                    
-                    while ($posicion = db_fetch_object($lista_equipos)) {
-
-                        if ($equipo->nid == $posicion->nid_Equipo)
-                            break;
-                        else
-                            ++$ranking;
-                    }
-                    
-                    $output .= '<div class = "fondo_juegos">
-                                    <div class = "left_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
-                                    <div class = "datos_equipo">
-                                        <ul>
-                                            <li>'. l($modalidad->Nombre, 'taxonomy/term/'. $modalidad->tid) .'</li>
-                                            <li>'. l($equipo->title, 'node/'. $equipo->nid) .'</li>
-                                            <li>'. $ranking .'</li>
-                                            <li>'. $division .'</li>
-                                        </ul>
-                                    </div>
-                                    <div class = "right_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
-                                </div>';
-                }
-            }
-            
-        }
-    }
-    return $output;
 }
 /**
  * Función para obtener la plantilla de un equipo
  */
 function _team_get_plantilla($nid_Equipo) {
   db_set_active( 'eSM' );  //Carga todos los jugadores activos en el equipo.
-    $jugadores = db_query
-    (
-      'SELECT
-          *
-        FROM
-          { Jugador }
-        AS
-          j
-      INNER JOIN
-          { Integrantes_Equipo }
-        AS
-          ie
-        ON
-          j.{ id_Jugador } = ie.{ id_Jugador }
-      INNER JOIN
-        { Equipo }
-        AS
-          e
-        ON
-          ie.{ nid_Equipo } = e.{ nid_Equipo }
-      WHERE
-          e.{ nid_Equipo } = %d
-        AND
-          ie.{ Estado } = %d',
-      $nid_Equipo,
-      ACEPTADO
-    );
-
+    $jugadores = db_query ('SELECT * FROM { Jugador } AS j
+                           INNER JOIN { Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
+                           INNER JOIN { Equipo } AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+                           WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
+                           $nid_Equipo, ACEPTADO);
   db_set_active('default');
   
   return $jugadores;
@@ -834,4 +790,266 @@ function _team_get_user_team_modalidad ($uid, $id_Modalidad_Juego_Temporada) {
 	db_set_active('default');
 	
 	return node_load(array('nid' => $equipo['nid_Equipo']));
+}
+/**
+ * Creates the contents of the team logo block. Called from team_block().
+ */
+function team_pane_get_block() {
+  $area = arg(0);
+  $context = NULL;
+
+  // Check that we're in the right area. The block only works on the user pages,
+  // node full view pages, and the blog listing pages. It also does not work on
+  // the "edit" subpath.
+  if (!($area == 'node') || !is_numeric(arg(1)) || arg(2) == 'edit') {
+    return;
+  }
+  
+  //Load the node
+  $team = node_load(array('nid' => arg(1)));
+  
+  if (!($team->type == 'team')) {
+    return;
+  }
+
+  // Build the author pane
+  $team_pane = theme('team_pane', $team, variable_get('team_block_team_picture_preset', ''));
+  
+  return $team_pane;
+}
+/**
+ * Preprocesses template variables for the team pane picture template.
+ *
+ * Available variables (All optional except 'team'):
+ * $variables['team']: Team node account object.
+ * $variables['picture_preset']: Imagecache preset to use to format the
+ *    user picture.
+ */
+function template_preprocess_team_pane(&$variables) {
+  $variables['picture'] = '';
+  $team = $variables['team'];
+
+  // Get the imagecache preset, if any.
+  $preset = (!empty($variables['picture_preset'])) ? $variables['picture_preset'] : '';
+
+  // If team pictures are enabled...
+  module_load_include('inc', 'content', 'includes/content.crud');
+  // Check for filefields on teams.
+  $instances = content_field_instance_read(array('field_name' => 'field_logo', 'type_name' => 'team'));
+  $field_check = (bool) count($instances);
+  
+  if ($field_check) {
+    // Get the team's logo if they have one or the default picture if exists.
+    if (module_exists('imagecache') && (isset($team->field_logo) && file_exists($team->{field_logo}[0]['filepath']))) {
+      // We only want to get the full URL if not using imagecache.
+      //$picture = (!empty($preset) && module_exists('imagecache')) ? $team->field_logo[0] : file_create_url($team->field_logo);
+      $picture = $team->{field_logo}[0]['filepath'];
+    }
+    else {
+      $field = content_fields('field_logo', 'team');
+      $picture = $field['widget']['default_image']['filepath'];
+    }
+    
+   //$variables['picture'] = $picture;
+
+    // If we have a picture...
+    
+    if (isset($picture)) {
+      // If there's a preset set and imagecache is enabled...
+      if (!empty($preset) && module_exists('imagecache')) {
+        // Toss the picture over to imagecache for sizing
+        $alt = t("@team's logo", array('@user' => $team->title));
+        $variables['picture'] = theme('imagecache', $preset, $picture, $alt, $alt);
+        $variables['imagecache_used'] = TRUE;
+      }
+      else {
+        // Just run the picture through theme_image. Note that we don't link
+        // the picture here since it doesn't make sense for many uses of AP.
+        // If the picture needs to be linked, it can be done in the template.
+        $alt = t("@team's logo", array('@user' => $team->title));
+        $variables['picture'] = theme('image', $picture, $alt, $alt, '', FALSE);
+        $variables['imagecache_used'] = FALSE;
+      }
+    }
+  }
+}
+/**
+ * Creates the contents of the team roster block. Called from team_block().
+ */
+function team_roster_get_block() {
+  $area = arg(0);
+  $preset = variable_get('team_block_roster_picture_preset', '');
+  
+  // Check that we're in the right area. The block only works on the user pages,
+  // node full view pages, and the blog listing pages. It also does not work on
+  // the "edit" subpath.
+  if (!($area == 'node') || !is_numeric(arg(1)) || arg(2) == 'edit') {
+    return;
+  }
+  
+  // If user pictures are enabled...
+  if (variable_get('user_pictures', 0)) {
+    //Obtiene los datos del equipo y su plantilla
+    $team_id = arg(1);
+    $plantilla = _team_get_plantilla($team_id);
+    
+    while ($jugador = db_fetch_object($plantilla)) {
+      $account = user_load( array( 'uid' => $jugador->uid ) );
+      // Get the user's avatar if they have one or the default picture if exists.
+      if (!empty($account->picture) && file_exists($account->picture)) {
+        // We only want to get the full URL if not using imagecache.
+        $picture = (!empty($preset) && module_exists('imagecache')) ? $account->picture : file_create_url($account->picture);
+      }
+      elseif (variable_get('user_picture_default', '')) {
+        $picture = variable_get('user_picture_default', '');
+      }
+      // If there's a preset set and imagecache is enabled...
+      if (!empty($preset) && module_exists('imagecache')) {
+        $content[] = l( theme('imagecache', $preset, $picture, $account->name, $account->name ) . '<span>'. $account->name . '</span>',  'user/'.$account->uid, array('html'=>TRUE) );
+      }
+      else {
+        $content[] = l( theme('image', $picture, $account->name, $account->name ) . '<span>'. $account->name . '</span>', 'user/'.$account->uid, array('html'=>TRUE) );
+      }
+    }
+    return theme('menu_tree', theme('item_list', $content));
+  }
+  else {
+    return t('User images are not allowed');
+  }
+}
+/**
+ * Creates the contents of the team roster block. Called from team_block().
+ */
+function team_capitan_get_block() {
+  $area = arg(0);
+  $preset = variable_get('team_block_roster_picture_preset', '');
+  
+  // Check that we're in the right area. The block only works on the user pages,
+  // node full view pages, and the blog listing pages. It also does not work on
+  // the "edit" subpath.
+  if (!($area == 'node') || !is_numeric(arg(1)) || arg(2) == 'edit') {
+    return;
+  }
+  
+  // If user pictures are enabled...
+  if (variable_get('user_pictures', 0)) {
+    //Obtiene los datos del capitán del equipo
+    $team_id = arg(1);
+    $team = node_load(array('nid' => $team_id));
+    $account = user_load( array( 'uid' => $team->uid ) );
+    
+    // Get the user's avatar if they have one or the default picture if exists.
+    if (!empty($account->picture) && file_exists($account->picture)) {
+      // We only want to get the full URL if not using imagecache.
+      $picture = (!empty($preset) && module_exists('imagecache')) ? $account->picture : file_create_url($account->picture);
+    }
+    elseif (variable_get('user_picture_default', '')) {
+      $picture = variable_get('user_picture_default', '');
+    }
+    // If there's a preset set and imagecache is enabled...
+    if (!empty($preset) && module_exists('imagecache')) {
+      $content = '<div id="team_capitan">'. l( theme('imagecache', $preset, $picture, $account->name, $account->name ) . '<span>'. $account->name . '</span>',  'user/'.$account->uid, array('html'=>TRUE) ) . '</div>';
+    }
+    else {
+      $content = '<div id="team_capitan">'. l( theme('image', $picture, $account->name, $account->name ) . '<span>'. $account->name . '</span>', 'user/'.$account->uid, array('html'=>TRUE) ) . '</div>';
+    }
+    return $content;
+  }
+  else {
+    return t('User images are not allowed');
+  }
+}
+/**
+ * Creates the contents of block games on user/team participate
+ */
+function team_active_games_block() {
+  $area = arg(0);
+
+  // Check that we're in the right area. The block only works on the user pages,
+  // node full view pages, only if node view is 'team' type.
+  //It also does not work on the "edit" subpath.
+  if (!($area == 'user' || $area == 'node') || !is_numeric(arg(1)) || arg(2) == 'edit') {
+    return;
+  }
+
+  if ($area == 'user') {
+    // On the user page or the user's blog listing. Get the UID from the URL.
+    $uid = arg(1);
+    
+    //Obtiene todos los equipos activos en los que el jugador está registrado
+    db_set_active('eSM');
+      $teams = db_query('SELECT {nid_Equipo} FROM {Equipo} AS e
+                        INNER JOIN {Integrantes_Equipo} AS ie ON e.nid_Equipo = ie.nid_Equipo
+                        INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
+                        WHERE j.uid = %d AND e.Estado = %d',
+                        $uid, ACTIVO);
+    db_set_active('default');
+    
+    while ($team = db_fetch_object($teams)) {
+      //Obtiene el ránking del equipo
+      $ranking = ranking_get_ranking_equipo($team->nid_Equipo, $modalidad->id_Modalidad_Juego_Temporada);
+    }
+  }
+  else {
+    // We're on a node page so load the node.
+    $node = $node = menu_get_object();
+
+    if (!($node->type] == 'team')) {
+      // Not a type we want to show on.
+      return;
+    }
+    
+    //Obtiene todas las modalidades en que el equipo está activo
+    db_set_active('eSM');
+      $teams = db_query('SELECT {nid_Equipo} FROM {Equipo} AS e
+                        INNER JOIN {Integrantes_Equipo} AS ie ON e.nid_Equipo = ie.nid_Equipo
+                        INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
+                        WHERE j.uid = %d AND e.Estado = %d',
+                        $uid, ACTIVO);
+    db_set_active('default');
+  }
+  
+  return theme('menu_tree', theme('item_list', $content));
+  
+
+  foreach($modalidades_activas as $indice => $modalidad) {
+      db_set_active('eSM');       //Obtiene los equipos inscritos en la modalidad actual
+          $result = db_query('SELECT {nid_Equipo} FROM {Equipo}
+           WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d',
+           $modalidad->id_Modalidad_Juego_Temporada, ACTIVO);
+      db_set_active('default');
+      
+      while ($equipo = db_fetch_object($result)) {
+        //Si estamos en la vista de un equipo
+        if ($context) {
+          $equipo = node_load($equipo->nid_Equipo);
+        }
+        //Si estamos en la vista de un jugador
+        else {
+          //Carga el nodo equipo para obtener los jugadores inscritos en el equipo.
+        }
+
+          foreach($equipo->Integrantes as $indice => $jugador) {
+              if ($jugador->uid == $usuario->uid) {          //Revisa cada uno de los integrantes para saber si el jugador pertenece
+                //Calcula el ránking del equipo en la tabla
+                  
+                  
+                  $output .= '<div class = "fondo_juegos">
+                                <div class = "left_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
+                                <div class = "datos_equipo">
+                                    <ul>
+                                        <li>'. l($modalidad->Nombre, 'taxonomy/term/'. $modalidad->tid) .'</li>
+                                        <li>'. l($equipo->title, 'node/'. $equipo->nid) .'</li>
+                                        <li>Ránking: '. $ranking .'</li>
+                                        <li>Reputación: '. $division .'</li>
+                                        <li>'. $division .'</li>
+                                    </ul>
+                                </div>
+                                <div class = "right_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>
+                              </div>';
+              }
+          }
+          
+      }
+  }
 }

@@ -14,7 +14,7 @@ function team_admin(){
   } else {
     module_load_include('inc', 'content', 'includes/content.crud');
     // Check for filefields on products.
-    $instances = content_field_instance_read(array('field_name' => 'field_image_cache', 'type_name' => 'team'));
+    $instances = content_field_instance_read(array('field_name' => 'field_logo', 'type_name' => 'team'));
     $field_check = (bool) count($instances);
 
     if ($field_check) {
@@ -43,7 +43,7 @@ function team_add_image_field() {
   $label = t('Image');
   $field = array(
     'type_name' => 'team',
-    'field_name' => 'field_image_cache',
+    'field_name' => 'field_logo',
     'label' => $label,
     'type' => 'filefield',
     'widget_type' => 'imagefield_widget',
@@ -90,7 +90,7 @@ function team_add_image_field() {
     ),
   );
 
-  $instances = content_field_instance_read(array('field_name' => 'field_image_cache', 'type_name' => 'team'));
+  $instances = content_field_instance_read(array('field_name' => 'field_logo', 'type_name' => 'team'));
   if (count($instances) < 1) {
     // Only add the field if it doesn't exist. Don't overwrite any changes.
     content_field_instance_create($field);
