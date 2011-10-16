@@ -4,10 +4,10 @@
  *	Función para mostrar la puntuación de una modalidad
  */
 function mostrar_puntuacion(  ) {
-	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
-	$tid = arg( 1 );
+	$tid = arg( 2 );
 	$modalidad = term_is_active($tid);
+	
+	drupal_set_title(t('Ranking de '. $modalidad->Nombre));
 	
 	$Puntuacion_result = ranking_get_ranking($modalidad->id_Modalidad_Juego_Temporada);
 	

@@ -11,26 +11,15 @@
  * despliega las opciones de acuerdo al máximo de jugadores para los equipos.
  */
 function inscripcion( ) {
-
-  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-  $tid = arg( 2 );  //Obtiene el tid de la modalidad de la barra de direcciones
   global $user;
   
-  $Modalidad_Juego_Temporada = get_modalidad_juego_temporada_tid_id_temporada( $tid, $Temporada_Activa->id_Temporada );
-  
-  $tiene_equipo = tiene_equipo( $user->uid, $Modalidad_Juego_Temporada->id_Modalidad_Juego_Temporada );
-  
-  if ( !( $Modalidad_Juego = term_is_active( $tid ) ) ) {
-    drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );
-    drupal_goto ( 'taxonomy/term/'.$tid );    //Regresa a la vista de noticias de la modalidad
+  if( !function_exists("node_object_prepare")) {
+     include_once(drupal_get_path('module', 'node') . '/node.pages.inc');
   }
-  else {
-    if ( ( $tiene_equipo == AGENTE_LIBRE ) || ( $tiene_equipo == NO_REGISTRADO ) ) {
-        drupal_goto('node/add/team/'. $Modalidad_Juego_Temporada->id_Modalidad_Juego_Temporada);
-    }
-    else {
-      drupal_set_message( 'Ya perteneces a un equipo de esta modalidad. Para poder inscribirte en otro equipo debes salir primero del equipo al que estás inscrito actualmente.' );
-      drupal_goto( 'taxonomy/term/'. $tid );
-    }
-  }
+  $type = 'team';
+  
+  // Initialize settings:
+  $node = array('uid' => $user->uid, 'name' => (isset($user->name) ? $user->name : ''), 'type' => $type, 'language' => '');
+  
+  return drupal_get_form($type .'_node_form', $node);
 }

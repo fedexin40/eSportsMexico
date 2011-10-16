@@ -6,4 +6,4 @@ package = eSM
 dependencies[] = date
 dependencies[] = taxonomy
 dependencies[] = text
-dependencies[] = profile
+dependencies[] = content_profile

@@ -74,21 +74,21 @@ function team_menu(){
   );
         
   //Página para verificar si el usuario puede crear un equipo        
-	$items [ 'taxonomy/term/%/register' ] = array (			
-	  'title' => 'Inscripción',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('inscripcion'),
-	  'access arguments' => array ('create team'),
+	$items [ 'taxonomy/term/%/team/register' ] = array (			
+	  'title' => t('Signup'),
+    'page callback' => 'inscripcion',
+    'access callback' => 'team_register_access',
+	  'access arguments' => array (),
 	  'file' => 'inc/inscripcion.inc',
-          'type' => MENU_CALLBACK,
-	);
-        
+    'type' => MENU_CALLBACK,
+	);    
 	//MENÚ para registrar un agente libre
 	$items [ 'taxonomy/term/%/free_agent/register' ] = array (
 	  'title' => 'Agentes Libres',
 	  'page callback' => 'drupal_get_form',
+    'access callback' => 'team_register_access',
 	  'page arguments' => array('agente_libre'),
-	  'access arguments' => array ('create team'),
+	  'access arguments' => array (),
 	  'file' => 'inc/agentes_libres.inc',
 	  'type' => MENU_CALLBACK,
 	);
@@ -101,6 +101,18 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	);
   
+	//MENÚ local task para ver los equipos inscritos en una modalidad
+	$items [ 'taxonomy/term/%/teams'] = array (
+			'title' => 'Equipos',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('equipos_usuario'),
+			'access arguments' => array('view team'),
+			'file' => 'inc/equipos_usuario.inc',
+			'type' => MENU_LOCAL_TASK,
+      'weight' => 100,
+	);
+  
+  
   //Formulario para solicitar unirse a un equipo
 	$items[ 'node/%node/join/request' ] = array(
 	  'title' => 'Unirme a este equipo',
@@ -110,17 +122,6 @@ function team_menu(){
       'access arguments' => array ( 1 ),
 	  'type' => MENU_CALLBACK,
 	  'file' => 'inc/team_solicitud.inc',
-	);
-  
-        
-	//MENU que despliega la lsita de los equipos que todavía no están completos
-	$items [ 'equipos/%/disponibles' ] = array (
-	  'title' => 'Equipos en Formacion',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('equipos_disponibles_listar'),
-	  'access arguments' => array ('create team'),
-	  'file' => 'inc/equipos_disponibles.inc',
-	  'type' => MENU_CALLBACK,
 	);
 
 	//MENÚ para administrar equipos
@@ -193,16 +194,6 @@ function team_menu(){
 		'file' => 'inc/invitaciones_jugador.inc',
 		'type' => MENU_CALLBACK,
 	);
-    
-	//MENÚ para que se pueda acceder a un pequeño formulario con la información de los equipos a los que pertenece un usuario
-	$items [ 'user/%/myteams'] = array (
-			'title' => 'Mis Equipos',
-			'page callback' => 'drupal_get_form',
-			'page arguments' => array('equipos_usuario'),
-			'access arguments' => array('view team'),
-			'file' => 'inc/equipos_usuario.inc',
-			'type' => MENU_CALLBACK,
-	);
 
 	return $items;
 }
@@ -243,6 +234,42 @@ function team_access($op, $node, $account){
 	return FALSE;
 } 
 
+/**
+ * Función para verificar si el usuario cumple
+ * los requisitos para registrarse a una modalidad
+ * ya sea como agente libre o para crear un equipo
+ */
+function team_register_access() {
+  $context = arg(3);
+  $tid = arg( 2 );  //Obtiene el tid de la modalidad de la barra de direcciones
+  global $user;
+  
+  if (!($modalidad = term_is_active($tid))) {
+    drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );
+    return FALSE;
+  }
+  
+  $profile_node = content_profile_load('profile', $user->uid);
+  if ($profile_node->{$modalidad->identificador}['0']['value'] == '') {
+    drupal_set_message(t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario'));
+    return FALSE;
+  }
+  
+  $tiene_equipo = tiene_equipo( $user->uid, $modalidad->id_Modalidad_Juego_Temporada );
+  if ($tiene_equipo == NO_REGISTRADO)
+    return TRUE;
+  
+  if ($tiene_equipo == AGENTE_LIBRE && $context == 'team')
+    return TRUE;
+  
+  if ($tiene_equipo == AGENTE_LIBRE && $context == 'free_agent') {
+    drupal_set_message(t('Ya estas registrado como Agente Libre en esta modalidad'));
+    return TRUE;
+  }
+
+  drupal_set_message( 'Ya perteneces a un equipo de esta modalidad. Para poder inscribirte en otro equipo debes salir primero del equipo al que perteneces actualmente.' );
+  return FALSE;
+}
 /**
  * Implementation of hook_form()
  * @param $node
@@ -475,20 +502,10 @@ function team_block( $op = 'list', $delta = 0, $edit = array()) {
         case 'view':
             switch( $delta ) {
                 case 0:
-                    if (arg(1) == 'term' && is_numeric(arg(2)))
-                        $tid = arg(2);
-                                                    
-                    if ( is_object( $modalidad = term_is_active( $tid )) ) {
-                        $block[ 'subject' ] = 'Equipos';
-                        $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/register');
-                        if ($modalidad->Maximo_Jugadores > 1) {
-                                $content[] = l( t( 'Agentes Libres' ), 'taxonomy/term/'. $tid . '/free_agent' );
-                                $content[] = l( t( 'Look for Team' ), 'taxonomy/term/'. $tid . '/free_agent/register' );
-                        }
-                        
-                        $block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
-                    }
-                    break;
+                    $block = array();
+                    $block['subject'] = t('Battlearena');
+                    $block['content'] = team_links_get_block();
+                    return $block;
                 
                 case 1:
                   $block = array();
@@ -541,30 +558,6 @@ function team_admin_access($node) {
 	else {
 		return FALSE;
 	}
-}
-/**
- * Función para decidir si el usuario tiene acceso a la pestaña de "Unirme a este Equipo"
- * Revisamos que la modalidad sea para un equipo de varios integrantes y que el usuario no sea el capitán
- * Revisa si el usario está registrado en esta modalidad y si tiene equipo o es agente libre
- */
-function unirme_equipo_access($node) {
-		module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
-    global $user;
-    $modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
-
-    $tiene_equipo = tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada);
-    
-	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid != $user->uid) && ($node->type == 'team')){
-        
-        if (($tiene_equipo == AGENTE_LIBRE) || ($tiene_equipo == NO_REGISTRADO))
-            return TRUE;
-        else
-            return FALSE;
-	}
-    else {
-        return FALSE;
-    }
 }
 /**
  * Implementation of hook_rules_event_info().
@@ -1037,4 +1030,25 @@ function team_active_games_block() {
   }
     
   return theme('menu_tree', theme('item_list', $content));
+}
+/**
+ * Función para crear el bloque de inscripción a las modalidades
+ */
+function team_links_get_block() {
+  $area = arg(0);
+
+  // Check that we're in the right area. 
+  if (!($area == 'taxonomy') && !is_numeric(arg(2))) {
+    return;
+  }
+  $tid = arg(2);
+
+  if ( is_object( $modalidad = term_is_active( $tid )) ) {
+      $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/team/register', array('attributes'=>array('class' => 'popups')));
+      if ($modalidad->Maximo_Jugadores > 1) {
+        $content[] = l( t( 'Look for Team' ), 'taxonomy/term/'. $tid . '/free_agent/register', array('attributes'=>array('class' => 'popups')));
+      }
+      
+      return theme('menu_tree', theme('item_list', $content));
+  }
 }

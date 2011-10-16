@@ -62,15 +62,16 @@ function ranking_menu(){
   	'type' => MENU_LOCAL_TASK,
   );
 	
-    //MENÚ para mostrar el ranking
-    $items[ 'puntuacion/%' ] = array (
-        'title' => t( 'Puntuacion' ),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array( 'mostrar_puntuacion' ),
-        'access arguments' => array( 'view ranking' ),
-        'file' => 'inc/ranking_modalidades.inc',
-        'type' => MENU_CALLBACK,
-    );
+  //MENÚ para mostrar el ranking
+  $items[ 'taxonomy/term/%/ranking' ] = array (
+      'title' => t( 'Ladderboard' ),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array( 'mostrar_puntuacion' ),
+      'access arguments' => array( 'view ranking' ),
+      'file' => 'inc/ranking_modalidades.inc',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 100,
+  );
 
   return $items;
 }

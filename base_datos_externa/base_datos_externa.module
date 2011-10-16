@@ -271,6 +271,20 @@ function base_datos_externa_menu( ) {
 		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_modos_juego.inc',
 	);
+	
+	//Define la subpestaña principal
+	$items[ 'taxonomy/term/%/home' ] = array(
+		'title' => t('Frontpage'),
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'weight' => -100,
+	);
+	$items[ 'taxonomy/term/%/comunity' ] = array(
+		'title' => t('Comunity'),
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'modos_juego_admin_eliminar' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_LOCAL_TASK,
+	);
   return $items;
 }
 /**
@@ -406,7 +420,7 @@ function term_is_active( $tid ) {
 	$temporada_activa = temporada_activa();
 	
 	db_set_active ('eSM');
-	$modalidades_activas = db_query('SELECT {tid}, {Maximo_Jugadores}, {Minimo_Jugadores}, {id_Modalidad_Juego_Temporada}, {reglas} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
+	$modalidades_activas = db_query('SELECT {tid}, {Nombre}, {Maximo_Jugadores}, {Minimo_Jugadores}, {id_Modalidad_Juego_Temporada}, {identificador} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
 	db_set_active ('default');
 	
 	while ( $result = db_fetch_object($modalidades_activas) ) {
