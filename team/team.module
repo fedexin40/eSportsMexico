@@ -100,6 +100,18 @@ function team_menu(){
 	  'file' => 'inc/agentes_libres.inc',
 	  'type' => MENU_CALLBACK,
 	);
+  
+  //Formulario para solicitar unirse a un equipo
+	$items[ 'node/%node/join/request' ] = array(
+	  'title' => 'Unirme a este equipo',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_solicitud' ),
+	  'access callback' => 'unirme_equipo_access',
+      'access arguments' => array ( 1 ),
+	  'type' => MENU_CALLBACK,
+	  'file' => 'inc/team_solicitud.inc',
+	);
+  
         
 	//MENU que despliega la lsita de los equipos que todavía no están completos
 	$items [ 'equipos/%/disponibles' ] = array (
@@ -121,8 +133,7 @@ function team_menu(){
 	  'type' => MENU_LOCAL_TASK,
 	  'file' => 'inc/team_administracion.inc',
 	);
-	$items['node/%node/administrar/activos'] = array
-	(
+	$items['node/%node/administrar/activos'] = array (
 	  'title' => 'Jugadores activos',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array( 'team_administrar_activos' ),
@@ -140,8 +151,7 @@ function team_menu(){
 	  'access arguments' => array( 1 ),
 	  'type' => MENU_LOCAL_TASK,
 	);
-	$items['node/%node/administrar/invitados'] = array
-	(
+	$items['node/%node/administrar/invitados'] = array (
 	  'title' => 'Invitados',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array('team_administrar_invitados'),
@@ -161,26 +171,7 @@ function team_menu(){
 		'type' => MENU_CALLBACK,
 	);
     
-	$items[ 'node/%node/solicitar' ] = array(
-	  'title' => 'Unirme a este equipo',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array( 'team_solicitud' ),
-	  'access callback' => 'unirme_equipo_access',
-      'access arguments' => array ( 1 ),
-	  'type' => MENU_LOCAL_TASK,
-	  'file' => 'inc/team_solicitud.inc',
-	);
 
-	//TODO Menú para desligarse de un equipo
-	//MENÚ para darse de baja de un equipo
-	/*$items [ 'user/%/baja_equipo' ] = array (
-		'title' => 'Invitaciones del Jugador',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'administrar_invitaciones' ),
-		'access arguments' => array( 'view team' ),
-		'file' => 'inc/invitaciones_jugador.inc',
-		'type' => MENU_LOCAL_TASK,
-	);*/
 	
 	
 	//MENÚ que aparece en la ficha de jugador para aceptar y rechazar solicitudes recibidas

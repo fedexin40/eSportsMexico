@@ -130,11 +130,21 @@ function modalidades_juegos_admin_insertar ( )	 {
 			$Plataforma_Nombres[ $Plataforma->id_Plataforma ] = $Plataforma->Nombre;
 		}
 		
+		//Obtiene la lista de categorías en las que se puede ubicar una modalidad
 		$terminos = taxonomy_get_tree(variable_get('vocabulario_modalidades', NULL));
 		foreach($terminos as $indice => $termino) {
 			$options[$termino->tid] = $termino->name;
 		}
 		$options['0'] = t('Crear categoria');
+		
+		//Obtiene la lista de campos de identificador que se pueden asociar con una modalidad
+		$type_name = 'profile';
+		$type = content_types($type_name);
+		$fields = $type['fields'];
+		foreach($fields as $indice => $field) {
+				$options_identificador[$indice] = $indice;
+		}
+		$options_identificador['crear'] = t('Crear identificador');
 		
 		$form[ 'insertar' ][ 'title' ] = array (
 			'#type' => 'textfield',
@@ -177,6 +187,14 @@ function modalidades_juegos_admin_insertar ( )	 {
 			'#required' => TRUE,
 			'#default_value' => 0,
 			'#options' => $options,
+		);
+		
+		$form[ 'insertar' ][ 'identificador' ] = array (
+			'#type' => 'select',
+			'#title' => t( 'Identificador. Escoge "Nuevo Identificador" para crear un campo de identificador nuevo en el perfil de usuario.' ),
+			'#required' => TRUE,
+			'#default_value' => 0,
+			'#options' => $options_identificador,
 		);
 		
 		$form[ 'insertar' ][ 'submit' ] = array(
@@ -244,6 +262,12 @@ function modalidades_juegos_admin_insertar_submit( $form, $form_state ) {
 		$term['tid'] = $form_state['values']['tid'];
 	}
 	
+	//Crea el campo de identificador en caso de ser necesario
+	if ($form_state['values']['identificador'] == 'crear') {
+		$identificador = modadalidad_juegos_admin_crear_identificador($form_state['values']['title']);
+	}
+	
+	//Graba los datos en la base de datos
 	db_set_active( 'eSM' );
 	
 		db_query("INSERT INTO { Modalidad_Juego }
@@ -277,6 +301,15 @@ function modalidad_juego_admin_editar( ) {
 		$options[$termino->tid] = $termino->name;
 	}
 	$options['0'] = t('Crear categoria');
+	
+  //Obtiene la lista de campos de identificador que se pueden asociar con una modalidad
+  $type_name = 'profile';
+  $type = content_types($type_name);
+  $fields = $type['fields'];
+  foreach($fields as $indice => $field) {
+		$options_identificador[$indice] = $indice;
+  }
+  $options_identificador['crear'] = t('Crear identificador');
 	
 	$result = db_query("SELECT nid FROM {node} WHERE type = '%s'", variable_get('reglas_modalidades', NULL));	//Obtiene los posibles nodos de reglas para esta modalidad
 	while($row = db_fetch_object($result)) {
@@ -340,6 +373,14 @@ function modalidad_juego_admin_editar( ) {
 			'#title' => t( 'Categoria.' ),
 			'#default_value' => $Modalidad_Juego->tid,
 			'#options' => $options,
+		);
+		
+		$form[ 'detalles' ][ 'identificador' ] = array (
+			'#type' => 'select',
+			'#title' => t( 'Identificador. Escoge "Nuevo Identificador" para crear un campo de identificador nuevo en el perfil de usuario.' ),
+			'#required' => TRUE,
+			'#default_value' => $Modalidad_Juego->identificador,
+			'#options' => $options_identificador,
 		);
 		
 		$form['mapas'] = array (
@@ -464,15 +505,96 @@ function modalidad_juego_admin_editar_submit( $form, $form_state ) {
 		$term['tid'] = $form_state['values']['tid'];
 	}
 	
+	//Crea el campo de identificador en caso de ser necesario
+	if ($form_state['values']['identificador'] == 'crear') {
+		$identificador = modadalidad_juegos_admin_crear_identificador($form_state['values']['title']);
+	}
+	
 	db_set_active( 'eSM' );
 		
 	db_query("UPDATE {Modalidad_Juego}
-						SET id_Plataforma = %d, Nombre = '%s', Nombre_Juego = '%s', Minimo_Jugadores = %d, Maximo_Jugadores = %d, tid = %d, reglas = %d
+						SET id_Plataforma = %d, Nombre = '%s', Nombre_Juego = '%s', Minimo_Jugadores = %d, Maximo_Jugadores = %d, tid = %d, identificador = '%s', reglas = %d
 						WHERE id_Modalidad_Juego = %d",
-						$form_state[ 'values' ][ 'id_Plataforma' ], $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'nombre_juego' ], $form_state[ 'values' ][ 'minimo_jugadores' ], $form_state[ 'values' ][ 'maximo_jugadores' ], $term[ 'tid' ], $form_state[ 'values' ][ 'reglas' ], $form_state[ 'values' ][ 'id_Modalidad_Juego' ]
+						$form_state[ 'values' ][ 'id_Plataforma' ], $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'nombre_juego' ], $form_state[ 'values' ][ 'minimo_jugadores' ], $form_state[ 'values' ][ 'maximo_jugadores' ], $term[ 'tid' ], $form_state['values']['identificador'], $form_state[ 'values' ][ 'reglas' ], $form_state[ 'values' ][ 'id_Modalidad_Juego' ]
 		);		
 	db_set_active( 'default' );
 	
 	drupal_set_message( "La modalidad de juego fué guardada satisfactoriamente" );
 	drupal_goto( "admin/base_datos_externa/modalidades" );
+}
+/**
+ * Función para crear el campo de identificador
+ */
+function modadalidad_juegos_admin_crear_identificador ($name) {
+
+  module_load_include('inc', 'content', 'includes/content.crud');
+
+  $field = array (
+		'field_name' => 'field_'. str_replace( " ", "_", $name),
+		'type_name' => 'profile',
+		'display_settings' => array (
+			'label' => array (
+				'format' => 'above',
+				'exclude' => 0,
+				),
+			'teaser' => array (
+				'format' => 'default',
+				'exclude' => 0,
+				),
+			'full' => array (
+				'format' => 'default',
+				'exclude' => 0,
+				),
+			4 => array (
+				'format' => 'default',
+				'exclude' => 0,
+				),
+			'token' => array (
+				'format' => 'default',
+				'exclude' => 0,
+				),
+		),
+		'widget_active' => '1',
+		'type' => 'text',
+		'required' => '0',
+		'multiple' => '0',
+		'db_storage' => '1',
+		'module' => 'text',
+		'active' => '1',
+		'locked' => '0',
+		'columns' => array (
+			'value' => array (
+				'type' => 'varchar',
+				'length' => '45',
+				'not null' => false,
+				'sortable' => true,
+				'views' => true,
+			),
+		),
+		'text_processing' => '0',
+		'max_length' => '45',
+		'allowed_values' => '',
+		'allowed_values_php' => '',
+		'widget' => array (
+			'rows' => 5,
+			'size' => '45',
+			'default_value' => array (
+				0 => 
+				array ('value' => '',
+					'_error_element' => 'default_value_widget][field_'. str_replace( " ", "_", $name) .'][0][value',
+				),
+			),
+			'default_value_php' => NULL,
+			'label' => 'identificador_'. str_replace( " ", "_", $name),
+			'weight' => '31',
+			'description' => 'Escribe tu identificador online de'. $name,
+			'type' => 'text_textfield',
+			'module' => 'text',
+		),
+	);
+
+  content_field_instance_create($field);
+	drupal_set_message(t('Se ha creado el identificador onlie'));
+	
+	return $field['field_name'];
 }
