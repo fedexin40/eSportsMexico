@@ -1,63 +1,68 @@
 <?php
-
-  /**
-   * Archivo para desplegar las formas que controlan la inscripción a las diferentes modalidades
-   * la función de inscripción es la principal que revisa si la modalidad actual es válida en
-   * la temporada activa, en caso de que no esté activa despliega el mensaje y regresa a la vista de la modalidad
-   * Si la modalidad actual es válida en la temporada activa, revisa si es individual o por equipos
-   * y despliega las opciones correspondintes.
-
-/**  TODO campo imagen columna
-* forma para presentar opciones de inscripción a las modalidades por equipos
+/**
+ * Archivo para desplegar las formas que controlan la inscripción a las diferentes modalidades
+ * la función de inscripción es la principal que revisa si la modalidad actual es válida en
+ * la temporada activa, en caso de que no esté activa despliega el mensaje y regresa a la vista de la modalidad
+ * Si la modalidad actual es válida en la temporada activa, revisa si es individual o por equipos
+ * y despliega las opciones correspondintes.
+ **  TODO campo imagen columna
+ * forma para presentar opciones de inscripción a las modalidades por equipos
 */
-function equipos_disponibles_listar( ) {
-
-  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-                
-  $tid = arg( 1 );  
-
+function equipos_disponibles( ) {
+  $tid = arg(2);
   $modalidad = term_is_active($tid);
+  drupal_set_title(t('Teams participating in '. $modalidad->Nombre));
   
   module_load_include( 'php', 'team', 'db_functions' );
   $teams = get_equipos( $modalidad->id_Modalidad_Juego_Temporada );
   
   $count = 0;
-  //Primero almacenaremos todos los equipos en nodos
-  
-  foreach ( $teams AS $index => $team )
-  {
+  foreach ( $teams AS $index => $team ) {
     $team = node_load( array( 'nid' => $team['nid_Equipo']) );
-    if ( $team->Numero_Integrantes < $modalidad->Maximo_Jugadores )
-    {
-      $capitan = user_load(array('uid' => $team->uid));
-      //Presentaremos una forma para cada equipo disponible
-      $form[ 'equipos_disponibles' ][ $team->title ][ 'imagen' ] = array (
-        '#value' => $team->imagen,
+    //Presentaremos una forma para cada equipo disponible
+    $form[ 'equipos_disponibles' ][ $team->title ][ 'imagen' ] = array (
+      '#value' => theme('team_pane', $team, variable_get('team_block_roster_picture_preset', '')),
+    );
+    $form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
+      '#value' => l($team->title, 'node/'. $team->nid),
+    );
+    $form[ 'equipos_disponibles' ][ $team->title ][ 'tag' ] = array (
+      '#value' => $team->abreviacion,
+    );
+    if ($team->Numero_Intergrantes < $modalidad->Maximo_Jugadores) {
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'recruit' ] = array (
+        '#value' => t('Yes'),
       );
-      $form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
-        '#value' => $team->title,
+    }
+    else {
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'recruit' ] = array (
+        '#value' => t('No'),
       );
-      $form[ 'equipos_disponibles' ][ $team->title ][ 'tag' ] = array (
-        '#value' => $team->abreviacion,
+    }
+    
+    //Si está activo el módulo de ránking ponemos los datos de victorias y derrotas
+    if(module_exists('ranking')) {
+      $puntuacion = _ranking_get_team_puntuacion($team->nid);
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'win' ] = array (
+        '#value' => $puntuacion->PG,
       );
-      $form[ 'equipos_disponibles' ][ $team->title ][ 'capitan' ] = array (
-        '#value' => l($capitan->name, 'user/'. $capitan->uid),
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'lose' ] = array (
+        '#value' => ($puntuacion->PJ - $puntuacion->PG),
       );
-      $form[ 'equipos_disponibles' ][ $team->title ][ 'plazas' ] = array (
-        '#value' => $modalidad->Maximo_Jugadores - $team->Numero_Integrantes,
-      );
-      $form[ 'equipos_disponibles' ][ $team->title ][ 'link' ] = array (
-        '#value' => l( t( 'Solicitar Unirme' ), 'node/'.$team->nid.'/solicitar' ),
+    }
+    
+    //Si está activo el módulo de matches ponemos la reputación del equipo
+    if(module_exists('match')) {
+      $form[ 'equipos_disponibles' ][ $team->title ][ 'reputation' ] = array (
+        '#value' => _match_display_reputation($team->nid),
       );
     }
     $count++;
   }
   
-  if( $count == 0 )
-  {
-    $form[ 'equipos_disponibles' ] = array
-    (
-      '#value' => 'No hay equipos disponibles',
+  if( $count == 0 ) {
+    $form[ 'equipos_disponibles' ] = array (
+      '#value' => 'No hay inscritos en esta modalidad todavia',
     );
   }
   

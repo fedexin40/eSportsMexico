@@ -7,28 +7,38 @@ function agente_libre() {
   $tid = arg( 2 );  //Obtiene el tid de la modalidad de la barra de direcciones
   global $user;
   
-  if (!($modalidad = term_is_active($tid)))
-    return t('Esta modalidad no esta activa en esta temporada.');
+  if (!($modalidad = term_is_active($tid))) {
+    $form['mensaje'] = array ('#value' => t('Esta modalidad no esta activa en esta temporada.'));
+    return $form;
+  }
   
-  if($modalidad->identificador == '')
-    return t('El identificador de este juego no esta configurado.</br>Por favor contacta a un administrador.');
+  if($modalidad->identificador == '') {
+    $form['mensaje'] = array ('#value' => t('El identificador de este juego no esta configurado.</br>Por favor contacta a un administrador.'));
+    return $form;
+  }
   
   $profile_node = content_profile_load('profile', $user->uid);
-  if ($profile_node->{$modalidad->identificador}['0']['value'] == '')
-    return t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario.</br>');
+  if ($profile_node->{$modalidad->identificador}['0']['value'] == '') {
+    $form['mensaje'] = array ('#value' => t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario.</br>'));
+    return $form;
+  }
   
   $tiene_equipo = tiene_equipo( $user->uid, $modalidad->id_Modalidad_Juego_Temporada );
-  if ($tiene_equipo == TIENE_EQUIPO)
-    return t('Ya perteneces a un equipo de esta modalidad. Para buscar otro equipo primero debes abandonar el equipo al que perteneces actualmente.');
+  if ($tiene_equipo == TIENE_EQUIPO) {
+    $form['mensaje'] = array ('#value' => t('Ya perteneces a un equipo de esta modalidad. Para buscar otro equipo primero debes abandonar el equipo al que perteneces actualmente.'));
+    return $form;
+  }
   
-  if ($tiene_equipo == AGENTE_LIBRE)
-    return t('Ya estas registrado como Agente Libre en esta modalidad.');
+  if ($tiene_equipo == AGENTE_LIBRE) {
+    $form['mensaje'] = array ('#value' => t('Ya estas registrado como Agente Libre en esta modalidad.'));
+    return $form;
+  }
       
     //Trata de obtener la información del usuario
     db_set_active('eSM');
         $jugador = db_fetch_object(db_query('SELECT * FROM {Agente_Libre} AS al
                                             INNER JOIN {Jugador} AS j ON al.id_Jugador = j.id_Jugador
-                                            WHERE j.uid = $d',
+                                            WHERE j.uid = %d',
                                             $user->uid));
     db_set_active('default');
     
@@ -38,6 +48,7 @@ function agente_libre() {
     );
     $form['Instrucciones'] = array (
         '#value' => t('<p>Marca en la parte derecha los dias y horas que mejor se adaptan a tu disponibilidad habitual para jugar en eSM.</p><p>Ten en cuenta que los equipos buscan jugadores que jueguen a la misma hora que ellos, asi que asegurate de que los datos sobre tu tiempo libre sean fiables</p>'),
+        '#weight' => -100,
     );
     
     $form[ 'presentacion' ] = array (
@@ -46,11 +57,13 @@ function agente_libre() {
         '#required' => TRUE,
         '#description' => 'Presentacion breve: estilo de juego, motivaciones, etc.',
         'default_value' => $jugador->descripcion,
+        '#weight' => -50,
     );
      
     $form[ 'disponibilidad' ] = array (
         '#title' => 'Disponibilidad',
         '#type' => 'fieldset',
+        '#weight' => 0,
     );
     
     $form[ 'disponibilidad' ][ 'dias' ] = array (
@@ -82,9 +95,10 @@ function agente_libre() {
     $form['submit'] = array (
         '#type' => 'submit',
         '#value' => t('Declararse Agente Libre'),
+        '#weight' => 100,
     );
       
-    return drupal_render_form($form);
+    return $form;
 }
 
 /**
@@ -115,32 +129,31 @@ function agente_libre_submit ( $form, $form_state ) {
     }
     
     //0.- Verifica si existe o no el registro del jugador en la tabla
-    db_set_active('eSM');
-        $result = db_result(db_query('SELECT COUNT FROM {Jugador} WHERE uid = %d', $user->uid));
-    db_set_active('default');
+    $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
     
-    if($result > 0)
+    if(is_object($jugador))
         $op = 'update';
     else
         $op = 'insert';
     
     //1.- Insertar un registro en la tabla de Jugador para reflejar que el usuario se inscribió a la modalidad como agente libre
-    db_set_active( 'eSM' );
-        if ($op == 'insert') {
-            db_query("INSERT INTO { Jugador }
-                    (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado)
-                    VALUES ( %d, %d, %d, %d )",
-                    $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE);
-        }
-        if ($op == 'create') {
-            db_query("UPDATE {Jugador}
-                    SET Estado = %d
-                    WHERE id_Modalidad_Juego_Temporada = %d AND uid = %d",
-                    AGENTE_LIBRE, $id_Modalidad_Juego_Temporada, $user->uid);
-        }
-    db_set_active( 'default' );
-    
-    $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
+    if ($op == 'insert') {
+      db_set_active( 'eSM' );
+        db_query("INSERT INTO { Jugador }
+                (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado)
+                VALUES ( %d, %d, %d, %d )",
+                $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE);
+      db_set_active('default');
+      $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
+    }
+    if ($op == 'update') {
+      db_set_active('eSM');
+        db_query("UPDATE {Jugador}
+                SET Estado = %d
+                WHERE id_Modalidad_Juego_Temporada = %d AND uid = %d",
+                AGENTE_LIBRE, $id_Modalidad_Juego_Temporada, $user->uid);
+      db_set_active( 'default' );
+    }
     
     if (db_result(db_query('SELECT COUNT FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador->id_Jugador)) > 0) {
         db_set_active('eSM');
@@ -154,7 +167,7 @@ function agente_libre_submit ( $form, $form_state ) {
                      WHERE id_Jugador = %d",
                      $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo'], $jugador->id_Jugador);
             //4.- Actualiza la disponibildad de horas en la tabla;
-            db_query("UPDATA {Disponibilidad_Horas}
+            db_query("UPDATE {Disponibilidad_Horas}
                      SET  Morning = %d, Evening = %d, Night = %d
                      WHERE id_Jugador = %d",
                      $horas['morning'], $horas['evening'], $horas['nigth'], $jugador->id_Jugador);
@@ -184,12 +197,14 @@ function agente_libre_submit ( $form, $form_state ) {
 *	Función para listar a los agentes libres
 */
 function agente_libre_listar ( ) {
-    module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-    
     global $user;
-    $tid = arg(1);     //obtiene el tid de la barra de direcciones
+    $tid = arg(2);     //obtiene el tid de la barra de direcciones
+    //Utilizamos el mismo preset de imagecache que se está usando para desplegar la plantilla
+    //en caso de querer cambiarlo debería de agregarse la opción en la pestaña de administración del equipo
+    $preset = variable_get('team_block_roster_picture_preset', ''); 
 
     if ($modalidad = term_is_active($tid)) {
+        drupal_set_title(t('Free Agents for '. $modalidad->Nombre));
         $count = 0;
         $is_capitan = is_capitan($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
     
@@ -198,7 +213,6 @@ function agente_libre_listar ( ) {
             $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $modalidad->id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
         db_set_active( 'default' );
         
-        //TODO: Elaborar función theme para darle formato a esta tabla de jugadores libres.
         while ( $jugador = db_fetch_array( $result ) ) {
             ++ $count;
             //Obtiene los datos del jugador
@@ -211,7 +225,29 @@ function agente_libre_listar ( ) {
             //TODO: Revisar la conveniencia de añadir al objeto user los datos del jugador para que sea más sencillo de manejar y menos consultas que realizar.
             $jugador = user_load($jugador['uid']);
             
-            //TODO: Agregar el campo de imágen del jugador a la lista de los agentes libres
+            // If user pictures are enabled...
+            if (variable_get('user_pictures', 0)) {
+                // Get the user's avatar if they have one or the default picture if exists.
+                if (!empty($jugador->picture) && file_exists($jugador->picture)) {
+                  // We only want to get the full URL if not using imagecache.
+                  $picture = (!empty($preset) && module_exists('imagecache')) ? $jugador->picture : file_create_url($jugador->picture);
+                }
+                elseif (variable_get('user_picture_default', '')) {
+                  $picture = variable_get('user_picture_default', '');
+                }
+                // If there's a preset set and imagecache is enabled...
+                if (!empty($preset) && module_exists('imagecache')) {
+                  $form['Jugadores_Libres'][$jugador->uid]['Imagen'] = array (
+                    '#value' => theme('imagecache', $preset, $picture, $jugador->name, $jugador->name),
+                  );
+                }
+                else {
+                  $form['Jugadores_Libres'][$jugador->uid]['Imagen'] = array (
+                    '#value' => theme('image', $picture, $jugador->name, $jugador->name),
+                  );
+                }
+            }
+
             $form['Jugadores_Libres'][$jugador->uid]['Nombre'] = array (
                 '#value' => l($jugador->name, 'user/'. $jugador->uid)
             );

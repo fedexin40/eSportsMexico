@@ -27,62 +27,51 @@ function mostrar_puntuacion(  ) {
 			$victorias = 0;
 
 		$form[ $count ][ 'Ranking' ] = array (
-			//'#title' => 'Nombre',
 			'#type' => 'item',
 			'#value' => $count,
 		);
 		
 		$form[ $count ][ 'Title' ] = array (
-			//'#title' => 'Nombre',
 			'#type' => 'item',
 			'#value' => l($Equipo->title, 'node/'.$Equipo->nid),
 		);
 		
 		$form[ $count ][ 'Puntuacion' ] = array (
-			//'#title' => 'Puntuacion',
 			'#type' => 'item',
 			'#value' => $Puntuacion->Puntuacion
 		);
-		
 
 		$form[ $count ][ 'PJ' ] = array (
-			//'#title' => 'Desafios Jugados',
 			'#type' => 'item',
 			'#value' => $Puntuacion->PJ
 		);
 
 		$form[ $count ][ 'PG' ] = array (
-			//'#title' => 'Desafíos Ganados',
 			'#type' => 'item',
 			'#value' => $Puntuacion->PG
 		);
 		
 		$form[ $count ][ 'PP' ] = array (
-			//'#title' => 'Desafíos Ganados',
 			'#type' => 'item',
 			'#value' => $Puntuacion->PJ - $Puntuacion->PG
 		);
 
 		$form[ $count ][ 'TJ' ] = array (
-			//'#title' => 'Desafíos Ganados',
 			'#type' => 'item',
 			'#value' => $Puntuacion->TJ
 		);
 		
 		$form[ $count ][ 'Victorias' ] = array (
-			//'#title' => 'Desafíos Ganados',
 			'#type' => 'item',
 			'#value' => $victorias
 		);
 		
 		$form[ $count ][ 'Actividad' ] = array (
-			//'#title' => 'Desafíos Ganados',
 			'#type' => 'item',
 			'#value' => $actividad,
 		);
 		
 		$form[ $count ][ 'Racha' ] = array (
-			//'#title' => 'Desafíos Ganados',
 			'#type' => 'item',
 			'#value' => $Puntuacion->Racha
 		);

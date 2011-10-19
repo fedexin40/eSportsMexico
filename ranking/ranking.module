@@ -420,5 +420,5 @@ function _ranking_get_team_puntuacion ($nid_Equipo) {
 		$result = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
 	db_set_active('default');
 	
-	return $result->Puntuacion;
+	return $result;
 }

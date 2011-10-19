@@ -1,7 +1,4 @@
 <?php
-
-
-
 //Función que recibe un identificador de juego y temporada
 //y devuelve un arreglo con los datos de todos los equipos inscritos
 function get_equipos( $id_Modalidad_Juego_Temporada ) {
