@@ -93,7 +93,7 @@ function modalidades_juegos_admin_listar ( ) {
 	db_set_active( 'default' );
 	
 	$output = '<div class="form_item">Lista de modalidades dadas de alta en la base de datos.</div>';
-	$header = array (t('Name'), t('Plataforma'), t('Game'), t('Minimo Jugadores'), t('Maximo Jugadores'), '');
+	$header = array (t('Name'), t('Plataforma'), t('Game'), t('Min Jugadores'), t('Max Jugadores'), '');
 	
 	//Pondremos un listado de modalidads disponibles
 	while( $Modalidad_Juego = db_fetch_object( $result_set_Modalidad_Juego ) ) {

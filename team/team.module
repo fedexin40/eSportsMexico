@@ -72,26 +72,26 @@ function team_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/admin_team.inc',
   );
-        
-  //Página para verificar si el usuario puede crear un equipo        
+  
+  //MENU para desplegar la forma de registro de un equipo
 	$items [ 'taxonomy/term/%/team/register' ] = array (			
 	  'title' => t('Signup'),
     'page callback' => 'inscripcion',
-    'access callback' => 'team_register_access',
-	  'access arguments' => array (),
+	  'access arguments' => array ('create team'),
 	  'file' => 'inc/inscripcion.inc',
     'type' => MENU_CALLBACK,
 	);    
 	//MENÚ para registrar un agente libre
 	$items [ 'taxonomy/term/%/free_agent/register' ] = array (
 	  'title' => 'Agentes Libres',
-	  'page callback' => 'drupal_get_form',
-    'access callback' => 'team_register_access',
-	  'page arguments' => array('agente_libre'),
-	  'access arguments' => array (),
+	  'page callback' => 'agente_libre',
+	  'access arguments' => array ('create team'),
 	  'file' => 'inc/agentes_libres.inc',
 	  'type' => MENU_CALLBACK,
 	);
+  
+  
+  
 	$items [ 'taxonomy/term/%/free_agent' ] = array (
 	  'title' => 'Agente Libre',
 	  'page callback' => 'drupal_get_form',
@@ -235,49 +235,12 @@ function team_access($op, $node, $account){
 } 
 
 /**
- * Función para verificar si el usuario cumple
- * los requisitos para registrarse a una modalidad
- * ya sea como agente libre o para crear un equipo
- */
-function team_register_access() {
-  $context = arg(3);
-  $tid = arg( 2 );  //Obtiene el tid de la modalidad de la barra de direcciones
-  global $user;
-  
-  if (!($modalidad = term_is_active($tid))) {
-    drupal_set_message( 'Esta modalidad no esta activa en esta temporada.' );
-    return FALSE;
-  }
-  
-  $profile_node = content_profile_load('profile', $user->uid);
-  if ($profile_node->{$modalidad->identificador}['0']['value'] == '') {
-    drupal_set_message(t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario'));
-    return FALSE;
-  }
-  
-  $tiene_equipo = tiene_equipo( $user->uid, $modalidad->id_Modalidad_Juego_Temporada );
-  if ($tiene_equipo == NO_REGISTRADO)
-    return TRUE;
-  
-  if ($tiene_equipo == AGENTE_LIBRE && $context == 'team')
-    return TRUE;
-  
-  if ($tiene_equipo == AGENTE_LIBRE && $context == 'free_agent') {
-    drupal_set_message(t('Ya estas registrado como Agente Libre en esta modalidad'));
-    return TRUE;
-  }
-
-  drupal_set_message( 'Ya perteneces a un equipo de esta modalidad. Para poder inscribirte en otro equipo debes salir primero del equipo al que perteneces actualmente.' );
-  return FALSE;
-}
-/**
  * Implementation of hook_form()
  * @param $node
  * @param $form_state
  * @return unknown_type
  */
 function team_form(&$node, $form_state) {
-
 	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
 
 	//Si estamos en una modalidad individual, sugiere al usuario que el nombre por defecto de su equipo sea su nombre de usuario.
@@ -292,10 +255,9 @@ function team_form(&$node, $form_state) {
 	  $form[ 'title' ][ '#disabled' ] = TRUE;
 	 }
 	
-	$form[ 'id_Modalidad_Juego_Temporada' ] = array
-	(
+	$form[ 'id_Modalidad_Juego_Temporada' ] = array (
 	  '#type' => 'hidden',
-	  '#value' => arg( 3 ),
+	  '#value' => $id_Modalidad_Juego_Temporada,
 	);
 	
 	$type = node_get_types('type', $node);

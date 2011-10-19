@@ -274,7 +274,7 @@ function base_datos_externa_menu( ) {
 	
 	//Define la subpestaña principal
 	$items[ 'taxonomy/term/%/home' ] = array(
-		'title' => t('Frontpage'),
+		'title' => t('Ver'),
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'weight' => -100,
 	);

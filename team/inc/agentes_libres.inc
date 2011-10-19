@@ -4,11 +4,37 @@
 * Forma para adquirir características de agente libre en la temporada
 */
 function agente_libre() {
-    $id_Modalidad_Juego_Temporada = arg(1); //Obtiene el id_Modalidad_Juego_Temporada pasado a la función en la barra de dirección
+  $tid = arg( 2 );  //Obtiene el tid de la modalidad de la barra de direcciones
+  global $user;
+  
+  if (!($modalidad = term_is_active($tid)))
+    return t('Esta modalidad no esta activa en esta temporada.');
+  
+  if($modalidad->identificador == '')
+    return t('El identificador de este juego no esta configurado.</br>Por favor contacta a un administrador.');
+  
+  $profile_node = content_profile_load('profile', $user->uid);
+  if ($profile_node->{$modalidad->identificador}['0']['value'] == '')
+    return t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario.</br>');
+  
+  $tiene_equipo = tiene_equipo( $user->uid, $modalidad->id_Modalidad_Juego_Temporada );
+  if ($tiene_equipo == TIENE_EQUIPO)
+    return t('Ya perteneces a un equipo de esta modalidad. Para buscar otro equipo primero debes abandonar el equipo al que perteneces actualmente.');
+  
+  if ($tiene_equipo == AGENTE_LIBRE)
+    return t('Ya estas registrado como Agente Libre en esta modalidad.');
+      
+    //Trata de obtener la información del usuario
+    db_set_active('eSM');
+        $jugador = db_fetch_object(db_query('SELECT * FROM {Agente_Libre} AS al
+                                            INNER JOIN {Jugador} AS j ON al.id_Jugador = j.id_Jugador
+                                            WHERE j.uid = $d',
+                                            $user->uid));
+    db_set_active('default');
     
     $form['id_Modalidad_Juego_Temporada'] = array (
         '#type' => 'hidden',
-        '#value' => $id_Modalidad_Juego_Temporada,
+        '#value' => $modalidad->id_Modalidad_Juego_Temporada,
     );
     $form['Instrucciones'] = array (
         '#value' => t('<p>Marca en la parte derecha los dias y horas que mejor se adaptan a tu disponibilidad habitual para jugar en eSM.</p><p>Ten en cuenta que los equipos buscan jugadores que jueguen a la misma hora que ellos, asi que asegurate de que los datos sobre tu tiempo libre sean fiables</p>'),
@@ -19,15 +45,16 @@ function agente_libre() {
         '#title' =>  t('Presentacion') ,
         '#required' => TRUE,
         '#description' => 'Presentacion breve: estilo de juego, motivaciones, etc.',
+        'default_value' => $jugador->descripcion,
     );
      
     $form[ 'disponibilidad' ] = array (
         '#title' => 'Disponibilidad',
         '#type' => 'fieldset',
     );
-
+    
     $form[ 'disponibilidad' ][ 'dias' ] = array (
-        '#type' => 'checkboxes', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+        '#type' => 'checkboxes', 
         '#title' => t('Dias  Disponibles'),
         '#required' => TRUE,
         '#options' => array(
@@ -40,9 +67,9 @@ function agente_libre() {
             'domingo' => t('Sunday'),
         ),
      );
-
+    
     $form[ 'disponibilidad' ][ 'horas' ] = array (
-        '#type' => 'checkboxes', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+        '#type' => 'checkboxes', 
         '#title' => t('Horas Disponibles'),
         '#required' => TRUE,
         '#options' => array(
@@ -57,7 +84,7 @@ function agente_libre() {
         '#value' => t('Declararse Agente Libre'),
     );
       
-    return $form;
+    return drupal_render_form($form);
 }
 
 /**
@@ -70,115 +97,93 @@ function agente_libre() {
 *	4.- Insertar la disponibildad de horas en la tabla;
 */
 function agente_libre_submit ( $form, $form_state ) {
-    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
     global $user;
     $id_Modalidad_Juego_Temporada = $form_state['values']['id_Modalidad_Juego_Temporada'];
-    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
     
-    //1.- Insertar un registro en la tabla de Jugador para reflejar que el usuario se inscribió a la modalidad como agente libre
-    db_set_active( 'eSM' );
-        db_query
-        ( 
-            "INSERT INTO { Jugador }
-            ( 
-                id_Modalidad_Juego_Temporada,
-                uid,
-                Fecha_Registro,
-                Estado
-            )			
-            VALUES ( %d, %d, %d, %d )",
-                $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE
-        );
-    db_set_active( 'default' );
-    
-    $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
-    
-    //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
-    db_set_active('eSM');
-        db_query
-        (
-            "INSERT INTO { Agente_Libre }
-            (
-                id_Jugador,
-                Descripcion
-            )
-            VALUES ( %d, '%s' )",
-                $jugador->id_Jugador, $form_state['values']['presentacion']
-        );
-    db_set_active( 'default' );
-    
-    //3.- Insertar la disponibilidad de días en la tabla;
     foreach ($form_state['values']['dias'] as $key => $element) {
         if (!$element == 0)
             $dias[$key] = 1;
         else
             $dias[$key] = 0;
     }
-    db_set_active('eSM');
-        db_query
-        (
-            "INSERT INTO {Disponibilidad_Dias}
-            (
-                id_Jugador,
-                Lunes,
-                Martes,
-                Miercoles,
-                Jueves,
-                Viernes,
-                Sabado,
-                Domingo
-            )
-            VALUES
-            (
-                %d, %d, %d, %d, %d, %d, %d, %d
-            )",
-            $jugador->id_Jugador, $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo']
-        );
-    db_set_active('default');
-        
-    //4.- Insertar la disponibildad de horas en la tabla;
+    
     foreach ($form_state['values']['horas'] as $key => $element) {
         if (!$element == 0)
-            $dias[$key] = 1;
+            $horas[$key] = 1;
         else
-            $dias[$key] = 0;
+            $horas[$key] = 0;
     }
-    db_set_active('eSM');
-        db_query
-        (
-            "INSERT INTO {Disponibilidad_Horas}
-            (
-                id_Jugador,
-                Morning,
-                Evening,
-                Night
-            )
-            VALUES
-            (
-                %d, %d, %d, %d
-            )",
-            $jugador->id_Jugador, $dias['morning'], $dias['evening'], $dias['nigth']
-        );
-    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
-    drupal_goto('user/'. $user->uid);
-}
-function agente_libre_validate ( $form, $form_state ) {
-    global $user;
-    $id_Modalidad_Juego_Temporada = $form_state['values']['id_Modalidad_Juego_Temporada'];
-    $tiene_equipo = tiene_equipo($user->uid, $id_Modalidad_Juego_Temporada);
     
-    if ( $tiene_equipo == TIENE_EQUIPO)
-        form_set_error('id_Modalidad_Juego_Temporada', '<p>No puedes declararte como agente libre porque ya perteneces a un equipo.</p><p>Abandona tu equipo actual para poder declararte como agente libre.</p>');
-        
-    if ($tiene_equipo == AGENTE_LIBRE)
-        form_set_error('id_Modalidad_Juego_Temporada', '<p>Ya te has declarado como agente libre.</p>');
-}
-       
+    //0.- Verifica si existe o no el registro del jugador en la tabla
+    db_set_active('eSM');
+        $result = db_result(db_query('SELECT COUNT FROM {Jugador} WHERE uid = %d', $user->uid));
+    db_set_active('default');
+    
+    if($result > 0)
+        $op = 'update';
+    else
+        $op = 'insert';
+    
+    //1.- Insertar un registro en la tabla de Jugador para reflejar que el usuario se inscribió a la modalidad como agente libre
+    db_set_active( 'eSM' );
+        if ($op == 'insert') {
+            db_query("INSERT INTO { Jugador }
+                    (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado)
+                    VALUES ( %d, %d, %d, %d )",
+                    $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE);
+        }
+        if ($op == 'create') {
+            db_query("UPDATE {Jugador}
+                    SET Estado = %d
+                    WHERE id_Modalidad_Juego_Temporada = %d AND uid = %d",
+                    AGENTE_LIBRE, $id_Modalidad_Juego_Temporada, $user->uid);
+        }
+    db_set_active( 'default' );
+    
+    $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
+    
+    if (db_result(db_query('SELECT COUNT FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador->id_Jugador)) > 0) {
+        db_set_active('eSM');
+            //2.- Actualiza la descripción ingresada por el usuario
+            db_query("UPDATE {Agente_Libre} SET Descripcion = '%s'
+                     WHERE id_Jugador = %d",
+                    $form_state['values']['presentacion'], $jugador->id_Jugador);
+            //3.- Acutaliza la disponibilidad de días en la tabla;
+            db_query("UPDATE {Disponibilidad_Dias}
+                     SET Lunes = %d, Martes = %d, Miercoles = %d, Jueves = %d, Viernes = %d, Sabado = %d, Domingo= %d
+                     WHERE id_Jugador = %d",
+                     $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo'], $jugador->id_Jugador);
+            //4.- Actualiza la disponibildad de horas en la tabla;
+            db_query("UPDATA {Disponibilidad_Horas}
+                     SET  Morning = %d, Evening = %d, Night = %d
+                     WHERE id_Jugador = %d",
+                     $horas['morning'], $horas['evening'], $horas['nigth'], $jugador->id_Jugador);
+        db_set_active( 'default' );
+    }
+    else {
+        db_set_active('eSM');
+            //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
+            db_query("INSERT INTO { Agente_Libre } (id_Jugador, Descripcion)
+                     VALUES ( %d, '%s' )",
+                    $jugador->id_Jugador, $form_state['values']['presentacion']);
+            //3.- Insertar la disponibilidad de días en la tabla;
+            db_query("INSERT INTO {Disponibilidad_Dias}
+                     (id_Jugador, Lunes, Martes, Miercoles, Jueves, Viernes, Sabado, Domingo)
+                     VALUES (%d, %d, %d, %d, %d, %d, %d, %d)",
+                     $jugador->id_Jugador, $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo']);
+            //4.- Insertar la disponibildad de horas en la tabla;
+            db_query("INSERT INTO {Disponibilidad_Horas}
+                     (id_Jugador, Morning, Evening, Night)
+                     VALUES (%d, %d, %d, %d)",
+                     $jugador->id_Jugador, $horas['morning'], $horas['evening'], $horas['nigth']);
+        db_set_active( 'default' );
+    }
+    drupal_set_message( "Te has agregado correctamente como Agente Libre." );
+} 
 /**
 *	Función para listar a los agentes libres
 */
 function agente_libre_listar ( ) {
-    
     module_load_include( 'php', 'base_datos_externa', 'db_functions' );
     
     global $user;

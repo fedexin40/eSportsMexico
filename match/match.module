@@ -828,7 +828,7 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
           //upcoming games
           $block['subject'] = t('Upcoming Matches');
           $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 0 ORDER BY {match}.match_time ASC LIMIT %d;", 3);
-          $block['content'] = theme('match_block', $to_show);
+          $block['content'] = l('Desafios Destacados', 'node');
           break;
         case 1:
           //latest results
