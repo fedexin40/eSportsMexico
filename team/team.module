@@ -24,6 +24,8 @@ include ( "db_functions.php" );
   define( 'SOLICITA', 2 );
   define( 'ACEPTADO', 3 );
   define( 'RECHAZADO', 4 );
+  define( 'ABANDONO', 5 );
+  define( 'EXPULSADO', 6 );
 
 /**
  * Implementation of hook_help()
@@ -54,7 +56,6 @@ function team_perm(){
  * @return unknown_type
  */
 function team_menu(){
-	//////////////////////////////EQUIPOS
 	//Una página par administrar las opciones de los equipos
   $items['admin/base_datos_externa/team'] = array(
       'title' => t('Equipos'),
@@ -112,47 +113,31 @@ function team_menu(){
 	);
 	$items [ 'taxonomy/term/%/teams/free_agent' ] = array (
 	  'title' => 'Agente Libre',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('agente_libre_listar'),
+	  'page callback' => 'agente_libre_listar',
 	  'access arguments' => array ('create team'),
 	  'file' => 'inc/agentes_libres.inc',
 	  'type' => MENU_LOCAL_TASK,
 	);
   
-	
-  
-  
-  //Formulario para solicitar unirse a un equipo
-	$items[ 'node/%node/join/request' ] = array(
-	  'title' => 'Unirme a este equipo',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array( 'team_solicitud' ),
-	  'access callback' => 'unirme_equipo_access',
-      'access arguments' => array ( 1 ),
-	  'type' => MENU_CALLBACK,
-	  'file' => 'inc/team_solicitud.inc',
-	);
-
-	//MENÚ para administrar equipos
-	$items['node/%node/administrar'] = array(
-	  'title' => 'Administrar Jugadores',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array( 'team_administrar' ),
-	  'access callback' => 'team_admin_access',
-	  'access arguments' => array( 1 ),
-	  'type' => MENU_LOCAL_TASK,
-	  'file' => 'inc/team_administracion.inc',
-	);
-	$items['node/%node/administrar/activos'] = array (
-	  'title' => 'Jugadores activos',
+	//MENÚ para administrar la plantilla de los equipos
+	$items['node/%node/roster'] = array(
+	  'title' => 'Roster',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array( 'team_administrar_activos' ),
 	  'access callback' => 'team_admin_access',
-	  'file' => 'inc/team_administracion.inc',
 	  'access arguments' => array( 1 ),
 	  'type' => MENU_LOCAL_TASK,
+	  'file' => 'inc/team_administracion.inc',
+    'weight' => 10,
 	);
-	$items['node/%node/administrar/solicitudes'] = array(
+	$items['node/%node/roster/active'] = array (
+	  'title' => 'Jugadores Activos',
+	  'access callback' => 'team_admin_access',
+	  'access arguments' => array( 1 ),
+	  'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -100,
+	);
+	$items['node/%node/roster/request'] = array(
 	  'title' => 'Solicitudes',
 	  'page callback' => 'drupal_get_form',
 	  'page arguments' => array( 'team_administrar_solicitudes' ),
@@ -161,52 +146,92 @@ function team_menu(){
 	  'access arguments' => array( 1 ),
 	  'type' => MENU_LOCAL_TASK,
 	);
-	$items['node/%node/administrar/invitados'] = array (
-	  'title' => 'Invitados',
-	  'page callback' => 'drupal_get_form',
-	  'page arguments' => array('team_administrar_invitados'),
+	$items['node/%node/roster/invite'] = array (
+	  'title' => 'Invitar',
+    'page callback' => 'team_administrar_invitados',
 	  'file' => 'inc/team_administracion.inc',
 	  'access callback' => 'team_admin_access',
 	  'access arguments' => array(1),
 	  'type' => MENU_LOCAL_TASK,
+    'weight' => 100,
 	);
-    
-	//MENÚ que aparece en la ficha de jugadores para recibir y administrar invitaciones y solicitudes
-	$items [ 'user/%/invitar/%' ] = array (
-		'title' => 'Invitar Jugador',
+  
+	//Formulario para aceptar invitaciones
+	$items [ 'node/%node/join' ] = array (
+		'title' => t('Acetpar Invitacion'),
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array('invitar_usuario'),
-		'access arguments' => array('create team'),
-		'file' => 'inc/invitar_jugador.inc',
+		'page arguments' => array('aceptar_invitacion'),
+    'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
+		'file' => 'inc/invitaciones_jugador.inc',
 		'type' => MENU_CALLBACK,
 	);
-    
-
-	
-	
-	//MENÚ que aparece en la ficha de jugador para aceptar y rechazar solicitudes recibidas
-	$items [ 'user/%/invitaciones' ] = array (
-		'title' => 'Invitaciones del Jugador',
+	//Formulario para rechazar invitaciones
+	$items [ 'node/%node/decline' ] = array (
+		'title' => t('Rechazar invitacion'),
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'administrar_invitaciones' ),
-		'access arguments' => array( 'create team' ),
+		'page arguments' => array( 'rechazar_invitacion' ),
+    'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
+		'file' => 'inc/invitaciones_jugador.inc',
+		'type' => MENU_CALLBACK,
+	);
+  
+	//MENÚ que permite al usuario administrar sus equipos
+	$items [ 'user/%/teams' ] = array (
+		'title' => t('Teams'),
+		'page callback' => 'administrar_equipos',
+    'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
 		'file' => 'inc/invitaciones_jugador.inc',
 		'type' => MENU_LOCAL_TASK,
-	);	
-	
-	//Página para rechazar invitaciones
-	$items [ 'user/%/rechazar_invitacion' ] = array (
-		'title' => 'Rechazar invitación',
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'rechaza_invitacion' ),
-		'access arguments' => array( 'create team' ),
+	);
+	$items [ 'user/%/teams/active' ] = array (
+		'title' => t('Teams Active'),
+    'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items [ 'user/%/teams/invites' ] = array (
+		'title' => t('Teams Invites'),
+		'page callback' => 'administrar_invitaciones',
+    'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
 		'file' => 'inc/invitaciones_jugador.inc',
-		'type' => MENU_CALLBACK,
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items [ 'user/%/teams/request' ] = array (
+		'title' => t('Teams Request'),
+		'page callback' => 'administrar_solicitudes',
+    'access callback' => 'team_admin_access',
+		'access arguments' => array(1),
+		'file' => 'inc/invitaciones_jugador.inc',
+		'type' => MENU_LOCAL_TASK,
+	);
+  
+  //Formulario para solicitar unirse a un equipo
+	$items[ 'node/%node/request' ] = array(
+	  'title' => t('Solicitar Unirme'),
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_solicitud' ),
+	  'access callback' => 'team_admin_access',
+    'access arguments' => array ( 1 ),
+	  'type' => MENU_CALLBACK,
+	  'file' => 'inc/team_solicitud.inc',
+	);
+  //Formulario para confirmar la salida de un equipo
+	$items[ 'node/%node/drop' ] = array(
+	  'title' => t('Abandonar Equipo'),
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array( 'team_drop' ),
+	  'access callback' => 'team_admin_access',
+    'access arguments' => array ( 1 ),
+	  'type' => MENU_CALLBACK,
+	  'file' => 'inc/invitaciones_jugador.inc',
 	);
 
 	return $items;
 }
-	
 /**
  * Implementation of hook_node_info()
  */
@@ -423,121 +448,170 @@ function team_block( $op = 'list', $delta = 0, $edit = array()) {
   //Evita que el block con id no. 0 sea cacehable
   $blocks[0]['cache'] = BLOCK_NO_CACHE;
   
-    switch( $op ) {
-        case 'list':
-          $block = array();
-          $block[ 0 ][ 'info' ] = t('Inscribirse a las modalidades.');
-          $block[ 1 ][ 'info' ] = t('Juegos en los que participa.');
-          $block[ 2 ][ 'info' ] = t('Plantilla del equipo.');
-          $block[ 3 ][ 'info' ] = t('Logo de equipo.');
-          $block[ 4 ][ 'info' ] = t('Capitan del equipo.');
-          return $block;
+  switch( $op ) {
+    case 'list':
+      $block = array();
+      $block[ 0 ][ 'info' ] = t('Inscribirse a las modalidades.');
+      $block[ 1 ][ 'info' ] = t('Juegos en los que participa.');
+      $block[ 2 ][ 'info' ] = t('Plantilla del equipo.');
+      $block[ 3 ][ 'info' ] = t('Logo de equipo.');
+      $block[ 4 ][ 'info' ] = t('Capitan del equipo.');
+      $block[ 5 ][ 'info' ] = t('Acciones del equipo.');
+      return $block;
 
-        case 'configure':
-          if (module_exists('imagecache') && function_exists('imagecache_presets')) {
-            // Get all the imagecache presets on the site.
-            $options = array('' => '');
-            $presets = imagecache_presets();
-            foreach ($presets AS $preset) {
-              $options[$preset['presetname']] = $preset['presetname'];
-            }
-            
-            switch ($delta) {
-              case 2:
-                // Allow the user to choose a preset to use on roster block.
-                $form['team_block_roster_picture_preset'] = array(
-                  '#type' => 'select',
-                  '#title' => t('User picture preset'),
-                  '#options' => $options,
-                  '#description' => t('Imagecache preset to use for the team picture on this block. Leave blank to not use this feature.'),
-                  '#default_value' => variable_get('team_block_roster_picture_preset', ''),
-                );
-                break;
-              case 3:
-                // Allow the user to choose a preset to use on team image block.
-                $form['team_block_team_picture_preset'] = array(
-                  '#type' => 'select',
-                  '#title' => t('Team picture preset'),
-                  '#options' => $options,
-                  '#description' => t('Imagecache preset to use for the user picture on roster block. Leave blank to not use this feature.'),
-                  '#default_value' => variable_get('team_block_team_picture_preset', ''),
-                );
-                break;
-            }
-          }
-            
-          return $form;
+    case 'configure':
+      if (module_exists('imagecache') && function_exists('imagecache_presets')) {
+        // Get all the imagecache presets on the site.
+        $options = array('' => '');
+        $presets = imagecache_presets();
+        foreach ($presets AS $preset) {
+          $options[$preset['presetname']] = $preset['presetname'];
+        }
         
-        case 'save':
-          switch ($delta) {
-            case 2:
-              variable_set('team_block_roster_picture_preset', $edit['team_block_roster_picture_preset']);
-              return;
-            
-            case 3:
-              variable_set('team_block_team_picture_preset', $edit['team_block_team_picture_preset']);
-              return;
-          }
+        switch ($delta) {
+          case 2:
+            // Allow the user to choose a preset to use on roster block.
+            $form['team_block_roster_picture_preset'] = array(
+              '#type' => 'select',
+              '#title' => t('User picture preset'),
+              '#options' => $options,
+              '#description' => t('Imagecache preset to use for the team picture on this block. Leave blank to not use this feature.'),
+              '#default_value' => variable_get('team_block_roster_picture_preset', ''),
+            );
+            break;
+          case 3:
+            // Allow the user to choose a preset to use on team image block.
+            $form['team_block_team_picture_preset'] = array(
+              '#type' => 'select',
+              '#title' => t('Team picture preset'),
+              '#options' => $options,
+              '#description' => t('Imagecache preset to use for the user picture on roster block. Leave blank to not use this feature.'),
+              '#default_value' => variable_get('team_block_team_picture_preset', ''),
+            );
+            break;
+        }
+      }
+        
+      return $form;
+    
+    case 'save':
+      switch ($delta) {
+        case 2:
+          variable_set('team_block_roster_picture_preset', $edit['team_block_roster_picture_preset']);
+          return;
+        
+        case 3:
+          variable_set('team_block_team_picture_preset', $edit['team_block_team_picture_preset']);
+          return;
+      }
+      
+    case 'view':
+      switch( $delta ) {
+        case 0:
+          $block = array();
+          $block['subject'] = t('Battlearena');
+          $block['content'] = team_links_get_block();
+          return $block;
+        
+        case 1:
+          $block = array();
+          $block['subject'] = t('Juegos en los que participa');
+          $block['content'] = team_active_games_block();
+          return $block;
           
-        case 'view':
-            switch( $delta ) {
-                case 0:
-                    $block = array();
-                    $block['subject'] = t('Battlearena');
-                    $block['content'] = team_links_get_block();
-                    return $block;
-                
-                case 1:
-                  $block = array();
-                  $block['subject'] = t('Juegos en los que participa');
-                  $block['content'] = team_active_games_block();
-                  return $block;
-                  
-                case 2:
-                  $block = array();
-                  $block['subject'] = t('Team Roster');
-                  $block['content'] = team_roster_get_block();
-                  return $block;
-                
-                case 3:
-                  $block = array();
-                  $block['subject'] = t('Team Logo');
-                  $block['content'] = team_pane_get_block();
-                  return $block;
-                
-                case 4:
-                  $block = array();
-                  $block['subject'] = t('Team Capitan');
-                  $block['content'] = team_capitan_get_block();
-                  return $block;
-              }
-          break;
-    }
+        case 2:
+          $block = array();
+          $block['subject'] = t('Team Roster');
+          $block['content'] = team_roster_get_block();
+          return $block;
+        
+        case 3:
+          $block = array();
+          $block['subject'] = t('Team Logo');
+          $block['content'] = team_pane_get_block();
+          return $block;
+        
+        case 4:
+          $block = array();
+          $block['subject'] = t('Team Capitan');
+          $block['content'] = team_capitan_get_block();
+          return $block;
+        
+        case 5:
+          $block = array();
+          $block['subject'] = t('Team Actions');
+          $block['content'] = team_actions_get_block();
+          return $block;
+      }
+      break;
+  }
 }
 /**
- * Función para decidir si el usuario tiene accinseso a las pestañas de administración del equipo
+ * Función para decidir si el usuario tiene accseso a las pestañas de administración del equipo
  * dependiendo de si es el capitán del equipo y si es un equipo formado por más de una persona
+ *
+ * También controla el acceso a los formularios de Aceptar/Rechazar invitaciones de equipo
  */
 function team_admin_access($node) {
-	module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	
+  module_load_include( 'php', 'base_datos_externa', 'db_functions' );
 	global $user;
-	$modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
-	
-	if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid) && ($node->type == 'team')) {
-		//Obtiene el estado del equipo para ver si está activo
-		db_set_active('eSM');
-			$team = db_fetch_object(db_query('SELECT * FROM {Equipo} WHERE nid_Equipo = %d', $node->nid));
-		db_set_active('default');
-		
-		if ($team->Estado == ACTIVO)
-			return TRUE;
-		else
-			return FALSE;
-	}
-	else {
-		return FALSE;
-	}
+  
+  //Verifica si estamos viendo un perfil de usuario y si el usuario es el propietario
+  if ((arg(0) == 'user') && is_numeric(arg(1)) && $user->uid == arg(1))
+    return TRUE;
+  
+  //Si estamos viendo un nodo de tipo equipo
+  if ($node->type == 'team') {
+    $context = arg(2);
+    switch ($context) {
+      case 'join':
+        //Un jugador quiere aceptar la invitación
+        //Verifica que el jugador no esté registrado en otro equipo
+        db_set_active('eSM');
+          $jugador = db_fetch_object(db_query('SELECT * FROM {Jugador}
+                                              WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
+                                              $user->uid, $node->nid));
+        db_set_active('default');
+        if ($jugador->Estado <> TIENE_EQUIPO)
+          return TRUE;
+        else
+          return FALSE;
+        
+      case 'drop':
+        //Un jugador quiere abandonar un equipo
+        //Verifica que no sea el capitán
+        if ($node->uid == $user->uid)
+          return FALSE;
+        else
+          return TRUE;
+        
+      case 'decline':
+        //Un jugador quiere rechazar una invitación
+        //Verifica que el usuario tenga una invitación al equipo
+        db_set_active('eSM');
+          $invitacion = db_fetch_object(db_query('SELECT * FROM {Integrantes_Equipo} AS ie
+                                                 INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
+                                                 WHERE nid_Equipo = %d and uid = %d',
+                                                 $node->nid, $user->uid));
+        db_set_active('default');
+        if($invitacion->Estado == INVITADO)
+          return TRUE;
+        else
+          return FALSE;
+    }
+    //si el usuario que está viendo la forma es el capitán del equipo y el equipo está activo.
+    $modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
+    if (($modalidad->Maximo_Jugadores > 1) && ($node->uid == $user->uid)) {
+      //Obtiene el estado del equipo para ver si está activo
+      db_set_active('eSM');
+        $team = db_fetch_object(db_query('SELECT * FROM {Equipo} WHERE nid_Equipo = %d', $node->nid));
+      db_set_active('default');
+      
+      if ($team->Estado == ACTIVO)
+        return TRUE;
+    }
+  }	
+	return FALSE;
 }
 /**
  * Implementation of hook_rules_event_info().
@@ -685,6 +759,10 @@ function team_theme() {
         'user_invitaciones' => array (
             'arguments' => array ('form' => NULL),
             'file' => 'erca/theme/user_invitaciones.inc',
+        ),
+        'team_active' => array (
+            'arguments' => array ('form' => NULL),
+            'file' => '/theme/team_active.inc',
         ),
         'team_solicitudes' => array (
             'arguments' => array ('form' => NULL),
@@ -1026,4 +1104,110 @@ function team_links_get_block() {
       
       return theme('menu_tree', theme('item_list', $content));
   }
+}
+/**
+ * Función para desplegar la lista de agentes libres
+ * de cada una de las modalidades
+ *
+ * @arg
+ *  $id_Modalidad_Juego_Temporada
+ */
+function _team_agente_libre_lista($id_Modalidad_Juego_Temporada) {
+  //Utilizamos el mismo preset de imagecache que se está usando para desplegar la plantilla
+  //en caso de querer cambiarlo debería de agregarse la opción en la pestaña de administración del equipo
+  $preset = variable_get('team_block_roster_picture_preset', '');
+  
+  //Sabemos si el que está viendo la lista es capitán o no para mostrar los links de invitación
+  global $user;
+  $is_capitan = is_capitan($user->uid, $id_Modalidad_Juego_Temporada);
+  
+  //Obtiene la lista de jugadores libres para una modalidad y temporada
+  db_set_active( 'eSM' );
+      $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
+  db_set_active( 'default' );
+  
+  $count = 0;
+  
+  while ( $jugador = db_fetch_array( $result ) ) {
+      ++ $count;
+      $row = array();
+      //Obtiene los datos del jugador
+      db_set_active('eSM');
+          $descripcion = db_fetch_array(db_query('SELECT {Descripcion} FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+          $disponibilidad_dias = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Dias} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+          $disponibilidad_horas = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Horas} WHERE id_Jugador = %d', $jugador['id_Jugador']));
+      db_set_active('default');
+      
+      //TODO: Revisar la conveniencia de añadir al objeto user los datos del jugador para que sea más sencillo de manejar y menos consultas que realizar.
+      $jugador = user_load($jugador['uid']);
+      
+      // If user pictures are enabled...
+      if (variable_get('user_pictures', 0)) {
+          // Get the user's avatar if they have one or the default picture if exists.
+          if (!empty($jugador->picture) && file_exists($jugador->picture)) {
+            // We only want to get the full URL if not using imagecache.
+            $picture = (!empty($preset) && module_exists('imagecache')) ? $jugador->picture : file_create_url($jugador->picture);
+          }
+          elseif (variable_get('user_picture_default', '')) {
+            $picture = variable_get('user_picture_default', '');
+          }
+          // If there's a preset set and imagecache is enabled...
+          if (!empty($preset) && module_exists('imagecache')) {
+            $row['Imagen'] = theme('imagecache', $preset, $picture, $jugador->name, $jugador->name);
+          }
+          else {
+            $row['Imagen'] = theme('image', $picture, $jugador->name, $jugador->name);
+          }
+      }
+      $row['Nombre'] = l($jugador->name, 'user/'. $jugador->uid);
+      $row['Descripcion'] = $descripcion['Descripcion'];
+      
+      foreach ($disponibilidad_dias as $dia => $valor) {
+          if ($valor == 1) {
+              $row['Dias'] .= substr($dia, 0, 2). ' / ';
+          }
+      }
+      
+      $horas = '';
+      foreach ($disponibilidad_horas as $key => $valor) {
+          if ($valor == 1)
+              $horas .= $key .' and ';
+      }
+      if ($horas == 'Morning and Evening and Night and ')
+          $horas = t('Always');
+          
+      if (substr($horas,-5) == ' and ')
+          $horas = substr($horas, 0, -5);
+  
+      $row['Horas'] = $horas;
+      
+      if (isset($is_capitan)) {
+          $row['link'] = l('Invitar', 'user/'. $jugador->uid . '/invitar/'. $is_capitan->nid, array('attributes'=>array('class' => 'popups')));
+      }
+      $rows[] = $row;
+  }
+  
+  if($count > 0) {
+    $header = array(t('Imagen'), t('Jugador'), t('Presentacion'), t('Dias'), t('Horarios'), t(' ')) ;
+    return theme('table', $header, $rows);
+  }
+  
+  return;
+}
+/**
+ * Función para construir el bloque de acciones de equipo
+ */
+function team_actions_get_block() {
+  $area = arg(0);
+  $nid = arg(1);
+
+  // Check that we're in the right area. 
+  if (!($area == 'node') && !is_numeric($nid))
+    return;
+
+  $content[] = l( t( 'Request Join' ), 'node/'. $nid .'/request', array('attributes'=>array('class' => 'popups')));
+  if(module_exists('flag')) 
+    $content[] = flag_create_link('follow_team', $nid);
+  
+  return theme('menu_tree', theme('item_list', $content));
 }

@@ -3,10 +3,10 @@
 /**
  * Función para hacer la personalización de la vista de puntuaciones de desafíos
  */
-function theme_team_solicitudes ($form) {
+function theme_team_active ($form) {
     //die('<pre>' . print_r($form, TRUE) . '</pre>');
     
-    $header = array(t('Aprove'), t('Jugador'), t('Mensaje')) ;
+    $header = array(t('Remove'), t('Jugador'), t('Mensaje')) ;
     $rows = array();
     
     foreach (element_children($form['Solicitudes']) as $user)   {

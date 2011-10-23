@@ -199,105 +199,20 @@ function agente_libre_submit ( $form, $form_state ) {
 function agente_libre_listar ( ) {
     global $user;
     $tid = arg(2);     //obtiene el tid de la barra de direcciones
-    //Utilizamos el mismo preset de imagecache que se está usando para desplegar la plantilla
-    //en caso de querer cambiarlo debería de agregarse la opción en la pestaña de administración del equipo
-    $preset = variable_get('team_block_roster_picture_preset', ''); 
 
     if ($modalidad = term_is_active($tid)) {
         drupal_set_title(t('Free Agents for '. $modalidad->Nombre));
-        $count = 0;
-        $is_capitan = is_capitan($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
-    
-        //Obtiene la lista de jugadores libres para una modalidad y temporada
-        db_set_active( 'eSM' );
-            $result = db_query( "SELECT { id_Jugador }, { uid } FROM { Jugador } WHERE id_Modalidad_Juego_Temporada = %d AND Estado = %d", $modalidad->id_Modalidad_Juego_Temporada, AGENTE_LIBRE );
-        db_set_active( 'default' );
         
-        while ( $jugador = db_fetch_array( $result ) ) {
-            ++ $count;
-            //Obtiene los datos del jugador
-            db_set_active('eSM');
-                $descripcion = db_fetch_array(db_query('SELECT {Descripcion} FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador['id_Jugador']));
-                $disponibilidad_dias = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Dias} WHERE id_Jugador = %d', $jugador['id_Jugador']));
-                $disponibilidad_horas = db_fetch_array(db_query('SELECT * FROM {Disponibilidad_Horas} WHERE id_Jugador = %d', $jugador['id_Jugador']));
-            db_set_active('default');
-            
-            //TODO: Revisar la conveniencia de añadir al objeto user los datos del jugador para que sea más sencillo de manejar y menos consultas que realizar.
-            $jugador = user_load($jugador['uid']);
-            
-            // If user pictures are enabled...
-            if (variable_get('user_pictures', 0)) {
-                // Get the user's avatar if they have one or the default picture if exists.
-                if (!empty($jugador->picture) && file_exists($jugador->picture)) {
-                  // We only want to get the full URL if not using imagecache.
-                  $picture = (!empty($preset) && module_exists('imagecache')) ? $jugador->picture : file_create_url($jugador->picture);
-                }
-                elseif (variable_get('user_picture_default', '')) {
-                  $picture = variable_get('user_picture_default', '');
-                }
-                // If there's a preset set and imagecache is enabled...
-                if (!empty($preset) && module_exists('imagecache')) {
-                  $form['Jugadores_Libres'][$jugador->uid]['Imagen'] = array (
-                    '#value' => theme('imagecache', $preset, $picture, $jugador->name, $jugador->name),
-                  );
-                }
-                else {
-                  $form['Jugadores_Libres'][$jugador->uid]['Imagen'] = array (
-                    '#value' => theme('image', $picture, $jugador->name, $jugador->name),
-                  );
-                }
-            }
-
-            $form['Jugadores_Libres'][$jugador->uid]['Nombre'] = array (
-                '#value' => l($jugador->name, 'user/'. $jugador->uid)
-            );
-            $form['Jugadores_Libres'][$jugador->uid]['Descripcion'] = array (
-                '#value' => $descripcion['Descripcion']
-            );
-            
-            foreach ($disponibilidad_dias as $dia => $valor) {
-                if ($valor == 1) {
-                    $form['Jugadores_Libres'][$jugador->uid]['Dias'][$dia] = array (
-                        '#value' => substr($dia, 0, 2)
-                    );
-                }
-            }
-            
-            $horas = '';
-            foreach ($disponibilidad_horas as $key => $valor) {
-                if ($valor == 1)
-                    $horas .= $key .' and ';
-            }
-            if ($horas == 'Morning and Evening and Night and ')
-                $horas = t('Always');
-                
-            if (substr($horas,-5) == ' and ')
-                $horas = substr($horas, 0, -5);
+        $lista = _team_agente_libre_lista($modalidad->id_Modalidad_Juego_Temporada);
         
-            $form['Jugadores_Libres'][$jugador->uid]['Horas'] = array (
-                '#value' => $horas,
-            );
-            
-            if (isset($is_capitan)) {
-                $form['Jugadores_Libres'][$jugador->uid]['link'] = array (
-                    '#value' => l('Invitar', 'user/'. $jugador->uid . '/invitar/'. $is_capitan->nid),
-                );
-            }
-        }
-        
-        if ($count == 0 ) {
-            $form['Jugadores_Libres']['Lista_Vacia'] = array (
-                '#value' => 'No hay jugadores libres registrados actualmente.',
-            );
-        }
+        if ($lista == '' ) 
+            $output = '<div class="form_item">'. t('No hay jugadores libres registrados actualmente.') .'</div>';
+        else 
+            $output = $lista;
     }
     else {
-        $form['Jugadores_Libres']['Temporada_Inactiva'] = array (
-            '#value' => t('Esta modalidad no esta activa en esta temporada.'),
-        );
+        $output = '<div class="form_item">'. t('Esta modalidad no esta activa en esta temporada.') .'</div>';
     }
     
-    $form['#theme'] = 'lista_agentes_libres';
-    
-    return $form;
+    return $output;
 }
