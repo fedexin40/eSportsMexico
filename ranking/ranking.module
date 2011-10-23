@@ -76,6 +76,24 @@ function ranking_menu(){
   return $items;
 }
 /**
+ * Implementación del hook_block
+ */
+function ranking_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $block[0]['info'] = t('Ranking.');
+      return $block;
+    
+    case 'view':
+      switch ($delta) {
+        case 0:
+          $block['subject'] = t('Ranking');
+          $block['content'] = _ranking_get_block();
+          return $block;
+      }
+  }
+}
+/**
  * Función para desplegar la forma de bienvenida para el módulo ránking
  * no estoy seguro de que se despliegue, pero si se despliega sólo
  * debe mostrar una leyenda indicando la forma de proceder con la
@@ -421,4 +439,42 @@ function _ranking_get_team_puntuacion ($nid_Equipo) {
 	db_set_active('default');
 	
 	return $result;
+}
+/**
+ * Función para desplegar el contenido del bloque de ránking
+ */
+function _ranking_get_block() {
+  $area = arg(0);
+  // Check that we're in the right area. 
+  if (!($area == 'taxonomy') && !is_numeric(arg(2)))
+    return;
+  
+  $tid = arg(2);
+  if (is_object($modalidad = term_is_active($tid))) {
+    $ranking = ranking_get_ranking($modalidad->id_Modalidad_Juego_Temporada);
+    $count = 0;
+    while($ranking_equipo = db_fetch_object($ranking)) {
+      ++ $count;
+      //Solo vamos a mostrar los primeros 10 equipos
+      //TODO: Hacer este número configurable en las opciones del bloque
+      if($count > 10)
+        break;
+      
+      $equipo = node_load(array('nid' => $ranking_equipo->nid_Equipo));
+      $row = array();
+      $row['place'] = $count;
+      $row['image'] = theme('team_pane', $equipo, variable_get('team_block_roster_picture_preset', ''));
+      $row['name'] = l($equipo->title, 'node/'. $equipo->nid);
+      $row['pts'] = $ranking_equipo->Puntuacion;
+      $rows[] = $row;
+    }
+    if($count > 0) {
+      $header = array(t('Lugar'), t(''), t('Nombre'), t('Puntos'));
+      return theme('table', $header, $rows);
+    }
+    else {
+      return '<div class="form_element">No hay equipos registrados en el ranking todavia.</div>';
+    }
+  }
+  return;
 }
