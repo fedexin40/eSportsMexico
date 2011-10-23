@@ -229,6 +229,16 @@ function team_menu(){
 	  'type' => MENU_CALLBACK,
 	  'file' => 'inc/invitaciones_jugador.inc',
 	);
+  //Formulario para invitar a un jugador
+  $items['user/%/invite/%'] = array(
+    'title' => t('Invite Player'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('invitar_usuario'),
+    'access callback' => 'team_admin_access',
+    'access arguments' => array (1),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/invitar_jugador.inc',
+  );
 
 	return $items;
 }
@@ -555,14 +565,23 @@ function team_block( $op = 'list', $delta = 0, $edit = array()) {
 function team_admin_access($node) {
   module_load_include( 'php', 'base_datos_externa', 'db_functions' );
 	global $user;
+  $context = arg(2);
+  $area = arg(0);
   
   //Verifica si estamos viendo un perfil de usuario y si el usuario es el propietario
-  if ((arg(0) == 'user') && is_numeric(arg(1)) && $user->uid == arg(1))
-    return TRUE;
+  if ($area == 'user') {
+    if(is_numeric(arg(1)) && $user->uid == arg(1))
+      return TRUE;
+    
+    if($context == 'invite')
+      return TRUE;
+  }
   
   //Si estamos viendo un nodo de tipo equipo
-  if ($node->type == 'team') {
-    $context = arg(2);
+  if ($area = 'node') {
+    if (!($node->type == 'team'))
+      return FALSE;
+    
     switch ($context) {
       case 'join':
         //Un jugador quiere aceptar la invitación
@@ -1182,7 +1201,7 @@ function _team_agente_libre_lista($id_Modalidad_Juego_Temporada) {
       $row['Horas'] = $horas;
       
       if (isset($is_capitan)) {
-          $row['link'] = l('Invitar', 'user/'. $jugador->uid . '/invitar/'. $is_capitan->nid, array('attributes'=>array('class' => 'popups')));
+          $row['link'] = l('Invitar', 'user/'. $jugador->uid . '/invite/'. $is_capitan->nid, array('attributes'=>array('class' => 'popups')));
       }
       $rows[] = $row;
   }
@@ -1202,7 +1221,11 @@ function team_actions_get_block() {
   $nid = arg(1);
 
   // Check that we're in the right area. 
-  if (!($area == 'node') && !is_numeric($nid))
+  if (!($area == 'node'))
+    return;
+  
+  $node = node_load(array('nid' => $nid));
+  if (!($node->type == 'team'))
     return;
 
   $content[] = l( t( 'Request Join' ), 'node/'. $nid .'/request', array('attributes'=>array('class' => 'popups')));
