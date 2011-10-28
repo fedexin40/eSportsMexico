@@ -21,7 +21,7 @@ function equipos_disponibles( ) {
     $team = node_load( array( 'nid' => $team['nid_Equipo']) );
     //Presentaremos una forma para cada equipo disponible
     $form[ 'equipos_disponibles' ][ $team->title ][ 'imagen' ] = array (
-      '#value' => theme('team_pane', $team, variable_get('team_block_roster_picture_preset', '')),
+      '#value' => theme('team_pane', $team, variable_get('team_lists_picture_preset', '')),
     );
     $form[ 'equipos_disponibles' ][ $team->title ][ 'nombre' ] = array (
       '#value' => l($team->title, 'node/'. $team->nid),

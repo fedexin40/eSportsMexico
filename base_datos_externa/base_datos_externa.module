@@ -16,13 +16,7 @@
  * administration pages.
  */
 function base_datos_externa_perm( ) {
-		return array(
-			'acceder a temporada',
-			'administrar bd',
-			'acceder a modalidades',
-			'acceder a mapas',
-			'acceder a juegos',
-		);
+		return array('acceder a temporada', 'administrar bd', 'acceder a modalidades', 'acceder a mapas', 'acceder a juegos', 'view comunity');
 }
 /**
 	* Implementation of hook_menu().
@@ -37,11 +31,11 @@ function base_datos_externa_menu( ) {
 
   $items['admin/base_datos_externa'] = array(
     'title' => 'Administrar Liga',
-	'description' => t( 'Administrar las Temporadas, Modalidades, Equipos y mas...' ),
-	'page callback' => 'bd_admin_panel',
-	'access arguments'	=> array( 'administer site configuration' ),
-	'type' => MENU_NORMAL_ITEM,
-	'file' => 'inc/admin_panel.inc',
+		'description' => t( 'Administrar las Temporadas, Modalidades, Equipos y mas...' ),
+		'page callback' => 'bd_admin_panel',
+		'access arguments'	=> array( 'administer site configuration' ),
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'inc/admin_panel.inc',
   );
   
 	//////////////////////////////PLATAFORMAS
@@ -279,65 +273,15 @@ function base_datos_externa_menu( ) {
 		'weight' => -100,
 	);
 	$items[ 'taxonomy/term/%/comunity' ] = array(
-		'title' => t('Comunity'),
-		'page_callback' => 'drupal_get_form',
-		'page arguments' => array( 'modos_juego_admin_eliminar' ),
-		'access arguments' => array( 'administrar bd' ),
+    'title' => t('Comunity'),
+		'page callback' => 'taxonomy_term_comunity',
+		'access arguments'	=> array( 'view comunity' ),
 		'type' => MENU_LOCAL_TASK,
+		'file' => 'inc/taxonomy_term_pages.inc',
 	);
+	
   return $items;
 }
-/**
- * Implementación del hook_block()
- */
-function base_datos_externa_block( $op = 'list', $delta = 0 ){
-	
-    switch( $op ) {
-        case 'list':
-            $block = array();
-            $block[ 0 ][ 'info' ] = t('Construye el submenú de secciones para cada modalidad.');
-            break;
-		
-        case 'view':
-            switch( $delta ) {
-                case 0:
-                    if (arg(1) == 'term' && is_numeric(arg(2)))
-						$tid = arg(2);
-						                    
-					if ( is_object( $modalidad = term_is_active( $tid )) ) {
-						$block[ 'subject' ] = 'Submenu modalidad';
-						$content[] = l( t( 'Principal' ), 'taxonomy/term/' . $tid );
-						
-						$content[] = l( t( 'Torneos' ), 'taxonomy/term/' . $tid . '/torneos');
-						if (module_exists('match')) 
-							$content[] = l( t( 'Desafios' ), 'taxonomy/term/' . $tid . '/desafios' );
-						
-						if (module_exists('team')) 
-							$content[] = l( t( 'Equipos' ), 'taxonomy/term/' . $tid . '/equipos' );
-							
-						$content[] = l(t('Comunidad'), 'taxonomy/term/' . $tid . '/muro');
-							
-						if (module_exists('ranking'))
-							$content[] = l( t( 'Ladderboard' ), 'taxonomy/term/' . $tid .'/ranking');
-						
-						$block[ 'content' ] = theme('menu_tree', theme('item_list', $content));
-					}
-          break;
-        }
-			break;
-    
-        case 'save':
-                
-            break;
-
-        case 'configure':
-            
-            break;
-    }
-	return $block;
-
-}
-
 /**
  * Implementación del hoock theme
  */

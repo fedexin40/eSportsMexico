@@ -10,14 +10,19 @@ function modalidad_lista_desafios () {
   $modalidad = term_is_active($tid);
   
   switch ($op) {
-    case 'proximos':
+    case 'scheduled':
       $op = 'programados';
       $retos = _match_modalidad_get_match_list($modalidad->id_Modalidad_Juego_Temporada, PROGRAMADO);
       break;
     
-    case 'resultados':
+    case 'results':
       $op = 'terminados';
       $retos = _match_modalidad_get_match_list($modalidad->id_Modalidad_Juego_Temporada, COMPLETADO);
+      break;
+    
+    case 'conflict':
+      $op = 'conflicto';
+      $retos = _match_modalidad_get_match_list($modalidad->id_Modalidad_Juego_Temporada, CONFLICTO);
       break;
   }
   

@@ -31,6 +31,11 @@ function mostrar_puntuacion(  ) {
 			'#value' => $count,
 		);
 		
+		$form[ $count ][ 'Image' ] = array (
+			'#type' => 'item',
+			'#value' => theme('team_pane', $Equipo, variable_get('team_lists_picture_preset', '')),
+		);
+		
 		$form[ $count ][ 'Title' ] = array (
 			'#type' => 'item',
 			'#value' => l($Equipo->title, 'node/'.$Equipo->nid),

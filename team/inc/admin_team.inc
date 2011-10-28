@@ -28,8 +28,14 @@ function team_admin(){
       $description .= theme('item_list', $items) . t('(This action is not required and should not be taken if you do not need images or have implemented your own image support.)');
     }
   }
-
+	
   return $description;
+}
+/**
+ * Función para guardar el preset de imagecache con que se van a renderizar las listas de equipos
+ */
+function team_admin_submit($form, $form_state) {
+	print_r($form_state);
 }
 /**
  * This adds an imagefield to a team. Code taken from uc_product.module.. Shame on me.

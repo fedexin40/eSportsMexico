@@ -85,12 +85,32 @@ function ranking_block($op = 'list', $delta = 0, $edit = array()) {
       return $block;
     
     case 'view':
-      switch ($delta) {
-        case 0:
-          $block['subject'] = t('Ranking');
-          $block['content'] = _ranking_get_block();
-          return $block;
+      $block['subject'] = t('Ranking');
+      $block['content'] = _ranking_get_block();
+      return $block;
+      
+    case 'configure':
+      if (module_exists('imagecache') && function_exists('imagecache_presets')) {
+        // Get all the imagecache presets on the site.
+        $options = array('' => '');
+        $presets = imagecache_presets();
+        foreach ($presets AS $preset) {
+          $options[$preset['presetname']] = $preset['presetname'];
+        }
+        $form['team_lists_picture_preset'] = array(
+          '#type' => 'select',
+          '#title' => t('User picture preset'),
+          '#options' => $options,
+          '#description' => t('Imagecache preset to use on ranking lists. Leave blank to not use this feature.'),
+          '#default_value' => variable_get('team_lists_picture_preset', ''),
+        );
+        return $form;
       }
+      
+    case 'save':
+      variable_set('team_lists_picture_preset', $edit['team_lists_picture_preset']);
+      return;
+    
   }
 }
 /**
@@ -394,15 +414,15 @@ function ranking_get_ranking_arreglo($id_Modalidad_Juego_Temporada) {
  *  ranking
  */
 function ranking_get_ranking_equipo ($nid_Equipo, $id_Modalidad_Juego_Temporada) {
-    //Obtiene el ranking de la modalidad
-    $ranking = ranking_get_ranking($id_Modalidad_Juego_Temporada);
+  //Obtiene el ranking de la modalidad
+  $ranking = ranking_get_ranking($id_Modalidad_Juego_Temporada);
     
 	$posicion = 1;
 	while ($equipo = db_fetch_object($ranking)) {
 		if ($equipo->nid_Equipo == $nid_Equipo)
-            return $posicion;
-        
-        ++$posicion;
+        return $posicion;
+    
+    ++$posicion;
 	}
 }
 /**
@@ -445,6 +465,8 @@ function _ranking_get_team_puntuacion ($nid_Equipo) {
  */
 function _ranking_get_block() {
   $area = arg(0);
+  //Define la cantidad de equipos a mostrar
+  $num_rows = 5;
   // Check that we're in the right area. 
   if (!($area == 'taxonomy') && !is_numeric(arg(2)))
     return;
@@ -454,27 +476,34 @@ function _ranking_get_block() {
     $ranking = ranking_get_ranking($modalidad->id_Modalidad_Juego_Temporada);
     $count = 0;
     while($ranking_equipo = db_fetch_object($ranking)) {
-      ++ $count;
       //Solo vamos a mostrar los primeros 10 equipos
       //TODO: Hacer este número configurable en las opciones del bloque
-      if($count > 10)
+      if($count == $num_rows)
         break;
       
       $equipo = node_load(array('nid' => $ranking_equipo->nid_Equipo));
-      $row = array();
-      $row['place'] = $count;
-      $row['image'] = theme('team_pane', $equipo, variable_get('team_block_roster_picture_preset', ''));
-      $row['name'] = l($equipo->title, 'node/'. $equipo->nid);
-      $row['pts'] = $ranking_equipo->Puntuacion;
-      $rows[] = $row;
+      if($equipo->Numero_Integrantes >= $modalidad->Minimo_Jugadores) {
+        ++ $count;
+        $row = array();
+        $row['place'] = array('data' => $count, 'class' => 'place');
+        $row['image'] = array('data' => theme('team_pane', $equipo, variable_get('team_lists_picture_preset', '')), 'class' => 'image');
+        $row['name'] = array('data' => l($equipo->title, 'node/'. $equipo->nid), 'class' => 'name');
+        $row['pts'] = array('data' => $ranking_equipo->Puntuacion, 'class' => 'pts');
+        $rows[] = $row;
+      }
+    }
+    if($count == $num_rows) {
+      $header = array(t('Lugar'), t(''), array('data'=> t('Nombre'), 'class' => 'name'), t('Puntos'));
+      $output = theme('table', $header, $rows);
+      $output .= '<div class="ranking_lint">'. l(t('Read More'), 'taxonomy/term/'. $modalidad->tid .'/ranking') .'</div>';
+      return $output;
     }
     if($count > 0) {
-      $header = array(t('Lugar'), t(''), t('Nombre'), t('Puntos'));
+      $header = array(t('Lugar'), t(''), array('data'=> t('Nombre'), 'class' => 'name'), t('Puntos'));
       return theme('table', $header, $rows);
     }
-    else {
-      return '<div class="form_element">No hay equipos registrados en el ranking todavia.</div>';
-    }
+    //Ránking vacío
+    return '<div class="form_element">No hay equipos registrados en el ranking todavia.</div>';
   }
   return;
 }

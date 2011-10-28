@@ -7,3 +7,4 @@ dependencies[] = date
 dependencies[] = taxonomy
 dependencies[] = text
 dependencies[] = content_profile
+dependencies[] = activity_log

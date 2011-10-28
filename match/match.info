@@ -6,3 +6,4 @@ package = eSM
 dependencies[] = team
 dependencies[] = ranking
 dependencies[] = rules
+dependencies[] = votingapi

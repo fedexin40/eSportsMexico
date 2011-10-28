@@ -12,25 +12,24 @@ function theme_match_content($node) {
   //Obtiene los datos de las pruebas subidas por los jugadores
   $pruebas = match_get_pruebas($node->nid);
   
+  //Obtiene los datos de los equipos participantes en el desafío
+  $home_team = node_load($node->nid_Equipo_Local);
+  $away_team = node_load($node->nid_Equipo_Visitante);
+  
   $header = array();
   
   //Primera columa del contenido
-  $rows['1'][] = array('data' => 'Competidores', 'class' => 'header', 'width' => '50%'); 
-  $rows['1'][] = array('data' => 'Parámetros', 'class' => 'header', 'width' => '50%');
-
-    $home_team = node_load($node->nid_Equipo_Local);
-    $away_team = node_load($node->nid_Equipo_Visitante);
+  $rows['1'][] = array('data' => $node->title, 'class' => 'header left'); 
+  $rows['1'][] = array('data' => 'Parámetros', 'class' => 'header right');
     
-    
-    $field = content_fields('field_logo', 'club');
     //Despliega los logos de los equipos y la palabra vs
-    $content['2'][] = array('data' => '<a href="/node/'. $home_team->nid . '"'. theme('imagecache', 'match', (empty($home_team->field_logo[0]['filepath']) ? $field['widget']['default_image']['filepath'] : $home_team->field_logo[0]['filepath']), 'Match', 'Imágen de '. $home_team->title) . '</a>', 'width' => '45%', 'align' => 'right');
-    $content['2'][] = ' VS. ';
-    $content['2'][] = '<a href="/node/'. $away_team->nid . '"'. theme('imagecache', 'match', (empty($away_team->field_logo[0]['filepath']) ? $field['widget']['default_image']['filepath'] : $away_team->field_logo[0]['filepath']), 'Match', 'Imágen de '. $away_team->title) . '</a>';
+    $content['2'][] = array('data' => theme('team_pane', $home_team, 'match'), 'class' => 'team');
+    $content['2'][] = array('data' => t(' VS. '), 'class' => 'vs');
+    $content['2'][] = array('data' => theme('team_pane', $away_team, 'match'), 'class' => 'team');
     //Despliega los nombres de los equipos como link al perfil de los mismos
-    $content['3'][] = l($home_team->title, 'node/'. $home_team->nid );
+    $content['3'][] = array('data' => l($home_team->title, 'node/'. $home_team->nid), 'class' => 'team_title');
     $content['3'][] = ' ';
-    $content['3'][] = l($away_team->title, 'node/'. $away_team->nid );
+    $content['3'][] = array('data' => l($away_team->title, 'node/'. $away_team->nid), 'class' => 'team_title');
     //Despliega el ránking de los equipos
     $content['4'][] = 'Ranking';
     $content['4'][] = ' ';
@@ -59,66 +58,59 @@ function theme_match_content($node) {
     $content['11'][] = $home_team->Victorias;
     $content['11'][] = ' ';
     $content['11'][] = $away_team->Victorias;
-    
-    if ($node->home_score > $node->away_score )
-      $winner = $home_team->title;
-    else
-      $winner = $away_team->title;
-
   
-  $rows['2'][] = theme('table', $header, $content);
+  $rows['2'][] = array('data' => theme('table', $header, $content), 'class' => 'content_left');
   
   //Segunda columna de contenido
   $content = array();
-  $content['2'][] = 'MatchID';
-  $content['2'][] = $node->nid;
-  $content['3'][] = 'Fecha del partido';
-  $content['3'][] = format_date($node->Fecha_Inicio, 'large', '');
-  $content['4'][] = 'Número de rondas';
-  $content['4'][] = $node->Numero_Rondas;
+  $content['2'][] = array('data' => '<span>MatchID: </span>'. $node->nid, 'class' => 'matchid');
+  $content['3'][] = array('data' => '<span>Fecha: </span>'. format_date($node->Fecha_Inicio, 'large', ''), 'class' => 'match_date');
+  $content['4'][] = array('data' => '<span>No. Rondas: </span>'. $node->Numero_Rondas, 'class' => 'match_round');
   
   //Genera un espacio para separar los links
-  $content['5'][] = array('data' => 'Acciones', 'class' => 'header');
-  $content['5'][] = array('data' => ' ', 'class' => 'header');
+  $content['5'][] = array('data' => 'Acciones:', 'class' => 'subheader');
   
+  $actions = '<div class="actions">';
   //Si el desafio está en estado creado y el usuario es capitán del equipo retado despliega un link para aceptar el reto
   if (($node->Estado == CREADO) && $away_capitan) {
-    $content['6'][] = l('Aceptar Desafio', 'node/'. $node->nid . '/aceptar');
+    $actions .= l('Aceptar Desafio', 'node/'. $node->nid . '/aceptar');
   }
   
   //Si el desafio está en estado programado despliega un link para reportar el resultado
   if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
-    $content['6'][] = l('Reportar Resultado', 'node/'. $node->nid . '/reportar');
+    $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/reportar');
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
   if (($node->Estado == CONFLICTO) && $is_capitan) {
-    $content['6'][] = l('Enviar Pruebas', 'node/'. $node->nid . '/pruebas');
+    $actions .= l('Enviar Pruebas', 'node/'. $node->nid . '/pruebas');
   }
-  
-  $content['7'][] = ' . ';
-  $content['7'][] = ' . ';
-  $content['8'][] = array('data' => 'Pruebas', 'class' => 'header');
-  $content['8'][] = array('data' => ' ', 'class' => 'header');
+  $actions .= '</div>';
+  $content['6'][] = $actions;
+  /* Las pruebas no deben de ir en este lugar
+  $content['7'][] = array('data' => ' ');
+  $content['7'][] = array('data' => ' ');
+  $content['8'][] = array('data' => 'Pruebas', 'class' => 'subheader');
+  $content['8'][] = array('data' => ' ', 'class' => 'subheader');
   
   if (is_array($pruebas)) {
     $content['9'][] = 'Prueba del equipo '. $home_team->title .' : ';
     $content['9'][] = l($pruebas['Prueba_Jugador_Local'], $pruebas['Prueba_Jugador_Local']);
     $content['10'][] = 'Prueba del equipo '. $away_team->title .' : ';
     $content['10'][] = l($pruebas['Prueba_Jugador_Visitante'], $pruebas['Prueba_Jugador_Visitante']);
-  }
+  }*/
   
-  $rows['2'][] = theme('table', $header, $content);
+  $rows['2'][] = array('data' => theme('table', $header, $content), 'class' => 'content_right');
   
   $output = theme('table', $header, $rows, array('id' => 'Match'));
   
   //Añade una tabla nueva para poner los resultados
   $rows = array();
-  $rows['3'][] = array('data' => 'Resultado', 'class' => 'header'); 
+  //$rows['3'][] = array('data' => 'Resultado', 'class' => 'header'); 
 
   $content = array();
-  $content['1'][] = array('data' => $match_info['home_score'], 'width' => '45%', 'align' => 'right');
+  /*$content['1'][] = array('data' => $match_info['home_score'], 'width' => '45%', 'align' => 'right');
   $content['1'][] = array('data' => ' : ', 'width' => '10%', 'align' => 'center');
-  $content['1'][] = $match_info['away_score'];
+  $content['1'][] = $match_info['away_score'];*/
   
   //Si es un desafio completado pone el nombre del equipo ganador
   if ($node->Estado == COMPLETADO) {
@@ -127,12 +119,14 @@ function theme_match_content($node) {
     else
       $winner = $away_team;
     
-    $content['2'][] = array('data' => '<div align="center" style="margin-top: 10px; margin-bottom: 10px; font-weight:bold;">'. $winner->title .' gana!</div>', 'colspan' => '5');
+    $content['2'][] = array('data' => '<div class="winer">Resultado: '. $winner->title .' gana!</div>', 'colspan' => '5');
+  } else {
+    $content['2'][] = array('data' => '<div class="guess">Indefinido</div>', 'colspan' => '5');
   }
   
   $rows['4'][] = theme('table', $header, $content);
 
-  $output .= theme('table', $header, $rows, array('id' => 'Match'));
+  $output .= theme('table', $header, $rows, array('id' => 'Result'));
   
   return $output;
 }

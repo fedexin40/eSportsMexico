@@ -1101,7 +1101,7 @@ function team_active_games_block() {
     $content[] = theme('team_info', $modalidad, $team, $ranking, $division, $calificacion);
   }
     
-  return theme('menu_tree', theme('item_list', $content));
+  return theme('item_list', $content, '', 'ul', 'team_info');
 }
 /**
  * Función para crear el bloque de inscripción a las modalidades
@@ -1116,9 +1116,9 @@ function team_links_get_block() {
   $tid = arg(2);
 
   if ( is_object( $modalidad = term_is_active( $tid )) ) {
-      $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/team/register', array('attributes'=>array('class' => 'popups')));
+      $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/team/register', array('attributes'=>array('class' => 'popups create_team')));
       if ($modalidad->Maximo_Jugadores > 1) {
-        $content[] = l( t( 'Look for Team' ), 'taxonomy/term/'. $tid . '/free_agent/register', array('attributes'=>array('class' => 'popups')));
+        $content[] = l( t( 'Look for Team' ), 'taxonomy/term/'. $tid . '/free_agent/register', array('attributes'=>array('class' => 'popups look_team')));
       }
       
       return theme('menu_tree', theme('item_list', $content));
