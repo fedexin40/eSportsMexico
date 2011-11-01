@@ -114,7 +114,8 @@ function team_menu(){
 	$items [ 'taxonomy/term/%/teams/free_agent' ] = array (
 	  'title' => 'Agente Libre',
 	  'page callback' => 'agente_libre_listar',
-	  'access arguments' => array ('create team'),
+    'access callback' => 'team_view_free_agentes_list',
+	  'access arguments' => array ( 1 ),
 	  'file' => 'inc/agentes_libres.inc',
 	  'type' => MENU_LOCAL_TASK,
 	);
@@ -277,7 +278,18 @@ function team_access($op, $node, $account){
 	}
 	return FALSE;
 } 
-
+/**
+ * Función para definir si se debe de mostrar la pestaña de agentes libres o no
+ */
+function team_view_free_agentes_list() {
+  $tid = arg(2);
+  $modalidad = term_is_active($tid);
+  
+  if ((is_object($modalidad)) && ($modalidad->Minimo_Jugadores > 1))
+    return TRUE;
+  else
+    return FALSE;
+}
 /**
  * Implementation of hook_form()
  * @param $node
@@ -583,6 +595,11 @@ function team_admin_access($node) {
       return FALSE;
     
     switch ($context) {
+      case 'request':
+        //Un usuario quiere solicitar unirse a un equipo
+        //Dejámos que sea la función del formulario de unirse el que haga la lógica
+        return TRUE;
+        
       case 'join':
         //Un jugador quiere aceptar la invitación
         //Verifica que el jugador no esté registrado en otro equipo
@@ -1054,8 +1071,8 @@ function team_active_games_block() {
       $teams = db_query('SELECT e.nid_Equipo, e.id_Modalidad_Juego_Temporada FROM {Equipo} AS e
                         INNER JOIN {Integrantes_Equipo} AS ie ON e.nid_Equipo = ie.nid_Equipo
                         INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
-                        WHERE j.uid = %d AND e.Estado = %d',
-                        $uid, ACTIVO);
+                        WHERE j.uid = %d AND ie.Estado = %d AND e.Estado = %d',
+                        $uid, ACEPTADO, ACTIVO);
     db_set_active('default');
   }
   else {
@@ -1217,6 +1234,7 @@ function _team_agente_libre_lista($id_Modalidad_Juego_Temporada) {
  * Función para construir el bloque de acciones de equipo
  */
 function team_actions_get_block() {
+  global $user;
   $area = arg(0);
   $nid = arg(1);
 
@@ -1224,13 +1242,18 @@ function team_actions_get_block() {
   if (!($area == 'node'))
     return;
   
+  //Checa que el nodo sea del tipo equipo
   $node = node_load(array('nid' => $nid));
   if (!($node->type == 'team'))
     return;
-
-  $content[] = l( t( 'Request Join' ), 'node/'. $nid .'/request', array('attributes'=>array('class' => 'popups')));
-  if(module_exists('flag')) 
-    $content[] = flag_create_link('follow_team', $nid);
+  
+  //Checa que la modalidad sea para más de un jugador
+  $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+  
+  if ((tiene_equipo($user, $node->nid) != TIENE_EQUIPO) && ($modalidad->Minimo_Jugadores > 1))
+    $content[] = array('data' => l(t( 'Request Join' ), 'node/'. $nid .'/request', array('attributes' => array('class' => 'popups', 'title' => t('Request Join')))), 'class' => 'team_join');
+  if (module_exists('flag')) 
+    $content[] = array('data' => flag_create_link('follow_team', $nid), 'class' => 'team_flag');
   
   return theme('menu_tree', theme('item_list', $content));
 }

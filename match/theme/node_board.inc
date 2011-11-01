@@ -1,6 +1,6 @@
 <?php
 
-function theme_match_content($node) {
+function theme_match_board($node) {
   global $user;
   //Añade el archivo css donde viene la personalización de la vista del desafio
   drupal_add_css(drupal_get_path('module', 'match') . '/css/match.css');
