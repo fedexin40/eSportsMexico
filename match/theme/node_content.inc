@@ -73,16 +73,16 @@ function theme_match_content($node) {
   $actions = '<div class="actions">';
   //Si el desafio está en estado creado y el usuario es capitán del equipo retado despliega un link para aceptar el reto
   if (($node->Estado == CREADO) && $away_capitan) {
-    $actions .= l('Aceptar Desafio', 'node/'. $node->nid . '/aceptar');
+    $actions .= l('Aceptar Desafio', 'node/'. $node->nid . '/accept');
   }
   
   //Si el desafio está en estado programado despliega un link para reportar el resultado
   if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
-    $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/reportar');
+    $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
   if (($node->Estado == CONFLICTO) && $is_capitan) {
-    $actions .= l('Enviar Pruebas', 'node/'. $node->nid . '/pruebas');
+    $actions .= l('Enviar Pruebas', 'node/'. $node->nid . '/proof');
   }
   $actions .= '</div>';
   $content['6'][] = $actions;
@@ -121,7 +121,7 @@ function theme_match_content($node) {
     
     $content['2'][] = array('data' => '<div class="winer">Resultado: '. $winner->title .' gana!</div>', 'colspan' => '5');
   } else {
-    $content['2'][] = array('data' => '<div class="guess">Indefinido</div>', 'colspan' => '5');
+    $content['2'][] = array('data' => '<div class="winer"> </div>', 'colspan' => '5');
   }
   
   $rows['4'][] = theme('table', $header, $content);

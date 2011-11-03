@@ -535,19 +535,23 @@ function team_block( $op = 'list', $delta = 0, $edit = array()) {
         case 2:
           $block = array();
           $block['subject'] = t('Team Roster');
-          $block['content'] = team_roster_get_block();
+          $block['content'] = $content;
           return $block;
         
         case 3:
           $block = array();
-          $block['subject'] = t('Team Logo');
-          $block['content'] = team_pane_get_block();
+          if($content = team_pane_get_block()) {
+            $block['subject'] = t('Team Logo');
+            $block['content'] = $content;
+          }
           return $block;
         
         case 4:
           $block = array();
-          $block['subject'] = t('Team Capitan');
-          $block['content'] = team_capitan_get_block();
+          if($content = team_capitan_get_block()) {
+            $block['subject'] = t('Team Capitan');
+            $block['content'] = $content;
+          }
           return $block;
         
         case 5:
