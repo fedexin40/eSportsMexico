@@ -3,9 +3,7 @@
 /**
  * Función para hacer la personalización de la vista de puntuaciones de desafíos
  */
-function theme_team_active ($form) {
-    //die('<pre>' . print_r($form, TRUE) . '</pre>');
-    
+function theme_team_active ($form) {    
     $header = array(t('Remove'), t('Jugador'), t('Mensaje')) ;
     $rows = array();
     

@@ -3,15 +3,31 @@
  * Función para confirmar que el usuario quiere solicitar su ingreso a un equipo.
  */
 function team_solicitud() {
+  //Verifica que el usuario esté registrado como agente libre
+  global $user;
+  $team = node_load(array('nid' => arg(1)));
+  $equipo_jugador = tiene_equipo($user->uid, $team->id_Modalidad_Juego_Temporada);
+
+  if (!($equipo_jugador == AGENTE_LIBRE)) {
+	$modalidad = get_modalidad($team->id_Modalidad_Juego_Temporada);
+	
+    $form['mensaje'] = array(
+	  '#value' => t('Para poder solicitar unirte a este equipo, ingresa tu disponibilidad de tiempo en: </br></br>') . l('Buscar Equipo', 'taxonomy/term/'. $modalidad->tid .'/free_agent/register'),
+	);
+	
+	return $form;
+  }
+		
   //Pasando las variables necesarias para procesar después de confirmar la acción
   $form[ 'nid_Equipo' ] = array (
     '#type' => 'hidden',
-    '#value' => arg( 1 ),  //Agrega a la forma el nid del equipo que obtenemos de la barra de dirección
+    '#value' => $team->nid,  //Agrega a la forma el nid del equipo que obtenemos de la barra de dirección
   );
   
 	$form['Mensaje'] = array (
 		'#type' => 'textarea',
 		'#title' => t('Explica brevemente porque quieres unirte este equipo.'),
+		'#required' => TRUE,
   );
   $form['Submit'] = array (
       '#type' => 'submit',
@@ -23,19 +39,14 @@ function team_solicitud() {
   * Validate handler for previus confirm form
   */
 function team_solicitud_validate( $form, &$form_state ) {
-	//Verifica que el usuario esté registrado como agente libre
 	global $user;
 	$team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );
-	$equipo_jugador = tiene_equipo($user->uid, $team->id_Modalidad_Juego_Temporada);
-
-	if (!($equipo_jugador == AGENTE_LIBRE))
-		form_set_error('nid_Equipo', t('No estas dado de alta como Agente Libre.'));
 	
 	db_set_active( 'eSM' );
 		$solicitud = db_fetch_object(db_query('SELECT * FROM { Integrantes_Equipo } AS ie
-																									INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador }
-																									WHERE j.{ uid } = %d AND AND ie. { nid_Equipo } = %d',
-																									$user->uid, $team->nid));
+											  INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador }
+											  WHERE j.{ uid } = %d AND AND ie. { nid_Equipo } = %d',
+											  $user->uid, $team->nid));
 	db_set_active( 'default' );
 
 	if (is_object($solicitud)) {

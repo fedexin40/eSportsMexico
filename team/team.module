@@ -296,12 +296,6 @@ function team_form(&$node, $form_state) {
     );
     return $form;
   }
-  
-  //Si estamos en una modalidad individual, sugiere al usuario que el nombre por defecto de su equipo sea su nombre de usuario.
-	if ( ( $modalidad->Maximo_Jugadores == 1 ) && ( !isset( $node->title ) ) ) {
-	  $node->title = $user->name;
-	  $form[ 'title' ][ '#disabled' ] = TRUE;
-	}
 	
 	$form[ 'id_Modalidad_Juego_Temporada' ] = array (
 	  '#type' => 'hidden',
@@ -325,7 +319,7 @@ function team_form(&$node, $form_state) {
 	  '#type' => 'textfield',
 	  '#title' => t( 'Abreviacion' ),
 	  '#description' => t('Ingresa el tag de tu equipo.'),
-	  '#required' => FALSE,	
+	  '#required' => TRUE,	
 	  '#default_value' => $node->abreviacion,
 	  '#weight' => 0,
 	);
@@ -334,10 +328,17 @@ function team_form(&$node, $form_state) {
 	  '#type' => 'textarea',
 	  '#title' => t( 'Descripcion del Equipo' ),
 	  '#default_value' => $node->body,
-	  '#required' => FALSE,
+	  '#required' => TRUE,
 	  '#description' => t('Puedes ingresar la informacion que quieras sobre el equipo, su historia o sus miembros en este espacio.'),
 	);
 	$form[ 'body_filter' ][ 'filter' ] = filter_form( $node->format );
+    
+  //Si estamos en una modalidad individual, sugiere al usuario que el nombre por defecto de su equipo sea su nombre de usuario.
+	if ( ( $modalidad->Maximo_Jugadores == 1 ) && ( !isset( $node->title ) ) ) {
+	  $node->title = $user->name;
+	  $form[ 'title' ][ '#disabled' ] = TRUE;
+      $form[ 'title' ][ '#value' ] = $user->name;
+	}
 	
 	return $form;
 }
@@ -456,8 +457,10 @@ function team_delete($node){
  */
 function team_block( $op = 'list', $delta = 0, $edit = array()) {
   //Evita que el block con id no. 0 sea cacehable
-  $blocks[0]['cache'] = BLOCK_NO_CACHE;
-  
+  $block[0]['cache'] = BLOCK_NO_CACHE;
+  $block[3]['cache'] = BLOCK_NO_CACHE;
+  $block[4]['cache'] = BLOCK_NO_CACHE;
+ 
   switch( $op ) {
     case 'list':
       $block = array();
@@ -564,7 +567,7 @@ function team_block( $op = 'list', $delta = 0, $edit = array()) {
  */
 function team_admin_access($node) {
   module_load_include( 'php', 'base_datos_externa', 'db_functions' );
-	global $user;
+  global $user;
   $context = arg(2);
   $area = arg(0);
   
@@ -617,6 +620,12 @@ function team_admin_access($node) {
           return TRUE;
         else
           return FALSE;
+      
+      case 'request':
+        //Un jugador quiere solicitar unirse a un equipo
+        //devolvemos TRUE y dejámos que sea la forma de request
+        //sea la que haga la función de validación
+        return TRUE;
     }
     //si el usuario que está viendo la forma es el capitán del equipo y el equipo está activo.
     $modalidad = get_modalidad_juego_temporada($node->id_Modalidad_Juego_Temporada);
@@ -1116,7 +1125,8 @@ function team_links_get_block() {
   $tid = arg(2);
 
   if ( is_object( $modalidad = term_is_active( $tid )) ) {
-      $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/team/register', array('attributes'=>array('class' => 'popups create_team')));
+      $content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/team/register', array('attributes'=>array('class' => 'create_team')));
+      //$content[] = l( t( 'Create Team' ), 'taxonomy/term/'. $tid .'/team/register', array('attributes'=>array('class' => 'popups create_team')));
       if ($modalidad->Maximo_Jugadores > 1) {
         $content[] = l( t( 'Look for Team' ), 'taxonomy/term/'. $tid . '/free_agent/register', array('attributes'=>array('class' => 'popups look_team')));
       }
@@ -1227,8 +1237,10 @@ function team_actions_get_block() {
   $node = node_load(array('nid' => $nid));
   if (!($node->type == 'team'))
     return;
-
-  $content[] = l( t( 'Request Join' ), 'node/'. $nid .'/request', array('attributes'=>array('class' => 'popups')));
+  
+  $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+  if($modalidad->Minimo_Jugadores > 1)
+    $content[] = l( t( 'Request Join' ), 'node/'. $nid .'/request', array('attributes'=>array('class' => 'popups')));
   if(module_exists('flag')) 
     $content[] = flag_create_link('follow_team', $nid);
   
