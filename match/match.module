@@ -841,7 +841,6 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
         case 0:
           //upcoming games
           $block['subject'] = t('Upcoming Matches');
-          $to_show = db_query("SELECT {node}.nid, {node}.title, {signup}.min_pp, {match}.home_team, {match}.away_team FROM {node}, {match}, {signup} WHERE {node}.nid = {match}.nid AND {match}.relation_id = {signup}.nid AND {match}.is_result = 0 ORDER BY {match}.match_time ASC LIMIT %d;", 3);
           $block['content'] = l('Desafios Destacados', 'node');
           break;
         case 1:
@@ -854,7 +853,7 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
           //Desafiar
           if (($content = _match_prepare_desafiar_link()) && ($content <> 'Equipo Incompleto')) {
             $block['subject'] = 'Desafiar';
-            $block['content'] = l('Desafiar', $content);
+            $block['content'] = l('Desafiar', $content, array('attributes'=>array('class' => 'popups')));
           }
 					elseif ($content == 'Equipo Incompleto') {
             $block['subject'] = 'Desafiar';

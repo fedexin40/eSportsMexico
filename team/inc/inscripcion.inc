@@ -21,8 +21,9 @@ function inscripcion( ) {
     return t('El identificador de este juego no esta configurado.</br>Por favor contacta a un administrador.');
   
   $profile_node = content_profile_load('profile', $user->uid);
-  if ($profile_node->{$modalidad->identificador}['0']['value'] == '')
-    return t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario.</br>');
+  if ($profile_node->{$modalidad->identificador}['0']['value'] == '') {
+    return t('Para registrarte primero debes dar de alta tu identificador online en tu perfil de usuario. Puedes editarlo haciendo click en este link:</br>') . l('Editar Perfil', 'user/'. $user->uid .'/edit/profile');
+  }
   
   $tiene_equipo = tiene_equipo( $user->uid, $modalidad->id_Modalidad_Juego_Temporada );
   if ($tiene_equipo == TIENE_EQUIPO)
