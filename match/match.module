@@ -559,7 +559,7 @@ function match_menu(){
     'file' => 'inc/match_tablero.inc',
   );
 	//Formulario para retar a un equipo
-  $items[ 'taxonomy/term/%/match/defy/%' ] = array (
+  $items[ 'taxonomy/term/%/defy/%' ] = array (
     'title' => t('Add match'),
     'page callback' => 'add_new_match',
 		'access arguments' => array('create match'),
