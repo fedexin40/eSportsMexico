@@ -77,8 +77,11 @@ function theme_match_content($node) {
   }
   
   //Si el desafio está en estado programado despliega un link para reportar el resultado
-  if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
-    $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
+  if ($node->Estado == PROGRAMADO) {
+    if ($is_capitan && ($node->Fecha_Inicio + 60*30 <= time()))
+      $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
+    else
+      $actions .= t('Podrás reportar el resultado de este desafío 30min después de la fecha de inicio programada.');
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
   if (($node->Estado == CONFLICTO) && $is_capitan) {
@@ -116,7 +119,7 @@ function theme_match_content($node) {
     
     $content['2'][] = array('data' => '<div class="winer">Resultado: '. $winner->title .' gana!</div>', 'colspan' => '5');
   } else {
-    $content['2'][] = array('data' => '<div class="winer">Resultado: En Progreso </div>', 'colspan' => '5');
+    $content['2'][] = array('data' => '<div class="winer">Desafío en Progreso </div>', 'colspan' => '5');
   }
   
   $rows['4'][] = theme('table', $header, $content);
