@@ -58,7 +58,7 @@ function modalidad_juego_reglas_submit( $form, $form_state ) {
 			db_query ("INSERT INTO { Reglas }
 						(id_Modalidad_Juego, Contenido, Archivo)
 						VALUES (%d, '%s', '%s')",
-						$form_state['values']['id_Modalidad_Juego'], $form_state['values']['file'], $id_Modalidad_Juego);
+						$id_Modalidad_Juego, $form_state['values']['contenido'], $form_state['values']['file']);
 		db_set_active( 'default' );
 	}
 	
