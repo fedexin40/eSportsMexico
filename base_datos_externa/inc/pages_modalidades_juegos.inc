@@ -480,8 +480,43 @@ function modalidad_juego_admin_editar( ) {
 		$form['modos']['link'] = array (
 				'#value' => l(t('Add new mod'), 'admin/base_datos_externa/modalidades/' . $id_Modalidad_Juego . '/modos/insertar'),
 				'#weight' => 8,
-		);		
-				
+		);
+		
+		//Ponemos las reglas de la modalidad y un link para editarlas
+		db_set_active('eSM');
+		  $reglas = db_fetch_object(db_query('SELECT * FROM {Reglas} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego));
+		db_set_active('default');
+
+		$form['rules'] = array (
+			'#type' => 'fieldset',
+			'#title' => t('Rules'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		
+		if (is_object($reglas)) {
+			$form['rules']['file'] = array (
+				'#type' => 'item',
+				'#value' => l($reglas->Archivo, $reglas->Archivo),
+				'#title' => t('File'),
+			);
+			$form['rules']['contenido'] = array (
+				'#type' => 'textarea',
+				'#disabled' => TRUE,
+				'#value' => $reglas->Contenido,
+				'#title' => t('Reglas'),
+			);
+			$form['rules']['editar'] = array (
+				'#value' => l('Editar Reglas', 'admin/base_datos_externa/modalidades/'. $id_Modalidad_Juego .'/reglas/editar'),
+			);
+		}
+		else {
+			$form['reglas']['#collapsed'] = FALSE;
+			$form['reglas']['agregar'] = array (
+				'#type' => 'item',
+				'#value' => l('Agregar Reglas', 'admin/base_datos_externa/modalidades/'. $id_Modalidad_Juego .'/reglas/insertar'),
+			);
+		}
 		$form[ '#validate' ] = array( 'modalidad_admin_insertar_validate' );
 	
 	return $form;	

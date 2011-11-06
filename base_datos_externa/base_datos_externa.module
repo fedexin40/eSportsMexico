@@ -106,6 +106,24 @@ function base_datos_externa_menu( ) {
 		'type' => MENU_CALLBACK,
 		'file' => 'inc/pages_modalidades_juegos.inc',
 	);
+	//Otra página para agregar las reglas de las modalidades de juegos
+	$items[ 'admin/base_datos_externa/modalidades/%/reglas/insertar' ] = array(
+		'title' => 'Editar modalidad de juego',
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'modalidad_juego_reglas' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_reglas_modalidades_juegos.inc',
+	);
+	//Otra página para editar las reglas de las modalidades de juegos
+	$items[ 'admin/base_datos_externa/modalidades/%/reglas/editar' ] = array(
+		'title' => 'Editar modalidad de juego',
+		'page_callback' => 'drupal_get_form',
+		'page arguments' => array( 'modalidad_juego_reglas' ),
+		'access arguments' => array( 'administrar bd' ),
+		'type' => MENU_CALLBACK,
+		'file' => 'inc/pages_reglas_modalidades_juegos.inc',
+	);
 	
 	////////////////////TEMPORADA
   $items[ 'admin/base_datos_externa/temporada' ] = array (
@@ -279,6 +297,14 @@ function base_datos_externa_menu( ) {
 		'type' => MENU_LOCAL_TASK,
 		'file' => 'inc/taxonomy_term_pages.inc',
 	);
+	$items[ 'taxonomy/term/%/rules' ] = array(
+    'title' => t('Rules'),
+		'page callback' => 'taxonomy_term_rules',
+		'access arguments'	=> array( 'view comunity' ),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 100,
+		'file' => 'inc/taxonomy_term_rules.inc',
+	);
 	
   return $items;
 }
@@ -364,7 +390,8 @@ function term_is_active( $tid ) {
 	$temporada_activa = temporada_activa();
 	
 	db_set_active ('eSM');
-	$modalidades_activas = db_query('SELECT {tid}, {Nombre}, {Maximo_Jugadores}, {Minimo_Jugadores}, {id_Modalidad_Juego_Temporada}, {identificador} FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}  WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
+		$modalidades_activas = db_query('SELECT * FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}
+										WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
 	db_set_active ('default');
 	
 	while ( $result = db_fetch_object($modalidades_activas) ) {
