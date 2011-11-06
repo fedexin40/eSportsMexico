@@ -9,6 +9,9 @@ function tablero_desafios() {
   $modalidad = term_is_active($tid);
 	$is_capitan = is_capitan($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
 	
+	//Define el título de la página
+	drupal_set_title(t('Matches from '). $modalidad->Nombre);
+	
 	//Añade el link para colgar un desafio en el tablero
 	$output = '<div class="form_item add_match">';
 	$output .= l(t('Add Match'), 'taxonomy/term/'. $tid .'/match/defy', array('attributes'=>array('class' => 'popups')));
@@ -66,7 +69,7 @@ function tablero_new_match() {
 		 
   $type = 'match';
   // Initialize settings:
-  $node = array('uid' => $user->uid, 'name' => (isset($user->name) ? $user->name : ''), 'type' => $type, 'language' => '', 'estado' => TABLERO, 'id_Modalidad_Juego_Temporada' => $modalidad->id_Modalidad_Juego_Temporada);
+  $node = array('uid' => $user->uid, 'name' => (isset($user->name) ? $user->name : ''), 'type' => $type, 'language' => '', 'Estado' => TABLERO, 'id_Modalidad_Juego_Temporada' => $modalidad->id_Modalidad_Juego_Temporada);
   
   return drupal_get_form($type .'_node_form', $node);
 }

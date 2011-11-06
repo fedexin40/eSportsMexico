@@ -7,7 +7,8 @@ function modalidad_lista_desafios () {
   $tid = arg(2);
   
   //Obtiene los datos de la modalidad con base en el tid que proporciona la ruta
-  $modalidad = term_is_active($tid);
+  $modalidad = term_is_active($tid);  
+  drupal_set_title(t('Matches from '). $modalidad->Nombre);
   
   switch ($op) {
     case 'scheduled':

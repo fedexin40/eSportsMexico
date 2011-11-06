@@ -1,6 +1,6 @@
 <?php
 
-function theme_match_content($node) {
+function theme_match_board($node) {
   global $user;
   //Añade el archivo css donde viene la personalización de la vista del desafio
   drupal_add_css(drupal_get_path('module', 'match') . '/css/match.css');
@@ -73,23 +73,16 @@ function theme_match_content($node) {
   $actions = '<div class="actions">';
   //Si el desafio está en estado creado y el usuario es capitán del equipo retado despliega un link para aceptar el reto
   if (($node->Estado == CREADO) && $away_capitan) {
-    $actions .= l('Aceptar Desafio', 'node/'. $node->nid . '/accept');
+    $actions .= l('Aceptar Desafio', 'node/'. $node->nid . '/aceptar');
   }
   
   //Si el desafio está en estado programado despliega un link para reportar el resultado
-  if ($node->Estado == PROGRAMADO) {
-    if ($is_capitan && ($node->Fecha_Inicio + 60*30 <= time()))
-      $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
-    else
-<<<<<<< HEAD
-      $actions .= t('Desafío en Progreso');
-=======
-      $actions .= t('Podrás reportar el resultado de este desafío 30min después de la fecha de inicio programada.');
->>>>>>> f2655b75e3a49ba1b44c83eceeeef3ee3977c26a
+  if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
+    $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/reportar');
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
   if (($node->Estado == CONFLICTO) && $is_capitan) {
-    $actions .= l('Enviar Pruebas', 'node/'. $node->nid . '/proof');
+    $actions .= l('Enviar Pruebas', 'node/'. $node->nid . '/pruebas');
   }
   $actions .= '</div>';
   $content['6'][] = $actions;
@@ -123,11 +116,7 @@ function theme_match_content($node) {
     
     $content['2'][] = array('data' => '<div class="winer">Resultado: '. $winner->title .' gana!</div>', 'colspan' => '5');
   } else {
-<<<<<<< HEAD
-    $content['2'][] = array('data' => '<div class="winer"> </div>', 'colspan' => '5');
-=======
-    $content['2'][] = array('data' => '<div class="winer">Desafío en Progreso </div>', 'colspan' => '5');
->>>>>>> f2655b75e3a49ba1b44c83eceeeef3ee3977c26a
+    $content['2'][] = array('data' => '<div class="guess">Indefinido</div>', 'colspan' => '5');
   }
   
   $rows['4'][] = theme('table', $header, $content);

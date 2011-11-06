@@ -6,16 +6,14 @@ function team_solicitud() {
   //Verifica que el usuario esté registrado como agente libre
   global $user;
   $team = node_load(array('nid' => arg(1)));
+	$modalidad = get_modalidad($team->id_Modalidad_Juego_Temporada);
   $equipo_jugador = tiene_equipo($user->uid, $team->id_Modalidad_Juego_Temporada);
 
   if (!($equipo_jugador == AGENTE_LIBRE)) {
-	$modalidad = get_modalidad($team->id_Modalidad_Juego_Temporada);
-	
     $form['mensaje'] = array(
-	  '#value' => t('Para poder solicitar unirte a este equipo, ingresa tu disponibilidad de tiempo en: </br></br>') . l('Buscar Equipo', 'taxonomy/term/'. $modalidad->tid .'/free_agent/register'),
-	);
-	
-	return $form;
+			'#value' => t('Para poder solicitar unirte a este equipo, ingresa tu disponibilidad de tiempo en: </br></br>') . l('Buscar Equipo', 'taxonomy/term/'. $modalidad->tid .'/free_agent/register'),
+		);
+		return $form;
   }
 		
   //Pasando las variables necesarias para procesar después de confirmar la acción
@@ -40,13 +38,13 @@ function team_solicitud() {
   */
 function team_solicitud_validate( $form, &$form_state ) {
 	global $user;
-	$team = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );
+	$nid_Equipo = $form_state['values']['nid_Equipo'];
 	
 	db_set_active( 'eSM' );
 		$solicitud = db_fetch_object(db_query('SELECT * FROM { Integrantes_Equipo } AS ie
 											  INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador }
 											  WHERE j.{ uid } = %d AND AND ie. { nid_Equipo } = %d',
-											  $user->uid, $team->nid));
+											  $user->uid, $nid_Equipo));
 	db_set_active( 'default' );
 
 	if (is_object($solicitud)) {
@@ -54,7 +52,7 @@ function team_solicitud_validate( $form, &$form_state ) {
 			form_set_error('nid_Equipo', t('El capitan de este equipo ya te ha invitado.'));
 			
 		if($solicitud->Estado == SOLICITA)
-			form_set_error('nid_Equipo', t('Ya has solicitado unirte a este equipo.'));
+			form_set_error('nid_Equipo', t('Ya has enviado esta solicitud anteriormente.'));
 	}
 }
 /**

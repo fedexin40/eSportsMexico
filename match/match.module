@@ -84,138 +84,132 @@ function match_access($op, $node, $account){
  *	@param
  *	  arg(3) = id_Modalidad_Juego_Temporada
  *	  arg(4) = nid_Equipo_Visitante
- *	  
  */
 function match_form( &$node, $form_state ) {
 	$format = 'Y-m-d H:i';
   global $user;
+	$tid = arg(2);
+	$modalidad = term_is_active($tid);
    
   if($node->Fecha_Inicio != '')
     $start_hour = format_date($node->Fecha_Inicio, 'custom', $format);
   else
     $start_hour = format_date(time(), 'custom', $format);
+  
+	//Verifica el estado del desafío y si es posible editarlo 
+  if (isset($node->Estado) && !(($node->Estado == CREADO) || ($node->Estado == TABLERO)))
+		//El partido ya está en estado de programado o posterior y no se pueden editar las opciones
+    $mensaje = t('No se pueden editar las opciones de este partido.');
+
+	if (!isset($node->id_Modalidad_Juego_Temporada) && is_object($modalidad))
+		$node->id_Modalidad_Juego_Temporada = $modalidad->id_Modalidad_Juego_Temporada;
+	elseif (!(is_object($modalidad)))
+		$mensaje = t('No se ha asignado una modalidad a este desafio.');
     
-  if (isset($node->Estado) && ($node->Estado != CREADO)) {
-    drupal_set_message(t('No se pueden editar las opciones de este partido.'), 'error');
-  }
-  else {
-    if (!isset($node->id_Modalidad_Juego_Temporada) && (arg(3) == 0)) 
-      drupal_set_message(t('No es la forma correcta de crear un partido.'), 'error');
-    else {
-      if (!isset($node->id_Modalidad_Juego_Temporada) && (arg(3) != 0))
-          $node->id_Modalidad_Juego_Temporada = arg(3);
-    
-      if (!isset($node->Estado)) {
-        $node->Estado = CREADO;
-      }
-      
-      $query = get_teams($node->id_Modalidad_Juego_Temporada);   //Obtenemos la lista de equipos
-      while ($team = db_fetch_object($query)) {
-        $team = node_load(array('nid' => $team->nid_Equipo));
-        $teams[$team->nid] =  $team->title;
-      }
-      
-      if (!is_array($teams)) {
-          drupal_set_message(t('La modalidad indicada todavia no tiene ningun equipo registrado.'), 'error');
-      }
-      else {
-          $form['id_Modalidad_Juego_Temporada'] = array(
-            '#type' => 'hidden',
-            '#value' => $node->id_Modalidad_Juego_Temporada,
-          );
-        
-          $form['Numero_Rondas'] = array(
-            '#type' => 'select',
-            '#title' => t('Numero de Rondas por Partido'),
-            '#required' => TRUE,
-            '#options' => array (
-                            1 => '1',
-                            2 => '2',
-                            3 => '3',
-                            4 => '4',
-                            5 => '5',
-                                 ),
-            '#weight' => -9,
-            '#default_value' => $node->Numero_Rondas,
-          );
-            
-          $Equipo_Local = is_capitan($user->uid, $node->id_Modalidad_Juego_Temporada);
-          
-          if (is_null($Equipo_Local)) {
-	    $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
-	    if (($modalidad->Minimo_Jugadores > 1) && (tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada) == TIENE_EQUIPO))
-              drupal_set_message(t('Solo los capitanes de equipo pueden crear desafios.'), 'error');
-	    else
-	      drupal_set_message(t('Necesitas inscribirte al ránking para poder empezar a desafiar.<br/>Para inscribirte al ranking haz click en este link: '. l('Click', 'taxonomy/term/'. $modalidad->tid)));
-          }
-          else {
-              $node->home_team = $Equipo_Local->nid;
-              
-              // We need to define form elements for the node's title and body.
-              $form['home_team'] = array(
-                '#type' => 'select',
-                '#title' => t('Home Team'),
-                '#required' => TRUE,
-                '#options' => $teams,
-                '#weight' => -8,
-                '#default_value' => $node->home_team,
-                '#disabled' => TRUE,
-              );
-                  
-              $form['away_team'] = array(
-                '#type' => 'select',
-                '#title' => t('Away Team'),
-                '#required' => TRUE,
-                '#options' => $teams,
-                '#weight' => -7,
-              );
-              
-              if (!is_null(arg(4)))
-                  $node->away_team = arg(4);
-                  
-              if (!is_null ($node->nid_Equipo_Visitante))
-                  $node->away_team = $node->nid_Equipo_Visitante;
-                  
-              if (!is_null($node->away_team)) {
-                  $form['away_team']['#default_value'] = $node->away_team;
-                  $form['away_team']['#disabled'] = TRUE;
-              }
-              
-              $form[ 'Fecha' ] = array (
-                '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-                '#title' => 'Fecha y Hora de Inicio del Match',
-                '#default_value' => $start_hour, 
-                '#date_format' => $format,
-                '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-                '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-                '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-                '#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-              );
-              
-              $form['Estado'] = array(
-                '#type' => 'hidden',
-                '#value' => $node->Estado,
-              );
-              $form['Tipo'] = array(
-                '#type' => 'hidden',
-                '#value' => $node->Tipo,
-              );
-              
-              $form['body_filter']['body'] = array(
-                '#type' => 'textarea',
-                '#title' => t('Match Notes'),
-                '#default_value' => $node->body,
-                '#required' => FALSE,
-                '#description' => t('Use this to enter some pre-match comments for the game, or post a match report after the game.'),
-                '#weight' => -5,
-              );
-              $form['body_filter']['filter'] = filter_form($node->format);
-            
-              return $form;
-          }
-      }
-    }
-  }
+	if (!isset($node->Estado))
+		$node->Estado = CREADO;
+		
+  //Obtenemos los datos del equipo visitante
+	if (is_numeric(arg(4)))
+		$node->away_team = arg(4);
+	if (!is_null ($node->nid_Equipo_Visitante))
+		$node->away_team = $node->nid_Equipo_Visitante;
+	
+	if (!is_null($node->away_team))
+		$away_team = node_load(array('nid' => $node->away_team));
+	elseif ($node->Estado != TABLERO)
+		$mensaje = t('No se ha seleccionado ningun equipo a desafiar.');
+	
+	//Obtenemos los datos del equipo local
+	$Equipo_Local = is_capitan($user->uid, $node->id_Modalidad_Juego_Temporada);
+	if (is_null($Equipo_Local)) {
+		if (($modalidad->Minimo_Jugadores > 1) && (tiene_equipo($user->uid, $node->id_Modalidad_Juego_Temporada) == TIENE_EQUIPO))
+			$mensaje = t('Solo los capitanes de equipo pueden crear desafios.');
+		else
+			$mensaje = t('Necesitas inscribirte al ránking para poder empezar a desafiar.<br/>Para inscribirte al ranking haz click en este link: '. l('Click', 'taxonomy/term/'. $modalidad->tid));
+	}	
+	$node->home_team = $Equipo_Local->nid;
+		
+	//Determina que se tiene que desplegar en la forma
+	if ($mensaje) {
+		$form['mensaje'] = array(
+			'#value' => $mensaje,
+			'#weight' => -100,
+		);
+	}
+	else {
+		$form['id_Modalidad_Juego_Temporada'] = array(
+			'#type' => 'hidden',
+			'#value' => $node->id_Modalidad_Juego_Temporada,
+		);
+		
+		$form['Estado'] = array(
+			'#type' => 'hidden',
+			'#value' => $node->Estado,
+		);
+		$form['Tipo'] = array(
+			'#type' => 'hidden',
+			'#value' => $node->Tipo,
+		);
+		
+		$form['home_team'] = array(
+			'#type' => 'hidden',
+			'#value' => $node->home_team,
+		);
+		
+		$form['Numero_Rondas'] = array(
+			'#type' => 'select',
+			'#title' => t('Numero de Rondas'),
+			'#required' => TRUE,
+			'#options' => array (
+											1 => '1',
+											2 => '2',
+											3 => '3',
+											4 => '4',
+											5 => '5',
+													 ),
+			'#weight' => -9,
+			'#default_value' => $node->Numero_Rondas,
+		);
+
+		if (!is_null($node->away_team)) {
+			$form['away_team'] = array(
+				'#value' => $node->away_team,
+				'#type' => 'hidden'
+			);
+			$form['body_filter']['body'] = array(
+				'#type' => 'textarea',
+				'#title' => t('Match Notes'),
+				'#default_value' => $node->body,
+				'#required' => FALSE,
+				'#description' => t('Use this to enter some pre-match comments for the game.'),
+				'#weight' => -90,
+			);
+		}
+		else {
+			drupal_set_title(t("Add match to match's board."));
+			
+			$form['mensaje'] = array(
+				'#value' => t('Envía tu desafío indicando la fecha y hora a la que prefieres jugar. También debes seleccionar las preferencias de juego para el enfrentamiento. Ten en cuenta que si tu rival acepta el desafío, ya no podrá ser cancelado. Asegúrate de estar disponible en el momento que indicas o sufrirás una derrota por incomparecencia.'),
+				'#weight' => -100,
+			);
+		}
+		
+		$form[ 'Fecha' ] = array (
+			'#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+			'#title' => 'Fecha y Hora de Inicio del Match',
+			'#default_value' => $start_hour, 
+			'#date_format' => $format,
+			'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+			'#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+			'#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+			'#date_year_range' => '0:+2', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+			'#weight' => -80,
+		);
+		$form['body_filter']['filter'] = filter_form($node->format);
+	}
+	
+	return $form;
 }
 /*
  * Implementation of hook_load()
@@ -494,7 +488,10 @@ function match_delete($node){
  * @return unknown_type
  */
 function match_view($node, $teaser = FALSE, $page = FALSE){
-  $content = theme('match_content', $node);
+	if ($node->Estado == TABLERO)
+		$content = theme('match_board', $node);
+  else
+		$content = theme('match_content', $node);
 
   $node->content[] = array(
     '#value' => $content, 
@@ -561,6 +558,14 @@ function match_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/match_tablero.inc',
   );
+	//Formulario para retar a un equipo
+  $items[ 'taxonomy/term/%/defy/%' ] = array (
+    'title' => t('Add match'),
+    'page callback' => 'add_new_match',
+		'access arguments' => array('create match'),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/match_defy.inc',
+  );
 	
   //Rutas para operaciones sobre desafíos
   $items['node/%node/accept'] = array(
@@ -590,10 +595,7 @@ function match_menu(){
     'type' => MENU_CALLBACK,
     'file' => 'inc/match_pruebas.inc',
   );
-  
-	
-	
-	
+
   //Rutas para detalles de desafíos de cada equipo
   $items[ 'node/%node/desafios' ] = array (
     'title' => t('Desafios'),
@@ -726,6 +728,11 @@ function match_theme($existing, $type, $theme, $path) {
       'path' => drupal_get_path('module', 'match') .'/theme',
       'arguments' => array('node'),
     ),
+    'match_board' => array(
+      'file' => 'node_board.inc',
+      'path' => drupal_get_path('module', 'match') .'/theme',
+      'arguments' => array('node'),
+    ),
     'match_fivestar_static' => array(
       'file' => 'fivestar.inc',
       'path' => drupal_get_path('module', 'match') .'/theme',
@@ -844,10 +851,14 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
           break;
         case 2:
           //Desafiar
-          if ($content = _match_prepare_desafiar_link()) {
+          if (($content = _match_prepare_desafiar_link()) && ($content <> 'Equipo Incompleto')) {
             $block['subject'] = 'Desafiar';
             $block['content'] = l('Desafiar', $content, array('attributes'=>array('class' => 'popups')));
           }
+					elseif ($content == 'Equipo Incompleto') {
+            $block['subject'] = 'Desafiar';
+            $block['content'] = '<div class="equipo_incompleto">No puduedes desafiar al equipo hasta que este completo</div>';
+					}
           break;
       }
       
@@ -1097,26 +1108,24 @@ function _match_crear_reporte_mala_conducta ($nid_Reto, $nid_Equipo, $conducta) 
  * Función para preparar el link para que los equipos se puedan desafiar entre ellos
  */
 function _match_prepare_desafiar_link() {  
-    //Carga el nodo
-    if (arg(0) == 'node' && is_numeric(arg(1)))
-        $node = node_load(arg(1));
-        
-    //Revisa que el nodo pertenezca a un equipo
-    if ($node->type == 'team') {
+	//Carga el nodo
+	if (arg(0) == 'node' && is_numeric(arg(1)))
+		$node = node_load(arg(1));
+			
+	//Revisa que el nodo pertenezca a un equipo
+	if ($node->type == 'team') {
 		//Obtiene los datos de la modalidad
 		$modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
-		
-        //Revisa que el equipo tenga el mínimo de integrantes necesarios para la modalidad
-		if ($node->Numero_Integrantes >= $modalidad->Minimo_Jugadores) {
+
+		//Revisa que el equipo tenga el mínimo de integrantes necesarios para la modalidad
+		if ($node->Numero_Integrantes >= $modalidad->Minimo_Jugadores)
 			//Prepara el link para desafiar a este equipo
-			$link = 'node/add/match/'. $node->id_Modalidad_Juego_Temporada .'/'. $node->nid;
-		}
-		else {
-			$link = t('Este equipo no puede ser desafiado hasta que este completo.');
-		}
-    }
-    
-    return $link;
+			$link = 'taxonomy/term/'. $modalidad->tid .'/defy/'. $node->nid;
+		else
+			$link = 'Equipo Incompleto';
+	}
+	
+	return $link;
 }
 /**
  * Función para preparar el despliegue de la reputación del equipo
