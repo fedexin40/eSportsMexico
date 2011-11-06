@@ -21,9 +21,11 @@
           <?php print '<li>'. l($modalidad->Nombre, 'taxonomy/term/'. $modalidad->tid) .'</li>'; ?>
           <?php print '<li>'. l($team->title, 'node/'. $team->nid) .'</li>';  ?>
           <?php print '<li>'. t('Ranking: '). $ranking .'</li>'; ?>
-          <?php print '<li>'. t('Division: '). $division .'</li>'; ?>
           <?php print '<li>'. $calificacion .'</li>'; ?>
       </ul>
+  </div>
+  <div class= "division">
+    <?php print '<span class = "'. str_replace( " ", "_", $division) .'>'. $division .'</span>'; ?>
   </div>
   <?php print '<div class = "right_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>'; ?>
 </div>
