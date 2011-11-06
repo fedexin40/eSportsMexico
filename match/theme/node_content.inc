@@ -77,8 +77,11 @@ function theme_match_content($node) {
   }
   
   //Si el desafio está en estado programado despliega un link para reportar el resultado
-  if (($node->Estado == PROGRAMADO) && $is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
-    $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
+  if ($node->Estado == PROGRAMADO) {
+    if ($is_capitan && ($node->Fecha_Inicio + 60*30 <= time()))
+      $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
+    else
+      $actions .= t('Desafío en Progreso');
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
   if (($node->Estado == CONFLICTO) && $is_capitan) {
