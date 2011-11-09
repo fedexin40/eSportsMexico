@@ -157,20 +157,34 @@ function team_administrar_solicitudes( ) {
  * Valida las solicitudes que se están intentando aprobar
  */
 function team_administrar_solicitudes_validate($form, $form_state) {
+  $nid_Equipo = $form_state['values'][ 'nid_equipo' ];
+  //Contador para mostrar el número de solicitudes aceptados
+  $count = 0; 
+  //Verifica que el jugador que está por ser aprovado no pertenezca a un equipo
   foreach( element_children($form_state['values']['checkboxes']) as $jugador ) { 
     if ($form_state['values']['checkboxes'][$jugador] != 0) {
+      ++$count;
       db_set_active('eSM');
         $account = db_fetch_object(db_query('SELECT * FROM {Jugador}
                                            WHERE id_Jugador = %d',
                                            $jugador));
       db_set_active('default');
-      //Verifica que el jugador que está por ser aprovado no pertenezca a un equipo
       if ($account->Estado == TIENE_EQUIPO) {
         $account = user_load(array('uid' => $jugador->uid));
         form_set_error('checkboxes', t('El jugador '. $account->name .' ya pertenece a otro equipo.'));
       }
     }
   }
+  //Verficia que el equipo no haya alcanzado el máximo de jugadores permitido
+  db_set_active('eSM');
+    $num_players = db_result(db_query('SELECT COUNT {*} FROM {Integrantes_Equipo}
+                                      WHERE nid_Equipo = %d AND Estado = %d',
+                                      $nid_Equipo, ACEPTADO));
+  db_set_active('default');
+  $node = node_load(array('nid' => $nid_Equipo));
+  $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
+  if (($num_players + $count) >= $modalidad->Maximo_Jugadores)
+    form_set_error('checkboxes', t('No puedes aprobar tantos jugadores porque sobrepasa el máximo permitido.'));
 }
 /**
  * Submit para la la forma de jugadores solicitantes

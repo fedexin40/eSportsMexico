@@ -79,11 +79,19 @@ function aceptar_invitacion () {
 function aceptar_invitacion_validate ($form, $form_state) {
 	global $user;
 	$equipo = node_load(array('nid' => $form_state['values']['nid_Equipo']));
-	
 	$estado = tiene_equipo($user->uid, $equipo->id_Modalidad_Juego_Temporada);
-	
+	//Verifica que el jugador no esté registrado en otro equipo
 	if($estado == TIENE_EQUIPO)
 		form_set_error('Equipo', t('Ya estas registrado en un equipo de esta modalidad.</br>No puedes aceptar esta invitacion.'), 'error');
+	//Verifica que el equipo tenga espacio para el jugador
+	$modalidad = get_modalidad($equipo->id_Modadalidad_Juego_Temporada);
+  db_set_active('eSM');
+    $num_players = db_result(db_query('SELECT COUNT {*} FROM {Integrantes_Equipo}
+                                      WHERE nid_Equipo = %d AND Estado = %d',
+                                      $nid_Equipo, ACEPTADO));
+  db_set_active('default');
+	if($num_players == $modalidad->Maximo_Jugadores)
+		form_set_error('Equipo', t('El equipo ha alcanzado el máximo de jugadores permitidos en la modaliad.</b>No puedes aceptar esta solicitud.'));
 }
 /**
  * Función para actualizar el estado del jugador aceptando la invitación seleccionada
