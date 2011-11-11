@@ -8,6 +8,7 @@ function team_solicitud() {
   $team = node_load(array('nid' => arg(1)));
 	$modalidad = get_modalidad($team->id_Modalidad_Juego_Temporada);
   $equipo_jugador = tiene_equipo($user->uid, $team->id_Modalidad_Juego_Temporada);
+  
 
   if (!($equipo_jugador == AGENTE_LIBRE)) {
     $form['mensaje'] = array(
@@ -36,39 +37,42 @@ function team_solicitud() {
 /**
   * Validate handler for previus confirm form
   */
-function team_solicitud_validate( $form, &$form_state ) {
+function team_solicitud_validate($form, &$form_state) {
 	global $user;
 	$nid_Equipo = $form_state['values']['nid_Equipo'];
-	
+	//Verifica que no se inserten dos solicitudes por parte del jugador
 	db_set_active( 'eSM' );
-		$solicitud = db_fetch_object(db_query('SELECT * FROM { Integrantes_Equipo } AS ie
-											  INNER JOIN { Jugador } AS j ON ie.{ id_Jugador } = j.{ id_Jugador }
-											  WHERE j.{ uid } = %d AND AND ie. { nid_Equipo } = %d',
+		$solicitud = db_fetch_object(db_query('SELECT ie.Estado FROM {Integrantes_Equipo} AS ie
+											  INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
+											  WHERE j.uid = %d AND ie.nid_Equipo = %d',
 											  $user->uid, $nid_Equipo));
 	db_set_active( 'default' );
-	//Verifica que no se inserten dos solicitudes por parte del jugador
 	if (is_object($solicitud)) {
-		if($solicitud->Estado == INVITADO)
+		if($solicitud->Estado == INVITADO) {
 			form_set_error('nid_Equipo', t('El capitan de este equipo ya te ha invitado.'));
+		}
 			
-		if($solicitud->Estado == SOLICITA)
+		if($solicitud->Estado == SOLICITA) {
 			form_set_error('nid_Equipo', t('Ya has enviado esta solicitud anteriormente.'));
+		}
 	}
 	//Verifica que el equipo tenga espacio para aceptar al jugador
 	$equipo = node_load(array('nid' => $nid_Equipo));
 	$modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
-  db_set_active('eSM');
-    $num_players = db_result(db_query('SELECT COUNT {*} FROM {Integrantes_Equipo}
-                                      WHERE nid_Equipo = %d AND Estado = %d',
-                                      $nid_Equipo, ACEPTADO));
-  db_set_active('default');
-	if ($num_players == $modalidad->Maximo_Jugadores)
+	$num_players = _team_num_players($equipo->nid);
+	if ($num_players == $modalidad->Maximo_Jugadores) {
 		form_set_error('nid_Equipo', t('Este equipo ya tiene el máximo de jugadores permitidos en esta modalidad. </br>No puedes enviar esta solicitud.'));
+	}
+	//Verifica que el usuario no tenga equipo todavía
+	$estado = tiene_equipo($user->uid, $modalidad->id_Modalidad_Juego_Temporada);
+	if ($estado == TIENE_EQUIPO) {
+	  form_set_error('nid_Equipo', t('Ya perteneces a un equipo en esta modalidad.'));
+	}
 }
 /**
 * Submit handler for previus confirm form
 */
-function team_solicitud_submit( $form, &$form_state ) {
+function team_solicitud_submit($form, &$form_state) {
 	global $user;
 	$equipo = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );
 	

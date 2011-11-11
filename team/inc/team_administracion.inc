@@ -175,12 +175,7 @@ function team_administrar_solicitudes_validate($form, $form_state) {
       }
     }
   }
-  //Verficia que el equipo no haya alcanzado el máximo de jugadores permitido
-  db_set_active('eSM');
-    $num_players = db_result(db_query('SELECT COUNT {*} FROM {Integrantes_Equipo}
-                                      WHERE nid_Equipo = %d AND Estado = %d',
-                                      $nid_Equipo, ACEPTADO));
-  db_set_active('default');
+  $num_players = _team_num_players($nid_Equipo);
   $node = node_load(array('nid' => $nid_Equipo));
   $modalidad = get_modalidad($node->id_Modalidad_Juego_Temporada);
   if (($num_players + $count) >= $modalidad->Maximo_Jugadores)

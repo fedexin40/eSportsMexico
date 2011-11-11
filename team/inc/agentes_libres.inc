@@ -19,7 +19,7 @@ function agente_libre() {
   
   $profile_node = content_profile_load('profile', $user->uid);
   if ($profile_node->{$modalidad->identificador}['0']['value'] == '') {
-    $form['mensaje'] = array ('#value' => t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario.</br>'));
+    $form['mensaje'] = array ('#value' => t('Para registrarte primero debes dar de alta tu identificador de juego en tu perfil de usuario.</br>Haz click en este link: '). l('Editar Perfil', 'user/'. $user->uid .'/edit/profile'));
     return $form;
   }
   
@@ -113,6 +113,7 @@ function agente_libre() {
 function agente_libre_submit ( $form, $form_state ) {
     global $user;
     $id_Modalidad_Juego_Temporada = $form_state['values']['id_Modalidad_Juego_Temporada'];
+    $fecha_registro = string_to_timestamp(date('Y-m-d'));
     
     foreach ($form_state['values']['dias'] as $key => $element) {
         if (!$element == 0)
@@ -142,7 +143,7 @@ function agente_libre_submit ( $form, $form_state ) {
         db_query("INSERT INTO { Jugador }
                 (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado)
                 VALUES ( %d, %d, %d, %d )",
-                $id_Modalidad_Juego_Temporada, $user->uid, string_to_timestamp( date( 'Y-m-d' ) ), AGENTE_LIBRE);
+                $id_Modalidad_Juego_Temporada, $user->uid, $fecha_registro, AGENTE_LIBRE);
       db_set_active('default');
       $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
     }
@@ -155,7 +156,11 @@ function agente_libre_submit ( $form, $form_state ) {
       db_set_active( 'default' );
     }
     
-    if (db_result(db_query('SELECT COUNT FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador->id_Jugador)) > 0) {
+    db_set_active('eSM');
+        $no_registros = db_result(db_query('SELECT COUNT(*) FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador->id_Jugador));
+    db_set_active('default');
+    
+    if ($no_registos > 0) {
         db_set_active('eSM');
             //2.- Actualiza la descripción ingresada por el usuario
             db_query("UPDATE {Agente_Libre} SET Descripcion = '%s'

@@ -77,14 +77,11 @@ function invitar_usuario_validate($form, $form_state) {
       }
     }
     //Verifica que el equipo tenga espacio suficiente para invitar un jugador
-    db_set_active('eSM');
-      $num_players = db_result(db_query('SELECT COUNT {*} FROM {Integrantes_Equipo}
-                                        WHERE nid_Equipo = %d AND Estado = %d',
-                                        $nid_Equipo, ACEPTADO));
-    db_set_active('default');
+    $num_players = _team_num_players($equipo->nid);
     $modalidad = get_modalidad($equipo->id_Modalidad_Juego_Temporada);
-    if ($num_players == $modalidad->Maximo_Jugadores)
+    if ($num_players == $modalidad->Maximo_Jugadores) {
         form_set_error('invitado', t('No puedes invitar a este jugador porque tu equipo ya alcanzó el máximo de jugadores permitidos en esta modalidad.'));
+    }
 }
 /**
  * Función para crear la forma de invitación
