@@ -57,6 +57,16 @@ function _match_cron_reportes () {
     //Si no hay un ganador definido, entonces el desafío debe ir al estado de conflicto
     if ($nid_Ganador == 0) {
       _match_update_match($reto->nid_Reto, CONFLICTO);
+      //Notifica a los capitanes de los equipos que el reto se fue a estado de conflicto por no haber reportado resultado      
+      //Primero obtenemos los datos de los capitanes de los equipos  
+      $home_team = node_load(array('nid' => $reto->nid_Equipo_Local));
+      $away_team = node_load(array('nid' => $reto->nid_Equipo_Visitante));
+      
+      $home_capitan = user_load(array('uid' => $home_team->uid));
+      $away_capitan = user_load(array('uid' => $away_team->uid));
+    
+      rules_invoke_event('partido_conflicto', $home_capitan, $reto);
+      rules_invoke_event('partido_conflicto', $home_capitan, $reto);
     }
     else {
       _match_end_match($reto->nid_Reto, $nid_Ganador);

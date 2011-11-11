@@ -25,7 +25,7 @@
       </ul>
   </div>
   <div class= "division">
-    <?php print '<span class = "'. str_replace( " ", "_", $division) .'>'. $division .'</span>'; ?>
+    <?php print '<span class = "'. str_replace( " ", "_", $division) .'>'. str_replace( " ", "_", $division) .'</span>'; ?>
   </div>
   <?php print '<div class = "right_'. str_replace( " ", "_", $modalidad->Nombre) .'"></div>'; ?>
 </div>

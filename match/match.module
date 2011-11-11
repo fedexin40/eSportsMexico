@@ -546,7 +546,7 @@ function match_menu(){
     'page arguments' => array( 'modalidad_lista_desafios' ),
     'access arguments' => array('administer matches'),
     'type' => MENU_LOCAL_TASK,
-    'file' => 'inc/modalidad_lista_desafios.inc',
+    'file' => 'inc/modalidad_lista_desafios_conflicto.inc',
 		'weight' => 100,
   );
 	
@@ -808,7 +808,15 @@ function match_rules_event_info() {
       'arguments' => array(
         'userA' => array('type' => 'user', 'label' => t('UserA, capitan del equipo al que se le ha programado un partido por un torneo.')),
         'userB' => array('type' => 'user', 'label' => t('UserB, usuario del sistema que notifica a UserA del partido programado.')),
-	'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
+		'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
+      ),
+    ),
+    'partido_conflicto' => array(
+      'label' => t('UserA tiene un partido en conflicto'),
+      'module' => 'Match',
+      'arguments' => array(
+        'userA' => array('type' => 'user', 'label' => t('UserA, capitan del equipo que tiene un partido en conflicto.')),
+		'match' => array('type' => 'node', 'label' => t('Detalles del desafio.')),
       ),
     ),
   );

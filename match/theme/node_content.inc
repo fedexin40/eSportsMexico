@@ -78,10 +78,12 @@ function theme_match_content($node) {
   
   //Si el desafio está en estado programado despliega un link para reportar el resultado
   if ($node->Estado == PROGRAMADO) {
-    if ($is_capitan && ($node->Fecha_Inicio + 60*30 <= time()))
+    if ($is_capitan && ($node->Fecha_Inicio + 60*30 <= time())) {
       $actions .= l('Reportar Resultado', 'node/'. $node->nid . '/report');
-    else
+    }
+    if ($is_capitan) {
       $actions .= t('Podrás reportar el resultado de este desafío 30min después de la fecha de inicio programada.');
+    }
   }
   //Si el desafio está en estado conflicto despliega un link para subir las pruebas
   if (($node->Estado == CONFLICTO) && $is_capitan) {
@@ -89,18 +91,6 @@ function theme_match_content($node) {
   }
   $actions .= '</div>';
   $content['6'][] = $actions;
-  /* Las pruebas no deben de ir en este lugar
-  $content['7'][] = array('data' => ' ');
-  $content['7'][] = array('data' => ' ');
-  $content['8'][] = array('data' => 'Pruebas', 'class' => 'subheader');
-  $content['8'][] = array('data' => ' ', 'class' => 'subheader');
-  
-  if (is_array($pruebas)) {
-    $content['9'][] = 'Prueba del equipo '. $home_team->title .' : ';
-    $content['9'][] = l($pruebas['Prueba_Jugador_Local'], $pruebas['Prueba_Jugador_Local']);
-    $content['10'][] = 'Prueba del equipo '. $away_team->title .' : ';
-    $content['10'][] = l($pruebas['Prueba_Jugador_Visitante'], $pruebas['Prueba_Jugador_Visitante']);
-  }*/
   
   $rows['2'][] = array('data' => theme('table', $header, $content), 'class' => 'content_right');
   
