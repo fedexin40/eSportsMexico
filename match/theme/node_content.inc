@@ -8,9 +8,6 @@ function theme_match_content($node) {
   //Verifica si el usuario actual es capitán de alguno de los dos equipos
   if (team_user_is_team_capitan($user->uid, $node->nid_Equipo_Local) || $away_capitan = team_user_is_team_capitan($user->uid, $node->nid_Equipo_Visitante))
     $is_capitan = TRUE;
-
-  //Obtiene los datos de las pruebas subidas por los jugadores
-  $pruebas = match_get_pruebas($node->nid);
   
   //Obtiene los datos de los equipos participantes en el desafío
   $home_team = node_load($node->nid_Equipo_Local);

@@ -543,7 +543,7 @@ function match_menu(){
   $items [ 'taxonomy/term/%/match/conflict' ] = array (
     'title' => t('Conflicto'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array( 'modalidad_lista_desafios' ),
+    'page arguments' => array( 'modalidad_lista_desafios_conflicto' ),
     'access arguments' => array('administer matches'),
     'type' => MENU_LOCAL_TASK,
     'file' => 'inc/modalidad_lista_desafios_conflicto.inc',
@@ -1174,15 +1174,19 @@ function _match_get_team_match_list ($nid_Equipo, $criterio) {
  * @return
  *  mysql object
  */
-function _match_modalidad_get_match_list ($id_Modalidad_Juego_Temporada, $criterio) {
-  db_set_active('eSM');
-    $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+function _match_modalidad_get_match_list ($id_Modalidad_Juego_Temporada, $criterio, $offset = NULL) {
+  $query = 'SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
                       WHERE id_Modalidad_Juego_Temporada = %d AND r.Estado = %d
-					  ORDER BY Fecha_Inicio DESC',
+					  ORDER BY Fecha_Inicio DESC';
+  if ($offset)
+	$query .= ' LIMIT '. $offset .', 2';
+  
+  db_set_active('eSM');
+    $result = db_query($query,
                       $id_Modalidad_Juego_Temporada, $criterio);
   db_set_active('default');
   
-  return $query;
+  return $result;
 }
 /**
  * Función para obtener una lista de los matches que coinciden con un criterio
