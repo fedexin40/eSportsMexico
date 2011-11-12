@@ -17,10 +17,24 @@ function modalidad_lista_desafios_conflicto () {
   
   //Obtiene la lista de retos
   $retos = _match_modalidad_get_match_list($modalidad->id_Modalidad_Juego_Temporada, CONFLICTO, $offset);
-  if ($reto = db_fetch_object($retos)) {
-    //Obtiene los datos de los equipos participantes
+  if ($reto = db_fetch_object($retos)) {     
+      //Obtiene los datos de los equipos participantes
       $home_team = node_load($reto->nid_Equipo_Local);
       $away_team = node_load($reto->nid_Equipo_Visitante);
+      
+      //Agrega a la forma los valores usados para validar y guardar resultados
+      $form['valores']['nid_Reto'] = array (
+        '#type' => 'hidden',
+        '#value' => $reto->nid_Reto,
+      );
+      $form['valores']['home_team_nid'] = array (
+        '#type' => 'hidden',
+        '#value' => $home_team->nid,
+      );
+      $form['valores']['away_team_nid'] = array (
+        '#type' => 'hidden',
+        '#value' => $away_team->nid,
+      );
       
       //Crea el div de cada equipo
       $form['home_team'] = array (
@@ -137,20 +151,6 @@ function modalidad_lista_desafios_conflicto () {
           '#value' => l('Skip Match', 'taxonomy/term/'. $tid .'/match/conflict/skip/'. $offset),
         );
       }
-      
-      //Agrega a la forma los valores usados para validar y guardar resultados
-      $form['nid_Reto'] = array (
-        '#type' => 'hidden',
-        '#value' => $reto->nid_Reto,
-      );
-      $form['home_team_nid'] = array (
-        '#type' => 'hidden',
-        '#value' => $home_team->nid,
-      );
-      $form['away_team_nid'] = array (
-        '#type' => 'hidden',
-        '#value' => $away_team->nid,
-      );
   }
   else {
       $form['Mensaje'] = array (
