@@ -125,7 +125,7 @@ function modalidad_lista_desafios_conflicto () {
         '#collapsible' => FALSE,
         '#attributes' => array ('class' => 'match_options'),
       );
-      $form['options']['cancle'] = array (
+      $form['options']['cancel'] = array (
         '#type' => 'item',
         '#value' => l('Cancel Match', 'node/'. $reto->nid_Reto .'/cancel'),
       );  
@@ -159,6 +159,17 @@ function modalidad_lista_desafios_conflicto () {
   }
   
   return $form;
+}
+/**
+ * Función para validar que el desafío efectivamente esté todavía en estado de conflicto
+ */
+function modalidad_match_conflict_validate($form, $form_state) {
+  db_set_active('eSM');
+	$reto = db_fetch_object(db_query( 'SELECT Estado FROM {Reto} WHERE nid_Reto = %d', $form_state['values']['nid_Reto']));
+  db_set_active('default');
+  
+  if(!($reto->Estado == CONFLICTO))
+    form_set_error('nid_Reto', t('Este desafio ya ha sido reportado.'));
 }
 /**
  * Función para dar el triunfo al equipo local
