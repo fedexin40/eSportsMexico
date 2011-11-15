@@ -88,18 +88,15 @@ function modalidad_juego_admin_submit( $form, $form_state ) {
  *
  */
 function modalidades_juegos_admin_listar ( ) {	
-	db_set_active( 'eSM' );
-		$result_set_Modalidad_Juego = db_query( "SELECT * FROM {Modalidad_Juego} ORDER BY id_Modalidad_Juego ASC" );
-	db_set_active( 'default' );
-	
+	$result_set_Modalidad_Juego = db_query( "SELECT * FROM {eSM_Modalidad_Juego} ORDER BY id_Modalidad_Juego ASC" );
+		
 	$output = '<div class="form_item">Lista de modalidades dadas de alta en la base de datos.</div>';
 	$header = array (t('Name'), t('Plataforma'), t('Game'), t('Min Jugadores'), t('Max Jugadores'), '');
 	
 	//Pondremos un listado de modalidads disponibles
 	while( $Modalidad_Juego = db_fetch_object( $result_set_Modalidad_Juego ) ) {
-		db_set_active( 'eSM' );
-				$result_set_Plataforma = db_query( "SELECT * from {Plataforma} WHERE id_Plataforma = %d ", $Modalidad_Juego->id_Plataforma );
-		db_set_active( 'default' );
+		$result_set_Plataforma = db_query( "SELECT * from {eSM_Plataforma} WHERE id_Plataforma = %d ", $Modalidad_Juego->id_Plataforma );
+		
 		$Plataforma = db_fetch_object( $result_set_Plataforma );
 		
 		$row = array();
@@ -121,10 +118,8 @@ function modalidades_juegos_admin_listar ( ) {
  * Función para presentar la forma para insertar una nueva modalidad
  */
 function modalidades_juegos_admin_insertar ( )	 {
-	db_set_active( 'eSM' );		
-		$result_set_plataformas = db_query( "SELECT * FROM Plataforma" );
-	db_set_active( 'default' );
-
+	$result_set_plataformas = db_query( "SELECT * FROM {eSM_Plataforma}" );
+	
 	if (isset($result_set_plataformas)) {
 		while( $Plataforma = db_fetch_object( $result_set_plataformas ) ) {
 			$Plataforma_Nombres[ $Plataforma->id_Plataforma ] = $Plataforma->Nombre;
@@ -227,18 +222,14 @@ function modalidades_juegos_admin_insertar_validate( $form, $form_state ) {
 		form_set_error( 'maximo_jugadores', t( 'El número de jugadores máximo debe ser mayor al mínimo.' ) );
 	
 	if (( $form_state['values']['id_Modalidad_Juego'] == 0) && ($form_state['values']['tid'] <> 0 )) {
-		db_set_active('eSM');
-			$result = db_fetch_object(db_query('SELECT {id_Modalidad_Juego} FROM {Modalidad_Juego} WHERE tid = %d', $form_state['values']['tid']));
-		db_set_active('default');
+		$result = db_fetch_object(db_query('SELECT {id_Modalidad_Juego} FROM {eSM_Modalidad_Juego} WHERE tid = %d', $form_state['values']['tid']));
 		
 		if($result->id_Modalidad_Juego <> 0)
 			form_set_error('vocabulario', t('No puedes asiganar a dos modaliades la misma categoría'));
 	}
 	
 	if (($form_state['values']['id_Modalidad_Juego'] <> 0) && ($form_state['values'] ['tid'] <> 0)) {
-		db_set_active('eSM');
-			$result = db_fetch_object(db_query('SELECT {id_Modalidad_Juego} FROM {Modalidad_Juego} WHERE tid = %d'. $form_state['values']['tid']));
-		db_set_active('default');
+		$result = db_fetch_object(db_query('SELECT {id_Modalidad_Juego} FROM {eSM_Modalidad_Juego} WHERE tid = %d'. $form_state['values']['tid']));
 		
 		if($result->id_Modalidad_Juego <> $form_state['values']['id_Modalidad_Juego'])
 			form_set_error('vocabulario', t('No puedes asignar una misma categoría a dos modalidades diferentes.'));
@@ -268,14 +259,11 @@ function modalidades_juegos_admin_insertar_submit( $form, $form_state ) {
 	}
 	
 	//Graba los datos en la base de datos
-	db_set_active( 'eSM' );
-	
-		db_query("INSERT INTO { Modalidad_Juego }
-												(id_Plataforma, Nombre, Nombre_Juego, Minimo_Jugadores, Maximo_Jugadores, tid, reglas) 
-												VALUES ( %d, '%s', '%s', %d, %d, %d, %d )",
-												$form_state[ 'values' ][ 'id_plataforma' ], $form_state[ 'values' ][ 'title' ],	 $form_state[ 'values' ][ 'nombre_juego' ],	 $form_state[ 'values' ][ 'minimo_jugadores' ],	$form_state[ 'values' ][ 'maximo_jugadores' ],	 $term[ 'tid' ],	$form_state[ 'values' ][ 'reglas' ]
-		);
-	db_set_active( 'default' );
+	db_query("INSERT INTO {eSM_Modalidad_Juego }
+			 (id_Plataforma, Nombre, Nombre_Juego, Minimo_Jugadores, Maximo_Jugadores, tid, reglas)
+			 VALUES ( %d, '%s', '%s', %d, %d, %d, %d )",
+			 $form_state[ 'values' ][ 'id_plataforma' ], $form_state[ 'values' ][ 'title' ],	 $form_state[ 'values' ][ 'nombre_juego' ],	 $form_state[ 'values' ][ 'minimo_jugadores' ],	$form_state[ 'values' ][ 'maximo_jugadores' ],	 $term[ 'tid' ],	$form_state[ 'values' ][ 'reglas' ]
+	);
 	
 	drupal_set_message( "La modalidad de juego fué guardada satisfactoriamente" );
 	drupal_goto( "admin/base_datos_externa/modalidades_juegos" );
@@ -286,10 +274,8 @@ function modalidades_juegos_admin_insertar_submit( $form, $form_state ) {
 function modalidad_juego_admin_editar( ) {
 	$id_Modalidad_Juego = arg( 3 );
 	
-	db_set_active( 'eSM' );
-		$result_set_Modalidad_Juego = db_query( "SELECT * FROM { Modalidad_Juego } WHERE { id_Modalidad_Juego } = %d", $id_Modalidad_Juego );
-		$result_set_Plataforma = db_query( "SELECT * FROM { Plataforma }" );
-	db_set_active( 'default' );
+	$result_set_Modalidad_Juego = db_query( "SELECT * FROM {eSM_Modalidad_Juego } WHERE { id_Modalidad_Juego } = %d", $id_Modalidad_Juego );
+	$result_set_Plataforma = db_query( "SELECT * FROM {eSM_Plataforma }" );
 
 	$Modalidad_Juego = db_fetch_object( $result_set_Modalidad_Juego );
 
@@ -395,10 +381,8 @@ function modalidad_juego_admin_editar( ) {
 		);
 		
 		//Ponemos una lista de todos los mapas dados de alta en esta modalidad
-		db_set_active('eSM');
-				$mapas = db_query('SELECT * FROM {Mapa} WHERE id_Modalidad_Juego  = %d', $id_Modalidad_Juego);
-		db_set_active('default');
-		
+		$mapas = db_query('SELECT * FROM {eSM_Mapa} WHERE id_Modalidad_Juego  = %d', $id_Modalidad_Juego);
+				
 		$count = 0;
 		while ($mapa = db_fetch_object($mapas)) {
 				++ $count;
@@ -442,10 +426,8 @@ function modalidad_juego_admin_editar( ) {
 		);
 		
 		//Ponemos una lista de todos los modos de juego dados de alta en esta modalidad
-		db_set_active('eSM');
-				$modos = db_query('SELECT * FROM {Modo_Juego} WHERE id_Modalidad_Juego  = %d', $id_Modalidad_Juego);
-		db_set_active('default');
-		
+		$modos = db_query('SELECT * FROM {eSM_Modo_Juego} WHERE id_Modalidad_Juego  = %d', $id_Modalidad_Juego);
+				
 		$count = 0;
 		while ($modo = db_fetch_object($modos)) {
 				++ $count;
@@ -483,10 +465,8 @@ function modalidad_juego_admin_editar( ) {
 		);
 		
 		//Ponemos las reglas de la modalidad y un link para editarlas
-		db_set_active('eSM');
-		  $reglas = db_fetch_object(db_query('SELECT * FROM {Reglas} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego));
-		db_set_active('default');
-
+		$reglas = db_fetch_object(db_query('SELECT * FROM {eSM_Reglas} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego));
+		
 		$form['rules'] = array (
 			'#type' => 'fieldset',
 			'#title' => t('Rules'),
@@ -544,15 +524,12 @@ function modalidad_juego_admin_editar_submit( $form, $form_state ) {
 	if ($form_state['values']['identificador'] == 'crear') {
 		$identificador = modadalidad_juegos_admin_crear_identificador($form_state['values']['title']);
 	}
-	
-	db_set_active( 'eSM' );
 		
-	db_query("UPDATE {Modalidad_Juego}
-						SET id_Plataforma = %d, Nombre = '%s', Nombre_Juego = '%s', Minimo_Jugadores = %d, Maximo_Jugadores = %d, tid = %d, identificador = '%s', reglas = %d
-						WHERE id_Modalidad_Juego = %d",
-						$form_state[ 'values' ][ 'id_Plataforma' ], $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'nombre_juego' ], $form_state[ 'values' ][ 'minimo_jugadores' ], $form_state[ 'values' ][ 'maximo_jugadores' ], $term[ 'tid' ], $form_state['values']['identificador'], $form_state[ 'values' ][ 'reglas' ], $form_state[ 'values' ][ 'id_Modalidad_Juego' ]
+	db_query("UPDATE {eSM_Modalidad_Juego}
+			 SET id_Plataforma = %d, Nombre = '%s', Nombre_Juego = '%s', Minimo_Jugadores = %d, Maximo_Jugadores = %d, tid = %d, identificador = '%s', reglas = %d
+			 WHERE id_Modalidad_Juego = %d",
+			 $form_state[ 'values' ][ 'id_Plataforma' ], $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'nombre_juego' ], $form_state[ 'values' ][ 'minimo_jugadores' ], $form_state[ 'values' ][ 'maximo_jugadores' ], $term[ 'tid' ], $form_state['values']['identificador'], $form_state[ 'values' ][ 'reglas' ], $form_state[ 'values' ][ 'id_Modalidad_Juego' ]
 		);		
-	db_set_active( 'default' );
 	
 	drupal_set_message( "La modalidad de juego fué guardada satisfactoriamente" );
 	drupal_goto( "admin/base_datos_externa/modalidades" );

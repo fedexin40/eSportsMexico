@@ -47,10 +47,8 @@ function match_aceptar_submit($form, &$form_state) {
 		$node = node_load(array('nid' => arg(1)));
 	
 		//Cambia el estado del match en la base de datos
-		db_set_active('eSM');
-			db_query('UPDATE {Reto} SET Estado = %d WHERE nid_Reto = %d', PROGRAMADO, $node->nid);
-		db_set_active('default');
-		
+		db_query('UPDATE {eSM_Reto} SET Estado = %d WHERE nid_Reto = %d', PROGRAMADO, $node->nid);
+				
 		//Envía la notificación de que se aceptó el match al equipo creador
 	  //Primero obtenemos los datos de los capitanes de los equipos  
 		$home_team = node_load(array('nid' => $node->home_team));

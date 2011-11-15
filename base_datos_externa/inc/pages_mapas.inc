@@ -34,12 +34,10 @@ function mapas_admin_insertar_validate( $form, $form_state ) {
 function mapas_admin_insertar_submit( $form, $form_state ) {
 	$id_Modalidad_Juego = arg(3);
 	
-	db_set_active( 'eSM' );
-		db_query("INSERT INTO { Mapa }
-						 (Nombre, id_Modalidad_Juego)
-						 VALUES ( '%s', %d )",
-						 $form_state[ 'values' ][ 'title' ], $id_Modalidad_Juego);
-	db_set_active( 'default' );
+	db_query("INSERT INTO {eSM_Mapa }
+					 (Nombre, id_Modalidad_Juego)
+					 VALUES ( '%s', %d )",
+					 $form_state[ 'values' ][ 'title' ], $id_Modalidad_Juego);
 	
 	drupal_set_message( "El mapa fué insertado satisfactoriamente en esta modalidad" );
 	drupal_goto('admin/base_datos_externa/modalidades/'. $id_Modalidad_Juego .'/editar');
@@ -52,9 +50,8 @@ function mapa_admin_editar( ) {
 	$id_Modalidad = arg(3);
 	
 	//Hacemos la consulta para saber el nombre del mapa
-	db_set_active( 'eSM' );		
-		$result_set_Mapa = db_query( "SELECT * FROM {Mapa} WHERE {id_Mapa} = %d", $id_Mapa );
-	db_set_active( 'default' );
+	$result_set_Mapa = db_query( "SELECT * FROM {eSM_Mapa}
+								WHERE {id_Mapa} = %d", $id_Mapa );
 	
 	$Mapa = db_fetch_object( $result_set_Mapa );
 		
@@ -87,11 +84,9 @@ function mapa_admin_editar( ) {
  *	Sumbit para la forma de edición
  */
 function mapa_admin_editar_submit( $form, $form_state ) {		
-	db_set_active( 'eSM' );
-		db_query("UPDATE {Mapa} SET Nombre = '%s'
-						 WHERE id_Mapa = %d",
-						 $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'id_Mapa' ]);
-	db_set_active( 'default' );
+	db_query("UPDATE {eSM_Mapa} SET Nombre = '%s'
+					 WHERE id_Mapa = %d",
+					 $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'id_Mapa' ]);
 	
 	drupal_set_message( "Las modificaciones se guardaron correctamente" );
 	drupal_goto( "admin/base_datos_externa/modalidades/". $form_state['values']['id_Modalidad'] ."/editar" );
@@ -104,9 +99,7 @@ function mapa_admin_eliminar() {
 	$id_Modalidad = arg(3);
 	
 	//Hacemos la consulta para saber el nombre del mapa
-	db_set_active( 'eSM' );		
-		$mapa = db_fetch_object(db_query( "SELECT * FROM {Mapa} WHERE {id_Mapa} = %d", $id_Mapa ));
-	db_set_active( 'default' );
+	$mapa = db_fetch_object(db_query( "SELECT * FROM {eSM_Mapa} WHERE {id_Mapa} = %d", $id_Mapa ));
 	
 	return confirm_form (
 		$form,
@@ -125,9 +118,7 @@ function mapa_admin_eliminar_submit() {
 	$id_Modalidad = arg(3);
 	
 	//Hacemos la consulta para saber el nombre del mapa
-	db_set_active( 'eSM' );		
-		db_query( "DELETE FROM {Mapa} WHERE {id_Mapa} = %d", $id_Mapa );
-	db_set_active( 'default' );
+	db_query( "DELETE FROM {eSM_Mapa} WHERE {id_Mapa} = %d", $id_Mapa );
 	
 	drupal_set_message( "El mapa se ha borrado correctamente" );
 	drupal_goto( "admin/base_datos_externa/modalidades/". $id_Modalidad ."/editar" );

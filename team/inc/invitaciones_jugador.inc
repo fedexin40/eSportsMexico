@@ -11,13 +11,11 @@ function administrar_invitaciones( ) {
 	global $user;
 	
 	//Consulta para obtener todos los equipos donde tiene invitación
-	db_set_active(  'eSM' );
-		$invitaciones_result = db_query('SELECT * FROM { Equipo } AS { e }
-																		INNER JOIN { Integrantes_Equipo } AS { ie } ON ie.{ nid_Equipo } = e.{ nid_Equipo }
-																		INNER JOIN { Jugador } AS { j } ON j.{ id_Jugador } = ie.{ id_Jugador }
-																		WHERE ie.{ Estado }	= %d AND j.{ uid } = %d AND e.{ Estado } = %d',
-																		INVITADO, $user->uid, ACTIVO);
-	db_set_active(  'default' );
+		$invitaciones_result = db_query('SELECT * FROM {eSM_Equipo} AS { e }
+										INNER JOIN {eSM_Integrantes_Equipo } AS { ie } ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+										INNER JOIN {eSM_Jugador } AS { j } ON j.{ id_Jugador } = ie.{ id_Jugador }
+										WHERE ie.{ Estado }	= %d AND j.{ uid } = %d AND e.{ Estado } = %d',
+										INVITADO, $user->uid, ACTIVO);
 	
 	$count = 0;			//Contador de invitaciones
 	$options = array ();
@@ -98,22 +96,18 @@ function aceptar_invitacion_submit ($form, $form_state) {
 	global $user;
 	$equipo = node_load($form_state['values']['nid_Equipo']);	//Obtiene los datos del equipo para saber en que modalidad está inscrito
 	
-	db_set_active('eSM');
-		$jugador = db_fetch_object(db_query('SELECT * FROM {Jugador}
-																				WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
-																				$user->uid, $equipo->id_Modalidad_Juego_Temporada));
-	db_set_active('default');
+	$jugador = db_fetch_object(db_query('SELECT * FROM {eSM_Jugador}
+										WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
+										$user->uid, $equipo->id_Modalidad_Juego_Temporada));
 	
-	db_set_active('eSM');
-		db_query('UPDATE {Integrantes_Equipo} SET Estado = %d
+		db_query('UPDATE {eSM_Integrantes_Equipo} SET Estado = %d
 				 WHERE nid_Equipo = %d AND id_Jugador = %d',
 				 ACEPTADO, $form_state['values']['nid_Equipo'], $jugador->id_Jugador);
 		//Cambia el estado del jugador en la tabla de Jugadores
-		db_query('UPDATE {Jugador} SET Estado = %d
+		db_query('UPDATE {eSM_Jugador} SET Estado = %d
 				 WHERE id_Jugador = %d AND id_Modalidad_Juego_Temporada = %d',
 				 TIENE_EQUIPO, $jugador->id_Jugador, $equipo->id_Modalidad_Juego_Temporada);
-	db_set_active('default');
-		
+			
 	//Envía mensaje al capitán del equipo notificando que el usuario a aceptado su invitación
 	rules_invoke_event('invitacion_aceptada', $user, user_load(array('uid' => $equipo->uid)), $equipo->nid);
 	drupal_set_message( t( 'Te has unido al equipo.') );
@@ -145,18 +139,14 @@ function rechazar_invitacion_submit( $form, &$form_state ) {
 	$nid_Equipo = $form_state[ 'values' ][ 'nid_Equipo' ];
 	$equipo = node_load(array('nid' => $nid_Equipo));
 	
-	db_set_active('eSM');
-		$jugador = db_fetch_object(db_query('SELECT * FROM {Jugador}
-																				WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
-																				$user->uid, $equipo->id_Modalidad_Juego_Temporada));
-	db_set_active('default');
-	
-	db_set_active( 'eSM' );
-		db_query( 'UPDATE { Integrantes_Equipo }
-						 SET Estado = %d WHERE
-						 nid_Equipo = %d AND id_Jugador = %d)',
-						 RECHAZADO, $nid_Equipo, $jugador->id_Jugador);
-	db_set_active( 'default' );
+		$jugador = db_fetch_object(db_query('SELECT * FROM {eSM_Jugador}
+											WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
+											$user->uid, $equipo->id_Modalidad_Juego_Temporada));
+		
+		db_query( 'UPDATE {eSM_Integrantes_Equipo}
+				 SET Estado = %d WHERE
+				 nid_Equipo = %d AND id_Jugador = %d)',
+				 RECHAZADO, $nid_Equipo, $jugador->id_Jugador);
 	
 	drupal_set_message( t( 'Haz rechazado la solicitud del unirte al equipo '. $equipo->title .'.' ) );
 	//Notifica al capitán del equipo que el usuario ha rechazado la invitación
@@ -170,13 +160,11 @@ function administrar_solicitudes() {
 	global $user;
 	
 	//Consulta para obtener todos los equipos donde tiene invitación
-	db_set_active(  'eSM' );
-		$equipos_result = db_query('SELECT * FROM { Equipo } AS { e }
-																		INNER JOIN { Integrantes_Equipo } AS { ie } ON ie.{ nid_Equipo } = e.{ nid_Equipo }
-																		INNER JOIN { Jugador } AS { j } ON j.{ id_Jugador } = ie.{ id_Jugador }
-																		WHERE ie.{ Estado }	= %d AND j.{ uid } = %d AND e.{ Estado } = %d',
-																		SOLICITA, $user->uid, ACTIVO);
-	db_set_active(  'default' );
+		$equipos_result = db_query('SELECT * FROM {eSM_Equipo } AS { e }
+								   INNER JOIN {eSM_Integrantes_Equipo } AS { ie } ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+								   INNER JOIN {eSM_Jugador } AS { j } ON j.{ id_Jugador } = ie.{ id_Jugador }
+								   WHERE ie.{ Estado }	= %d AND j.{ uid } = %d AND e.{ Estado } = %d',
+								   SOLICITA, $user->uid, ACTIVO);
 	
 	$count = 0;			//Contador de invitaciones
 	$options = array ();
@@ -212,13 +200,11 @@ function administrar_equipos() {
 	global $user;
 	
 	//Consulta para obtener todos los equipos donde tiene invitación
-	db_set_active(  'eSM' );
-		$equipos_result = db_query('SELECT * FROM { Equipo } AS { e }
-																		INNER JOIN { Integrantes_Equipo } AS { ie } ON ie.{ nid_Equipo } = e.{ nid_Equipo }
-																		INNER JOIN { Jugador } AS { j } ON j.{ id_Jugador } = ie.{ id_Jugador }
-																		WHERE ie.{ Estado }	= %d AND j.{ uid } = %d AND e.{ Estado } = %d',
-																		ACEPTADO, $user->uid, ACTIVO);
-	db_set_active(  'default' );
+	$equipos_result = db_query('SELECT * FROM {eSM_Equipo } AS { e }
+							   INNER JOIN {eSM_Integrantes_Equipo } AS { ie } ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+							   INNER JOIN {eSM_Jugador } AS { j } ON j.{ id_Jugador } = ie.{ id_Jugador }
+							   WHERE ie.{ Estado }	= %d AND j.{ uid } = %d AND e.{ Estado } = %d',
+							   ACEPTADO, $user->uid, ACTIVO);
 	
 	$count = 0;			//Contador de invitaciones
 	$options = array ();
@@ -273,14 +259,12 @@ function team_drop() {
 function team_drop_validate($form, $form_state) {
 	global $user;
 	
-	db_set_active('eSM');
-		$jugador = db_fetch_object(db_query('SELECT * FROM {Integrates_Equipo} AS ie
-																			 INNER JOIN {Equipo} AS e ON ie.nid_Equipo = e.nid_Equpo
-																			 INNER JOIN {Jugador} AS j on ie.id_Jugador = j.id_Jugador
-																			 WHERE j.uid = %d AND e.nid_Equipo = %d',
-																			 $user->uid, $form_state['values']['nid_Equipo']));
-	db_set_active('default');
-	
+	$jugador = db_fetch_object(db_query('SELECT * FROM {eSM_Integrates_Equipo} AS ie
+										INNER JOIN {eSM_Equipo} AS e ON ie.nid_Equipo = e.nid_Equpo
+										INNER JOIN {eSM_Jugador} AS j on ie.id_Jugador = j.id_Jugador
+										WHERE j.uid = %d AND e.nid_Equipo = %d',
+										$user->uid, $form_state['values']['nid_Equipo']));
+		
 	if($jugador->Estado <> ACEPTADO)
 		form_set_error('nid_Equipo', t('No perteneces a la plantilla del equipo.'));
 }
@@ -290,22 +274,20 @@ function team_drop_validate($form, $form_state) {
 function team_drop_submit($form, $form_state) {
 	global $user;
 	
-	db_set_active('eSM');
 		//Obtiene los datos del jugador
-		$jugador = db_fetch_object(db_query('SELECT * FROM {Jugador} AS j
-																				INNER JOIN {Integrantes_Equipo} AS ie ON j.id_Jugador = ie.id_Jugador
-																				INNER JOIN {Equipo} AS e ON e.nid_Equipo = ie.nid_Equipo
-																				WHERE e.nid_Equipo = %d AND j.uid = %d',
-																				$form_state['values']['nid_Equipo'], $user->uid));
+		$jugador = db_fetch_object(db_query('SELECT * FROM {eSM_Jugador} AS j
+											INNER JOIN {eSM_Integrantes_Equipo} AS ie ON j.id_Jugador = ie.id_Jugador
+											INNER JOIN {eSM_Equipo} AS e ON e.nid_Equipo = ie.nid_Equipo
+											WHERE e.nid_Equipo = %d AND j.uid = %d',
+											$form_state['values']['nid_Equipo'], $user->uid));
 		//Actualiza la tabla de integrantes del equipo
-		db_query('UPDATE {Integrantes_Equipos}
+		db_query('UPDATE {eSM_Integrantes_Equipos}
 						 SET Estado = %d
 						 WHERE nid_Equipo = %d AND id_Jugador = %d',
 						 ABANDONO, $form_state['values']['nid_Equipo'], $jugador->id_Jugador);
 		//Actualiza el estado del jugador
-		db_query('UPDATE {Jugador}
+		db_query('UPDATE {eSM_Jugador}
 						 SET Estado = %d
 						 WHERE id_Jugador = %d',
 						 AGENTE_LIBRE, $jugador->id_Jugador);
-	db_set_active('default');
 }

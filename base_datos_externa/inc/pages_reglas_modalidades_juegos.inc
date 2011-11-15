@@ -10,9 +10,7 @@ function modalidad_juego_reglas( ) {
 	$id_Modalidad_Juego = arg(3);
 	$op = arg(5);
 	
-	db_set_active('eSM');
-		$reglas = db_fetch_object(db_query('SELECT * FROM {Reglas} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego));
-	db_set_active('default');
+	$reglas = db_fetch_object(db_query('SELECT * FROM {eSM_Reglas} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego));
 	
 	$form[ 'insertar' ][ 'file' ] = array (
 		'#type' => 'textfield',
@@ -54,21 +52,17 @@ function modalidad_juego_reglas_submit( $form, $form_state ) {
 	$op = arg(5);
 	
 	if($op == 'insertar') {
-		db_set_active( 'eSM' );
-			db_query ("INSERT INTO { Reglas }
-						(id_Modalidad_Juego, Contenido, Archivo)
-						VALUES (%d, '%s', '%s')",
-						$id_Modalidad_Juego, $form_state['values']['contenido'], $form_state['values']['file']);
-		db_set_active( 'default' );
+		db_query ("INSERT INTO {eSM_Reglas }
+					(id_Modalidad_Juego, Contenido, Archivo)
+					VALUES (%d, '%s', '%s')",
+					$id_Modalidad_Juego, $form_state['values']['contenido'], $form_state['values']['file']);
 	}
 	
 	if($op == 'editar') {
-		db_set_active( 'eSM' );
-			db_query ("UPDATE { Reglas }
-					   SET Contenido = '%s', Archivo = '%s'
-					   WHERE id_Modalidad_Juego = %d",
-					   $form_state['values']['contenido'], $form_state['values']['file'], $id_Modalidad_Juego);
-		db_set_active( 'default' );
+		db_query ("UPDATE {eSM_Reglas }
+				   SET Contenido = '%s', Archivo = '%s'
+				   WHERE id_Modalidad_Juego = %d",
+				   $form_state['values']['contenido'], $form_state['values']['file'], $id_Modalidad_Juego);
 	}
 	
 	drupal_set_message(t("Las reglas se guardaron satisfactoriamente en esta modalidad."));

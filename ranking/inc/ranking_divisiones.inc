@@ -1,9 +1,7 @@
 <?php
 
 function ranking_divisiones() {
-    db_set_active('eSM');
-        $divisiones = db_query('SELECT * FROM {Puntuacion_Divisiones}');
-    db_set_active('default');
+    $divisiones = db_query('SELECT * FROM {eSM_Puntuacion_Divisiones}');
     
     for ($i = 1; $i <= 5; $i++) {
         $division = db_fetch_array($divisiones);
@@ -49,20 +47,15 @@ function ranking_divisiones_submit ($form, $form_state) {
     //Borra los datos ingresados en la tabla para que no existan confusiones
     //dsm($form_state);
     
-    db_set_active('eSM');
-        db_query('TRUNCATE TABLE {Puntuacion_Divisiones}');
-    db_set_active('default');
+    db_query('TRUNCATE TABLE {eSM_Puntuacion_Divisiones}');
     
     for ($i = 1; $i <= 5; $i ++) {
-        db_set_active('eSM');
-            db_query('INSERT INTO {Puntuacion_Divisiones}
-                    (Division, Nombre, Jugadores)
-                    VALUES (%d, "%s", %d)',
-                    $i,
-                    $form_state['values']['Nombre_'. $i],
-                    $form_state['values']['Jugadores_'. $i]
-            );
-        db_set_active('default');
+        db_query('INSERT INTO {eSM_Puntuacion_Divisiones}
+                (Division, Nombre, Jugadores)
+                VALUES (%d, "%s", %d)',
+                $i,
+                $form_state['values']['Nombre_'. $i],
+                $form_state['values']['Jugadores_'. $i]);
     }
     
     drupal_set_message('Las divisiones se han guardado correctamente.');

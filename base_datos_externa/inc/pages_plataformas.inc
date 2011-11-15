@@ -10,9 +10,7 @@
 function plataforma_admin(  ) {
 	$output = '<div class="form_item">Panel de administración de las plataformas</div>';
 	
-	db_set_active( 'eSM' );
-		$result_set_Plataforma = db_query( "SELECT * FROM {Plataforma}" );	
-	db_set_active( 'default' );
+	$result_set_Plataforma = db_query( "SELECT * FROM {eSM_Plataforma}" );	
 	
 	//Primero pondremos un listado de plataformas disponibles
 	while( $Plataforma = db_fetch_object( $result_set_Plataforma ) ) {
@@ -32,19 +30,10 @@ function plataforma_admin(  ) {
  *	para la tabla plataforma
  */
 function plataforma_admin_insertar_submit( $form, $form_state ) {
-	db_set_active( 'eSM' );
-	
-	db_query
-	( 
-		"INSERT INTO { Plataforma } 
-		( 
-			Nombre
-		) 
-			VALUES ( '%s' )",
-			$form_state[ 'values' ][ 'title' ]
-	);
-	
-	db_set_active( 'default' );
+	db_query("INSERT INTO {eSM_Plataforma }
+			 (Nombre)
+			 VALUES ( '%s' )",
+			$form_state[ 'values' ][ 'title' ]);
 	
 	drupal_set_message( "La plataforma fué insertada satisfactoriamente" );
 	drupal_goto( "admin/base_datos_externa/plataformas" );
@@ -58,20 +47,13 @@ function plataforma_admin_insertar_submit( $form, $form_state ) {
 function plataforma_admin_editar( ) {
 	
 	$id_Plataforma = arg( 3 );
-	
-	
-	
-	db_set_active( 'eSM' );
-	$result_set_Plataforma = db_query( "SELECT * FROM {Plataforma} WHERE {Plataforma.id_Plataforma} = %d", $id_Plataforma );
-	db_set_active( 'default' );
-	
+
+	$result_set_Plataforma = db_query( "SELECT * FROM {eSM_Plataforma} WHERE {Plataforma.id_Plataforma} = %d", $id_Plataforma );
 	
 	//Primero pondremos un listado de plataformas disponibles
 	$Plataforma = db_fetch_object( $result_set_Plataforma );
-
 	
-	$form[ 'title' ] = array
-	(
+	$form[ 'title' ] = array (
 		'#type' => 'textfield',
 		'#title' => t('Nombre'),
 		'#required' => TRUE,
@@ -106,21 +88,10 @@ function plataforma_admin_editar( ) {
  *	Sumbit para la forma de edición
  */
 function plataforma_admin_editar_submit( $form, $form_state ) {
-	
-	db_set_active( 'eSM' );
-		
-	db_query
-	(
-		"UPDATE {Plataforma}
-		SET
-		Nombre = '%s'
-		WHERE
-		id_Plataforma = %d",
-		$form_state[ 'values' ][ 'title' ],
-		$form_state[ 'values' ][ 'id_Plataforma' ]
-	);
-			
-	db_set_active( 'default' );
+	db_query("UPDATE {eSM_Plataforma}
+			 SET Nombre = '%s'
+			 WHERE id_Plataforma = %d",
+			 $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'id_Plataforma' ]);
 	
 	drupal_set_message( "La plataforma fué guardada satisfactoriamente" );
 	drupal_goto( "admin/base_datos_externa/plataformas" );

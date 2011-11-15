@@ -8,26 +8,20 @@
  */
 function modalidades_temporada ( ) {
 	$id_Temporada = arg(3);
-	db_set_active('eSM');
-		$result = db_result(db_query('SELECT Estado FROM {Temporada} WHERE id_Temporada = %d', $id_Temporada));
-	db_set_active('default');
-	
+	$result = db_result(db_query('SELECT Estado FROM {eSM_Temporada} WHERE id_Temporada = %d', $id_Temporada));
+		
 	if ($result <> TEMPORADA_ACTIVA) {
 		drupal_set_message(t('No se pueden agregar modalidades a una temporada que no está activa'), 'error');
 		drupal_goto	('admin/base_datos_externa/temporada');
 	}
 	else {
-		db_set_active( 'eSM' );		
-			$result_set_Modalidad_Juego = db_query( "SELECT * FROM Modalidad_Juego" );
-		db_set_active( 'default' );
-		
+		$result_set_Modalidad_Juego = db_query( "SELECT * FROM {eSM_Modalidad_Juego}" );
+				
 		$count = 0;
 		while( $Modalidad_Juego = db_fetch_object( $result_set_Modalidad_Juego ) ) {
-			db_set_active('eSM');
-				$result = db_fetch_array(db_query('SELECT * FROM { Modalidad_Juego_Temporada }
-																				WHERE id_Modalidad_Juego = %d AND id_Temporada = %d',
-																				$Modalidad_Juego->id_Modalidad_Juego, $id_Temporada));
-			db_set_active('default');
+			$result = db_fetch_array(db_query('SELECT * FROM {eSM_Modalidad_Juego_Temporada }
+											  WHERE id_Modalidad_Juego = %d AND id_Temporada = %d',
+											  $Modalidad_Juego->id_Modalidad_Juego, $id_Temporada));
 			
 			if (!is_array($result)) {
 				++ $count;
@@ -72,12 +66,10 @@ function modalidades_temporada_submit( $form, $form_state ) {
   foreach( element_children($form_state['values']['checkboxes']) as $modalidad ) { 
     if ($form_state['values']['checkboxes'][$modalidad] != 0) {
       ++$count;
-      db_set_active('eSM');
-        db_query('INSERT INTO { Modalidad_Juego_Temporada }
-								 (id_Modalidad_Juego, id_Temporada)
-								 VALUES ( %d, %d )',
-								 $modalidad, $form_state[ 'values' ][ 'Temporada' ]);
-      db_set_active('default');
+	db_query('INSERT INTO {eSM_Modalidad_Juego_Temporada }
+			 (id_Modalidad_Juego, id_Temporada)
+			 VALUES ( %d, %d )',
+			 $modalidad, $form_state[ 'values' ][ 'Temporada' ]);
     }
   }
 
@@ -111,11 +103,9 @@ function desactivar_modalidades_temporada_submit( ) {
 	$id_temporada = arg(3);
 	$id_modalidad_juego = arg(5);
 	
-	db_set_active('eSM');
-		db_query('DELETE FROM {Modalidad_Juego_Temporada}
-						 WHERE id_Temporada = %d AND id_Modalidad_Juego = %d',
-						 $id_temporada, $id_modalidad_juego);
-	db_set_active('default');
+	db_query('DELETE FROM {eSM_Modalidad_Juego_Temporada}
+			 WHERE id_Temporada = %d AND id_Modalidad_Juego = %d',
+			 $id_temporada, $id_modalidad_juego);
 	
 	drupal_set_message('La modalidad seleccionada ha sido eliminada de la temporada actual.');
 	drupal_goto('admin/base_datos_externa/temporada');

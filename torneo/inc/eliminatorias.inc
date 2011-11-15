@@ -81,9 +81,9 @@ function torneo_eliminatorias ($node) {
 	    $data['Espacio'] = array('data' => array('&nbsp;'));
 	    //$data['Espacio2'] = array('data' => array('&nbsp;'));
 	    for ($w=1;$w<=$bracketSize;$w++) {
-			db_set_active('eSM');
-			  $mid = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d", $nid, $table, $w*2));
-			db_set_active('default');
+	  	  $mid = db_fetch_array(db_query("SELECT * FROM {eSM_Torneos_Brackets}
+										 WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d",
+										 $nid, $table, $w*2));
        		
           for ($t=0;$t<$front;$t++) {
               $data['Equipo'.$w.'Front'.$t]= array('data' => array('&nbsp;'));

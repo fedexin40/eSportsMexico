@@ -217,10 +217,11 @@ function match_form( &$node, $form_state ) {
  * y la agrega al objeto de tipo nodo para su reproducción o manejo
  */
 function match_load( $node ) {
-  db_set_active('eSM');
-	$reto = db_fetch_object(db_query( 'SELECT { * } FROM { Reto } AS { r } INNER JOIN { Inicio_Reto } AS { ir } ON { r.nid_Reto = ir.nid_Reto } WHERE { r.nid_Reto = %d }', $node->nid ) );
-  db_set_active('default');
-
+  $reto = db_fetch_object(db_query( 'SELECT { * } FROM {eSM_Reto } AS { r }
+								   INNER JOIN {eSM_Inicio_Reto } AS { ir }
+								   ON { r.nid_Reto = ir.nid_Reto }
+								   WHERE { r.nid_Reto = %d }', $node->nid ));
+  
   $node->Estado = $reto->Estado;
   $node->id_Modalidad_Juego_Temporada = $reto->id_Modalidad_Juego_Temporada;
   $node->Fecha_Inicio = $reto->Fecha_Inicio;
@@ -232,19 +233,15 @@ function match_load( $node ) {
   $node->Puntuacion_Inicial_Equipo_Visitante = $reto->Puntuacion_Inicial_Equipo_Visitante;
 
   if ($reto->Estado == COMPLETADO) {    //Si el estado del reto es completado entonces carga los datos adicionales de la tabla de Final_Reto
-    db_set_active('eSM');
-      $resultado = db_fetch_object(db_query('SELECT * FROM {Fin_Reto} WHERE nid_Reto = %d', $node->nid));
-    db_set_active('default');
-    
+    $resultado = db_fetch_object(db_query('SELECT * FROM {eSM_Fin_Reto} WHERE nid_Reto = %d', $node->nid));
+        
     $node->ganador = $resultado->nid_Equipo_Ganador;
     $node->Puntuacion_Final_Equipo_Local = $resultado->Puntuacion_Final_Equipo_Local;
     $node->Puntuacion_Final_Equipo_Visitante = $resultado->Puntuacion_Final_Equipo_Visitante;
   }
   elseif ($reto->Estado == CONFLICTO) {
-    db_set_active('eSM');
-      $pruebas = db_fetch_object(db_query('SELECT * FROM {Prueba} WHERE nid_Reto = %d', $node->nid));
-    db_set_active('default');
-    
+    $pruebas = db_fetch_object(db_query('SELECT * FROM {eSM_Prueba} WHERE nid_Reto = %d', $node->nid));
+        
     $node->Prueba_Local = $pruebas->Prueba_Jugador_Local;
     $node->Prueba_Visitante = $pruebas->Prueba_Jugador_Visitante;
   }
@@ -296,18 +293,16 @@ function match_validate($node, $form){
     form_set_error($node->Fecha, t('La fecha de un desafio no se puede programar con menos de 10 minutos de anticipacion ni con más de 15 días de anticipacion.'));
   
   //Revisa que los equipos no tengan desafíos programados 60 minutos antes o después del inicio de este desafío
-  db_set_active('eSM');
-    $partidos_local = db_result(db_query('SELECT COUNT(*) FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ie ON r.nid_Reto = ie.nid_Reto WHERE
-                               (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d)
-                               AND (Fecha_Inicio > %d AND Fecha_Inicio < %d)
-                               AND (Estado = %d)',
-                               $node->home_team, $node->home_team, ($fecha_incio - 60*60), ($fecha_incio + 60*60), PROGRAMADO));
-    $partidos_visitante = db_result(db_query('SELECT COUNT(*) FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ie ON r.nid_Reto = ie.nid_Reto WHERE
-                                   (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d)
-                                   AND (Fecha_Inicio > %d AND Fecha_Inicio < %d)
-                                   AND (Estado = %d)',
-                                   $node->away_team, $node->away_team, ($fecha_incio - 60*60), ($fecha_incio + 60*60), PROGRAMADO));
-  db_set_active('default');
+	$partidos_local = db_result(db_query('SELECT COUNT(*) FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ie ON r.nid_Reto = ie.nid_Reto
+										 WHERE (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d)
+										 AND (Fecha_Inicio > %d AND Fecha_Inicio < %d)
+										 AND (Estado = %d)',
+										 $node->home_team, $node->home_team, ($fecha_incio - 60*60), ($fecha_incio + 60*60), PROGRAMADO));
+    $partidos_visitante = db_result(db_query('SELECT COUNT(*) FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ie ON r.nid_Reto = ie.nid_Reto
+											 WHERE (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d)
+											 AND (Fecha_Inicio > %d AND Fecha_Inicio < %d)
+											 AND (Estado = %d)',
+											 $node->away_team, $node->away_team, ($fecha_incio - 60*60), ($fecha_incio + 60*60), PROGRAMADO));
   
   if ($partidos_local > 0) {
     form_set_error($node->home_Team, t('El equipo '. $local->title .' tiene un desafio programado que entra en conflicto con este desafio.'));
@@ -317,14 +312,12 @@ function match_validate($node, $form){
   }
   
   //Revisa que los equipos no tengan 3 desafíos en estado de conflicto
-  db_set_active('eSM');
-    $conflictos_local = db_result(db_query('SELECT COUNT(*) FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto WHERE
-                                 (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d) AND Estado = %d',
-                                 $node->home_team, $node->home_team, CONFLICTO));
-    $conflictos_visitante = db_result(db_query('SELECT COUNT(*) FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto WHERE
-                                     (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d) AND Estado = %d',
-                                     $node->away_team, $node->away_team, CONFLICTO));
-  db_set_active('default');
+    $conflictos_local = db_result(db_query('SELECT COUNT(*) FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+										   WHERE (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d) AND Estado = %d',
+										   $node->home_team, $node->home_team, CONFLICTO));
+    $conflictos_visitante = db_result(db_query('SELECT COUNT(*) FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+											   WHERE (nid_Equipo_Local = %d OR nid_Equipo_Visitante = %d) AND Estado = %d',
+											   $node->away_team, $node->away_team, CONFLICTO));
   
   if ($conflictos_local >= 3) {
     form_set_error($node->home_team, t('El equipo '. $local->title .' ha acumulado demasiados desafios en conflicto y no puede aceptar mas desafios.'));
@@ -370,19 +363,16 @@ function match_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
 function match_insert($node){
   $fecha_inicio = strtotime($node->Fecha);
   //add the extra details to database
-  db_set_active( 'eSM' );
-    db_query( "INSERT INTO { Reto } ( nid_Reto, id_Modalidad_Juego_Temporada, Numero_Rondas, Fecha_Inicio, Tipo, Estado )
+    db_query( "INSERT INTO {eSM_Reto } (nid_Reto, id_Modalidad_Juego_Temporada, Numero_Rondas, Fecha_Inicio, Tipo, Estado )
              VALUES (%d, %d, %d, %d, %d, %d )",
             $node->nid, $node->id_Modalidad_Juego_Temporada, $node->Numero_Rondas, $fecha_inicio, $node->Tipo, $node->Estado);
   
-    $puntuacion_local = db_fetch_object(db_query('SELECT Puntuacion FROM {Puntuacion} WHERE nid_Equipo = %d', $node->home_team));
-    $puntuacion_visitante = db_fetch_object(db_query('SELECT Puntuacion FROM {Puntuacion} WHERE nid_Equipo = %d', $node->away_team));
+    $puntuacion_local = db_fetch_object(db_query('SELECT Puntuacion FROM {eSM_Puntuacion} WHERE nid_Equipo = %d', $node->home_team));
+    $puntuacion_visitante = db_fetch_object(db_query('SELECT Puntuacion FROM {eSM_Puntuacion} WHERE nid_Equipo = %d', $node->away_team));
     
-    db_query('INSERT INTO {Inicio_Reto} (nid_Reto, nid_Equipo_Local, nid_Equipo_Visitante, Puntuacion_Inicial_Equipo_Local, Puntuacion_Inicial_Equipo_Visitante)
+    db_query('INSERT INTO {eSM_Inicio_Reto} (nid_Reto, nid_Equipo_Local, nid_Equipo_Visitante, Puntuacion_Inicial_Equipo_Local, Puntuacion_Inicial_Equipo_Visitante)
              VALUES (%d, %d, %d, %d, %d)',
              $node->nid, $node->home_team, $node->away_team, $puntuacion_local->Puntuacion, $puntuacion_visitante->Puntuacion);
-  
-  db_set_active( 'default' );
   
   //TODO: use this hook
   module_invoke_all( 'match_insert', $node );
@@ -421,11 +411,9 @@ function match_insert($node){
 function match_update($node){
   //update the extra details to database
     $fecha_inicio = strtotime($node->Fecha);
-  db_set_active( 'eSM' );
-    db_query( "UPDATE { Reto } SET Numero_Rondas = %d, Fecha_Inicio = %d, Tipo = %d, Estado = %d
+    db_query( "UPDATE {eSM_Reto } SET Numero_Rondas = %d, Fecha_Inicio = %d, Tipo = %d, Estado = %d
              WHERE nid_Reto = %d",
             $node->Numero_Rondas, $fecha_inicio, $node->Tipo, $node->Estado, $node->nid);
-  db_set_active( 'default' );
   
   //TODO: use this hook
   module_invoke_all( 'match_insert', $node );
@@ -452,20 +440,14 @@ function match_update($node){
 function match_delete($node){
   //delete the extra details
 	
-  db_set_active( 'eSM' );
-    $Reto = db_fetch_object( db_query( "SELECT * FROM { Reto } AS { r } WHERE { r.nid_Reto } = %d ", $node->nid ) );
-  db_set_active( 'default' );
+    $Reto = db_fetch_object( db_query( "SELECT * FROM {eSM_Reto } AS { r } WHERE { r.nid_Reto } = %d ", $node->nid ) );
   
-  db_set_active( 'eSM' );
-    db_query("DELETE FROM { Reto } WHERE nid_Reto = %d", $node->nid );
-    db_query('DELETE FROM {Inicio_Reto} WHERE nid_Reto = %d', $node->nid);
-    db_query('DELETE FROM {Fin_Reto} WHERE nid_Reto = %d', $node->nid);
-  db_set_active( 'default' );
-  
+    db_query("DELETE FROM {eSM_Reto } WHERE nid_Reto = %d", $node->nid );
+    db_query('DELETE FROM {eSM_Inicio_Reto} WHERE nid_Reto = %d', $node->nid);
+    db_query('DELETE FROM {eSM_Fin_Reto} WHERE nid_Reto = %d', $node->nid);
+    
   if ($Reto->Tipo == IS_TORNEO) {
-    db_set_active('eSM');
-	db_query('DELETE FROM {Retos_Torneos} WHERE nid_Reto = %d', $node->nid);
-    db_set_active('default');
+	db_query('DELETE FROM {eSM_Retos_Torneos} WHERE nid_Reto = %d', $node->nid);
     
     watchdog('error', t('Se ha borrado un desafio programado dentro de un torneo.')); 
   }
@@ -891,10 +873,8 @@ function match_block($op = 'list', $delta = 0, $edit = array()){
  *  $pruebas[away_team] = 'link';
  */
 function match_get_pruebas($nid_Reto) {
-    db_set_active('eSM');
-        $pruebas = db_fetch_array(db_query('SELECT * FROM {Prueba} WHERE nid_Reto = %d', $nid_Reto));
-    db_set_active('default');
-    
+    $pruebas = db_fetch_array(db_query('SELECT * FROM {eSM_Prueba} WHERE nid_Reto = %d', $nid_Reto));
+        
     return $pruebas;
 }
 /**
@@ -908,10 +888,10 @@ function match_get_pruebas($nid_Reto) {
  *  $pruebas[away_team] = 'link';
  */
 function match_get_modalidad_juego($nid_Reto) {
-    db_set_active('eSM');
-        $result = db_fetch_array(db_query('SELECT {id_Modalidad_Juego } FROM {Modalidad_Juego_Temporada} AS mj INNER JOIN {Reto} AS r ON mj.id_Modalidad_Juego_Temporada = r.id_Modalidad_Juego_Temporada WHERE nid_Reto = %d', $nid_Reto));
-    db_set_active('default');
-    
+    $result = db_fetch_array(db_query('SELECT id_Modalidad_Juego FROM {eSM_Modalidad_Juego_Temporada} AS mj
+									  INNER JOIN {eSM_Reto} AS r ON mj.id_Modalidad_Juego_Temporada = r.id_Modalidad_Juego_Temporada
+									  WHERE nid_Reto = %d', $nid_Reto));
+        
     return $result['id_Modalidad_Juego'];
 }
 /**
@@ -941,9 +921,7 @@ function _match_asignar_reglas ($nid_Reto, $numero_rondas) {
         //$mapa_regla = array_shift($mapas);
         $modo_regla = array_shift($modos);
         
-        db_set_active('eSM');
-            db_query('INSERT INTO {Regla} (nid_Reto, id_Modo_Juego) VALUES (%d, %d)', $nid_Reto, $modo_regla);
-        db_set_active('default');
+		db_query('INSERT INTO {eSM_Regla} (nid_Reto, id_Modo_Juego) VALUES (%d, %d)', $nid_Reto, $modo_regla);
     }
 }
 /**
@@ -957,10 +935,8 @@ function _match_asignar_reglas ($nid_Reto, $numero_rondas) {
  */
 function _match_obtener_reglas ($nid_Reto) {
     //Obtiene todas las reglas asignadas al partido de la base de datos
-    db_set_active('eSM');
-        $result = db_query('SELECT * FROM {Regla} WHERE nid_Reto = %d', $nid_Reto);
-    db_set_active('default');
-    
+    $result = db_query('SELECT * FROM {eSM_Regla} WHERE nid_Reto = %d', $nid_Reto);
+        
     $i = 0;
     while ($regla = db_fetch_object($result)) {
         ++$i;
@@ -982,10 +958,9 @@ function _match_obtener_reglas ($nid_Reto) {
  *  NULL en caso de que el equipo no haya reportado nada todaví
  */
 function _match_get_team_resultado ($nid_Reto, $nid_Equipo) {
-	db_set_active('eSM');
-		$reporte = db_fetch_object(db_query('SELECT * FROM {Reporte_Reto} WHERE nid_Reto = %d AND nid_Equipo = %d', $nid_Reto, $nid_Equipo));
-	db_set_active('default');
-    
+	$reporte = db_fetch_object(db_query('SELECT * FROM {eSM_Reporte_Reto}
+										WHERE nid_Reto = %d AND nid_Equipo = %d', $nid_Reto, $nid_Equipo));
+	    
     return $reporte;
 }
 /**
@@ -1030,10 +1005,8 @@ function _match_check_match($nid_Reto) {
  *   Estado
  */
 function _match_update_match($nid_Reto, $estado) {
-    db_set_active('eSM');
-      db_query('UPDATE {Reto} SET Estado = %d WHERE nid_Reto = %d', $estado, $nid_Reto);
-    db_set_active('default');
-    
+    db_query('UPDATE {eSM_Reto} SET Estado = %d WHERE nid_Reto = %d', $estado, $nid_Reto);
+        
     //TODO: Ejectuar acciones o enviar notificaciones de acuerdo al estado del match
 }
 /**
@@ -1051,17 +1024,13 @@ function _match_end_match($nid_Reto, $nid_Ganador) {
     
     if ($reto->Tipo == IS_TORNEO) {
       //Para los desafios de torneos, las puntuaciones finales son iguales a las puntuaciones iniciales
-      db_set_active('eSM');
-        db_query('INSERT INTO {Fin_Reto}
+        db_query('INSERT INTO {eSM_Fin_Reto}
                  (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Equipo_Ganador)
                  VALUES (%d, %d, %d, %d)',
                  $nid_Reto, $reto->Puntuacion_Inicial_Equipo_Local, $reto->Puntuacion_Inicial_Equipo_Visitante, $nid_Ganador);
-      db_set_active('default');
       
       //Obtiene el torneo del que forma parte el desafio
-      db_set_active('eSM');
-        $Torneo = db_fetch_object(db_query('SELECT * FROM {Retos_Torneos} WHERE nid_Reto = %d', $nid_Reto));
-      db_set_active('default');
+        $Torneo = db_fetch_object(db_query('SELECT * FROM {eSM_Retos_Torneos} WHERE nid_Reto = %d', $nid_Reto));
       
       //Actualiza los brackets del torneo
       _torneo_update_bracket($Torneo->nid_Torneo, $nid_Ganador);
@@ -1083,12 +1052,10 @@ function _match_end_match($nid_Reto, $nid_Ganador) {
       $puntuacion_visitante = _ranking_get_team_puntuacion($reto->nid_Equipo_Visitante);
       
       //Guarda los datos en Fin_Reto
-      db_set_active('eSM');
-        db_query('INSERT INTO {Fin_Reto}
+        db_query('INSERT INTO {eSM_Fin_Reto}
                  (nid_Reto, Puntuacion_Final_Equipo_Local, Puntuacion_Final_Equipo_Visitante, nid_Equipo_Ganador)
                  VALUES (%d, %d, %d, %d)',
                  $nid_Reto, $puntuacion_local->Puntuacion, $puntuacion_visitante->Puntuacion, $nid_Ganador);
-      db_set_active('default');
     }
     
     //Actualiza el estado del reto a COMPLETADO
@@ -1106,9 +1073,9 @@ function _match_end_match($nid_Reto, $nid_Ganador) {
               3 => 'Juego sucio o trampas',
  */
 function _match_crear_reporte_mala_conducta ($nid_Reto, $nid_Equipo, $conducta) {
-  db_set_active('eSM');
-    db_query('INSERT INTO {Reto_Conducta} (nid_Reto, nid_Equipo, Reporte, Estado) VALUES (%d, %d, %d, %d)', $nid_Reto, $nid_Equipo, $conducta, 0);
-  db_set_active('default');
+    db_query('INSERT INTO {eSM_Reto_Conducta}
+			 (nid_Reto, nid_Equipo, Reporte, Estado) VALUES (%d, %d, %d, %d)',
+			 $nid_Reto, $nid_Equipo, $conducta, 0);
   
   //TODO: Mandar un mensaje al coordinador deportivo para que revise el estado del reporte.
 }
@@ -1155,12 +1122,10 @@ function _match_display_reputation($nid) {
  *  mysql object
  */
 function _match_get_team_match_list ($nid_Equipo, $criterio) {
-  db_set_active('eSM');
-    $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+    $query = db_query('SELECT * FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
                       WHERE (ir.nid_Equipo_Local = %d OR ir.nid_Equipo_Visitante = %d) AND r.Estado = %d
 					  ORDER BY Fecha_Inicio DESC',
                       $nid_Equipo, $nid_Equipo, $criterio);
-  db_set_active('default');
   
   return $query;
 }
@@ -1175,17 +1140,14 @@ function _match_get_team_match_list ($nid_Equipo, $criterio) {
  *  mysql object
  */
 function _match_modalidad_get_match_list ($id_Modalidad_Juego_Temporada, $criterio, $offset = NULL) {
-  $query = 'SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+  $query = 'SELECT * FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
                       WHERE id_Modalidad_Juego_Temporada = %d AND r.Estado = %d
 					  ORDER BY Fecha_Inicio DESC';
   if ($offset)
 	$query .= ' LIMIT '. $offset .', 2';
   
-  db_set_active('eSM');
-    $result = db_query($query,
-                      $id_Modalidad_Juego_Temporada, $criterio);
-  db_set_active('default');
-  
+    $result = db_query($query, $id_Modalidad_Juego_Temporada, $criterio);
+    
   return $result;
 }
 /**
@@ -1199,13 +1161,11 @@ function _match_modalidad_get_match_list ($id_Modalidad_Juego_Temporada, $criter
  *  mysql object
  */
 function _match_torneo_get_match_list ($nid_Torneo, $criterio) {
-  db_set_active('eSM');
-    $query = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
-					  INNER JOIN {Retos_Torneos} AS rt ON r.nid_Reto = rt.nid_Reto
+    $query = db_query('SELECT * FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+					  INNER JOIN {eSM_Retos_Torneos} AS rt ON r.nid_Reto = rt.nid_Reto
                       WHERE nid_Torneo = %d AND r.Estado = %d
 					  ORDER BY Ronda DESC',
                       $nid_Torneo, $criterio);
-  db_set_active('default');
   
   return $query;
 }
@@ -1218,9 +1178,7 @@ function _match_torneo_get_match_list ($nid_Torneo, $criterio) {
  *  Objeto con el resulatdo de un partido
  */
 function _match_get_resultado ($nid_Reto) {
-  db_set_active('eSM');
-    $resultado = db_fetch_object(db_query('SELECT * FROM {Fin_Reto} WHERE nid_Reto = %d', $nid_Reto));
-  db_set_active('default');
+    $resultado = db_fetch_object(db_query('SELECT * FROM {eSM_Fin_Reto} WHERE nid_Reto = %d', $nid_Reto));
   
   return $resultado;
 }

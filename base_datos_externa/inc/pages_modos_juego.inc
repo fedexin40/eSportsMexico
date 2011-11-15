@@ -34,12 +34,9 @@ function modos_juego_admin_insertar_validate( $form, $form_state ) {
 function modos_juego_admin_insertar_submit( $form, $form_state ) {
 	$id_Modalidad_Juego = arg(3);
 	
-	db_set_active( 'eSM' );
-		db_query ("INSERT INTO { Modo_Juego }
-							(Nombre, id_Modalidad_Juego)
-							VALUES ( '%s', %d )",
-							$form_state[ 'values' ][ 'title' ], $id_Modalidad_Juego);
-	db_set_active( 'default' );
+	db_query ("INSERT INTO {eSM_Modo_Juego }
+			  (Nombre, id_Modalidad_Juego)VALUES ( '%s', %d )",
+			  $form_state[ 'values' ][ 'title' ], $id_Modalidad_Juego);
 	
 	drupal_set_message( "El modo de juego fué insertado satisfactoriamente en esta modalidad" );
 	drupal_goto('admin/base_datos_externa/modalidades/'. $id_Modalidad_Juego .'/editar');
@@ -52,10 +49,8 @@ function modos_juego_admin_editar( ) {
 	$id_Modo_Juego = arg( 5 );
 
 	//Hacemos la consulta para saber el nombre del modo de juego
-	db_set_active( 'eSM' );		
-		$result_set_modos_juego = db_query( "SELECT * FROM {Modo_Juego} WHERE {id_Modo_Juego} = %d", $id_Modo_Juego );
-	db_set_active( 'default' );
-	
+	$result_set_modos_juego = db_query( "SELECT * FROM {eSM_Modo_Juego} WHERE {id_Modo_Juego} = %d", $id_Modo_Juego );
+		
 	$modos_juego = db_fetch_object( $result_set_modos_juego );
 	
 	$form[ 'title' ] = array (
@@ -87,12 +82,10 @@ function modos_juego_admin_editar( ) {
  *	Sumbit para la forma de edición
  */
 function modos_juego_admin_editar_submit( $form, $form_state ) {		
-	db_set_active( 'eSM' );
-		db_query("UPDATE {Modo_Juego}
-						 SET Nombre = '%s'
-						 WHERE id_Modo_juego = %d",
-						 $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'id_Modo_Juego' ]);
-	db_set_active( 'default' );
+	db_query("UPDATE {eSM_Modo_Juego}
+			 SET Nombre = '%s'
+			 WHERE id_Modo_juego = %d",
+			 $form_state[ 'values' ][ 'title' ], $form_state[ 'values' ][ 'id_Modo_Juego' ]);
 	
 	drupal_set_message( "El modo de juego fué insertado satisfactoriamente en esta modalidad" );
 	drupal_goto( "admin/base_datos_externa/modalidades/". $form_state['values']['id_Modalidad'] ."/editar" );
@@ -105,10 +98,8 @@ function modos_juego_admin_eliminar() {
 	$id_Modalidad = arg(3);
 	
 	//Hacemos la consulta para saber el nombre del mapa
-	db_set_active( 'eSM' );		
-		$modo = db_fetch_object(db_query( "SELECT * FROM {Modo_Juego} WHERE {id_Modo_Juego} = %d", $id_Modo_Juego ));
-	db_set_active( 'default' );
-	
+	$modo = db_fetch_object(db_query( "SELECT * FROM {eSM_Modo_Juego} WHERE {id_Modo_Juego} = %d", $id_Modo_Juego ));
+		
 	return confirm_form (
 		$form,
 		t('¿Realmente quieres borrar el modo de juego '. $modo->Nombre .'?'),
@@ -126,10 +117,8 @@ function modos_juego_admin_eliminar_submit() {
 	$id_Modalidad = arg(3);
 	
 	//Hacemos la consulta para saber el nombre del mapa
-	db_set_active( 'eSM' );		
-		db_query( "DELETE FROM {Modo_Juego} WHERE {id_Modo_Juego} = %d", $id_Modo_Juego );
-	db_set_active( 'default' );
-	
+	db_query( "DELETE FROM {eSM_Modo_Juego} WHERE {id_Modo_Juego} = %d", $id_Modo_Juego );
+		
 	drupal_set_message( "El mapa se ha borrado correctamente" );
 	drupal_goto( "admin/base_datos_externa/modalidades/". $id_Modalidad ."/editar" );
 }

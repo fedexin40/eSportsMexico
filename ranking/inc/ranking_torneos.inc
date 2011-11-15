@@ -1,10 +1,8 @@
 <?php
 
 function ranking_torneos() {
-    db_set_active('eSM');
-        $puntuaciones = db_query('SELECT * FROM {Puntuacion_Torneos}');
-    db_set_active('default');
-    
+    $puntuaciones = db_query('SELECT * FROM {eSM_Puntuacion_Torneos}');
+        
     for ($i = 0; $i < 5; $i++) {
         $puntuacion = db_fetch_array($puntuaciones);
             
@@ -114,31 +112,24 @@ function ranking_torneos_validate ($form, $form_state) {
  */
 function ranking_torneos_submit ($form, $form_state) {
     //Borra los datos ingresados en la tabla para que no existan confusiones
-    //dsm($form_state);
-    
-    db_set_active('eSM');
-        db_query('TRUNCATE TABLE {Puntuacion_Torneos}');
-    db_set_active('default');
-    
+    db_query('TRUNCATE TABLE {eSM_Puntuacion_Torneos}');
+        
     for ($i = 0; $i < 5; $i ++) {
-        db_set_active('eSM');
-            db_query('INSERT INTO {Puntuacion_Torneos}
-                    (Inscritos, `1`, `2`, `4`, `8`, `16`, `32`, `64`, `128`, `256`, `512`, `1024`)
-                    VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)',
-                    $form_state['values']['Inscritos_'. $i],
-                    $form_state['values']['1_'. $i],
-                    $form_state['values']['2_'. $i],
-                    $form_state['values']['4_'. $i],
-                    $form_state['values']['8_'. $i],
-                    $form_state['values']['16_'. $i],
-                    $form_state['values']['32_'. $i],
-                    $form_state['values']['64_'. $i],
-                    $form_state['values']['128_'. $i],
-                    $form_state['values']['256_'. $i],
-                    $form_state['values']['512_'. $i],
-                    $form_state['values']['1024_'. $i]
-            );
-        db_set_active('default');
+        db_query('INSERT INTO {eSM_Puntuacion_Torneos}
+                (Inscritos, `1`, `2`, `4`, `8`, `16`, `32`, `64`, `128`, `256`, `512`, `1024`)
+                VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)',
+                $form_state['values']['Inscritos_'. $i],
+                $form_state['values']['1_'. $i],
+                $form_state['values']['2_'. $i],
+                $form_state['values']['4_'. $i],
+                $form_state['values']['8_'. $i],
+                $form_state['values']['16_'. $i],
+                $form_state['values']['32_'. $i],
+                $form_state['values']['64_'. $i],
+                $form_state['values']['128_'. $i],
+                $form_state['values']['256_'. $i],
+                $form_state['values']['512_'. $i],
+                $form_state['values']['1024_'. $i]);
     }
     
     drupal_set_message('Las puntuaciones se han guardado correctamente.');

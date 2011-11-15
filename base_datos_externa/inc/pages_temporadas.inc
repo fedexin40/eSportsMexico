@@ -8,10 +8,8 @@
  * as the name in the file, and inserting in it too.
  */
 function temporada_admin(  ) {
-	db_set_active( 'eSM' );
-		$result_set_Temporada = db_query( "SELECT * FROM {Temporada}" );	
-	db_set_active( 'default' );
-
+	$result_set_Temporada = db_query( "SELECT * FROM {eSM_Temporada}" );	
+	
 	$Existe_Temporada_Activa = 0;
 
 	while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
@@ -26,10 +24,8 @@ function temporada_admin(  ) {
 	}
 	else {
 		//No hay temporadas activas en la base de datos
-		db_set_active( 'eSM' );		
-			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE Estado <> %d", TEMPORADA_CERRADA );
-		db_set_active( 'default' );
-		
+		$result_set_Temporada = db_query( "SELECT * FROM {eSM_Temporada} WHERE Estado <> %d", TEMPORADA_CERRADA );
+				
 		$output = '<p>No existe ninguna temporada activa actualemente.</p><p>Activa una temporada o crea una temporada nueva utilizando los enlaces de esta página</p>';
 		$output .= '<fieldset class="collapsible"><legend>Temporadas Disponibles</legend>';
 		
@@ -61,10 +57,8 @@ function temporada_admin(  ) {
  * Despliega la información de la temporada activa
  */
 function temporada_activa_listar () {
-		db_set_active( 'eSM' );
-			$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE {Temporada.Estado} = %d", TEMPORADA_ACTIVA );
-		db_set_active( 'default' );
-		
+	$result_set_Temporada = db_query( "SELECT * FROM {eSM_Temporada} WHERE {Temporada.Estado} = %d", TEMPORADA_ACTIVA );
+			
 		$Temporada = db_fetch_object( $result_set_Temporada );
 					
 		$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
@@ -84,13 +78,11 @@ function temporada_activa_listar () {
 		$output .= l( t( 'Añadir Temporada' ), 'admin/base_datos_externa/temporada/insertar');
 		$output .= '</fieldset>';
 		
-		db_set_active( 'eSM' );
-			$modalidades = db_query( "SELECT * FROM {Modalidad_Juego_Temporada} AS mjt
-																											 INNER JOIN {Modalidad_Juego} AS mj
-																											 ON mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego
-																											 WHERE id_Temporada = %d",
-																											 $Temporada->id_Temporada);
-		db_set_active( 'default' );
+		$modalidades = db_query( "SELECT * FROM {eSM_Modalidad_Juego_Temporada} AS mjt
+								INNER JOIN {eSM_Modalidad_Juego} AS mj
+								ON mjt.id_Modalidad_Juego = mj.id_Modalidad_Juego
+								WHERE id_Temporada = %d",
+								$Temporada->id_Temporada);
 		$count = 0;
 		//Primero pondremos un listado de modalidades disponibles
 		while( $modalidad = db_fetch_object( $modalidades) ) {
@@ -125,9 +117,8 @@ function temporada_admin_editar( ) {
 	
 	$id_Temporada = arg( 4 );
 	
-	db_set_active( 'eSM' );
-		$result_set_Temporada = db_query( "SELECT * FROM {Temporada} WHERE {Temporada.id_Temporada} = %d", $id_Temporada );
-	db_set_active( 'default' );
+	$result_set_Temporada = db_query( "SELECT * FROM {eSM_Temporada} WHERE {Temporada.id_Temporada} = %d", $id_Temporada );
+
 	$Temporada = db_fetch_object( $result_set_Temporada );
 	
 	$fecha_inicio = timestamp_to_string( $Temporada->Fecha_Inicio );
@@ -184,13 +175,10 @@ function temporada_admin_editar_submit( $form, $form_state ) {
 	$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
 	$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
 	
-	db_set_active( 'eSM' );
-		db_query 	("UPDATE {Temporada} SET
-							Nombre = '%s', Fecha_Inicio = %d, Fecha_Fin = %d
-							WHERE id_Temporada = %d",
-							$form_state[ 'values' ][ 'title' ], $temporada_inicio, $temporada_fin, $form_state[ 'values' ][ 'id_Temporada' ]
-						);
-	db_set_active( 'default' );
+	db_query("UPDATE {eSM_Temporada} SET
+			 Nombre = '%s', Fecha_Inicio = %d, Fecha_Fin = %d
+			 WHERE id_Temporada = %d",
+			 $form_state[ 'values' ][ 'title' ], $temporada_inicio, $temporada_fin, $form_state[ 'values' ][ 'id_Temporada' ]);
 	
 	drupal_set_message('Se han guardado los cambios');
 	drupal_goto( "admin/base_datos_externa/temporada" );
@@ -200,10 +188,8 @@ function temporada_admin_editar_submit( $form, $form_state ) {
  */
 function temporadas_admin_listar( ) {
 	$output = '';
-	db_set_active( 'eSM' );
-		$temporada = db_fetch_object(db_query("SELECT * FROM {Temporada} WHERE Estado = %d LIMIT 1", TEMPORADA_ACTIVA));
-	db_set_active( 'default' );
-	
+	$temporada = db_fetch_object(db_query("SELECT * FROM {eSM_Temporada} WHERE Estado = %d LIMIT 1", TEMPORADA_ACTIVA));
+		
 	if(is_object($temporada)) {	//Si hay una temporada activa desplegamos su información
 		$header = array(t('Nombre'), t('Fecha Inicio'), t('Fecha Fin'));
 		$rows = array(array($temporada->Nombre, timestamp_to_string( $temporada->Fecha_Inicio ), timestamp_to_string( $temporada->Fecha_Inicio )));
@@ -211,9 +197,8 @@ function temporadas_admin_listar( ) {
 	}
 	
 	//Primero pondremos un listado de las temporadas inactivas
-	db_set_active( 'eSM' );
-		$result_set_Temporada = db_query("SELECT * FROM {Temporada} WHERE Estado = %d ORDER BY Fecha_Inicio ASC", TEMPORADA_INACTIVA);
-	db_set_active( 'default' );	
+	$result_set_Temporada = db_query("SELECT * FROM {eSM_Temporada} WHERE Estado = %d ORDER BY Fecha_Inicio ASC", TEMPORADA_INACTIVA);
+	
 	$rows = array();
 	while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
 		$row = array();
@@ -233,9 +218,8 @@ function temporadas_admin_listar( ) {
 	}
 	
 	//Finalizamos con un listado de todas las temporadas pasadas
-	db_set_active( 'eSM' );
-		$result_set_Temporada = db_query("SELECT * FROM {Temporada} WHERE Estado = %d ORDER BY Fecha_Inicio DESC", TEMPORADA_CERRADA);
-	db_set_active( 'default' );	
+	$result_set_Temporada = db_query("SELECT * FROM {eSM_Temporada} WHERE Estado = %d ORDER BY Fecha_Inicio DESC", TEMPORADA_CERRADA);
+	
 	$rows = array();
 	while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
 		$row = array();
@@ -313,13 +297,10 @@ function temporadas_admin_insertar_submit( $form, $form_state ) {
 	$temporada_inicio = string_to_timestamp( $form_state[ 'values' ][ 'fecha_inicio' ] );
 	$temporada_fin = string_to_timestamp( $form_state[ 'values' ][ 'fecha_fin' ] );
 	
-	db_set_active( 'eSM' );
-		db_query	("INSERT INTO { Temporada }
-							 (Nombre,  Fecha_Inicio,  Fecha_Fin) 
-								VALUES ( '%s', %d, %d )",
-								$form_state[ 'values' ][ 'title' ], $temporada_inicio, $temporada_fin
-							);
-	db_set_active( 'default' );
+	db_query("INSERT INTO {eSM_Temporada }
+			 (Nombre,  Fecha_Inicio,  Fecha_Fin)
+			 VALUES ( '%s', %d, %d )",
+			 $form_state[ 'values' ][ 'title' ], $temporada_inicio, $temporada_fin);
 	
 	drupal_set_message( "La temporada fué insertada satisfactoriamente" );
 	drupal_goto( "admin/base_datos_externa/temporada" );
@@ -346,9 +327,7 @@ function temporadas_admin_insertar_validate( $form, $form_state ) {
 		form_set_error( 'fecha_inicio', t( 'La fecha de inicio debe ser mayor o igual que la fecha actual' ) );
 	}
 	else {
-		db_set_active( 'eSM' );
-		$result_set_Temporada = db_query( "SELECT * FROM {Temporada} ORDER BY Fecha_Inicio ASC" );
-		db_set_active( 'default' );
+		$result_set_Temporada = db_query( "SELECT * FROM {eSM_Temporada} ORDER BY Fecha_Inicio ASC" );
 		
 		//Primero pondremos un listado de temporadas disponibles
 		while( $Temporada = db_fetch_object( $result_set_Temporada ) ) {
@@ -384,14 +363,12 @@ function temporada_admin_desactivar( ) {
  */
 function temporada_admin_desactivar_submit( ) {
 	$id_Temporada = arg( 4 );
+	
+	db_query ("UPDATE {eSM_Temporada}
+			  SET { Estado } =  %d
+			  WHERE { Temporada.id_Temporada} = %d",
+			  TEMPORADA_CERRADA, $id_Temporada);			
 
-	db_set_active( 'eSM' );
-		db_query ("UPDATE { Temporada }
-							SET { Estado } =  %d
-							WHERE { Temporada.id_Temporada} = %d",
-							TEMPORADA_CERRADA, $id_Temporada
-							);			
-	db_set_active( 'default' );
 	//TODO: Establecer una serie de acciones a realizar cuando se cierra la temporada
 	drupal_set_message( "Has cerrado la temporada." );
 	drupal_goto( "admin/base_datos_externa/temporada" );		
@@ -415,13 +392,10 @@ function temporada_admin_activar( ) {
 function temporada_admin_activar_submit( ) {
 	$id_Temporada = arg( 4 );
 	
-	db_set_active( 'eSM' );
-		db_query ("UPDATE { Temporada }
-							SET { Estado } =  %d
-							WHERE { Temporada.id_Temporada} = %d",
-							TEMPORADA_ACTIVA, $id_Temporada
-							);			
-	db_set_active( 'default' );
+	db_query ("UPDATE {eSM_Temporada}
+			  SET { Estado } =  %d
+			  WHERE { Temporada.id_Temporada} = %d",
+			  TEMPORADA_ACTIVA, $id_Temporada);			
 	
 	drupal_set_message( "La temporada ha sido activada corrrectamente." );
 	drupal_goto( "admin/base_datos_externa/temporada" );
@@ -432,11 +406,9 @@ function temporada_admin_activar_submit( ) {
 function temporada_admin_activar_validate( ) {
 	$id_Temporada = arg( 4 );
 	
-	db_set_active( 'eSM' );
-		$result = db_result(db_query ("SELECT count(*) FROM {Temporada}
-							WHERE { Estado } = %d",
-							TEMPORADA_ACTIVA));			
-	db_set_active( 'default' );
+	$result = db_result(db_query ("SELECT count(*) FROM {eSM_Temporada}
+								  WHERE { Estado } = %d",
+								  TEMPORADA_ACTIVA));			
 	
 	if ($result <> 0)
 		form_set_error(NULL, t('Ya existe una temporada activa.'));

@@ -4,10 +4,8 @@
  */ 
 function _torneo_signup_update_equipos () {
   //Selecciona todos los torneos para los que todavía no se han creado brackets
-  db_set_active ('eSM');
-    $result = db_query('SELECT * FROM {Torneos} WHERE Estado = %d', FUTURO);
-  db_set_active ('default');
-  
+  $result = db_query('SELECT * FROM {eSM_Torneos} WHERE Estado = %d', FUTURO);
+    
   while ($torneo = db_fetch_object($result)) {
     
     $modalidad = get_modalidad($torneo->id_Modalidad_Juego_Temporada);    //Obtiene los datos de la modalidad

@@ -20,10 +20,8 @@ function _match_cron_reportes () {
   $fecha = time() - ($horas * 60 * 60);
   
   //Obtiene una lista de partidos con más de 3 horas de programado y que continúan en estado de programado
-  db_set_active('eSM');
-    $retos = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
-                         WHERE Estado = %d AND Fecha_Inicio <= %d', PROGRAMADO, $fecha);
-  db_set_active('default');
+  $retos = db_query('SELECT * FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+                       WHERE Estado = %d AND Fecha_Inicio <= %d', PROGRAMADO, $fecha);
   
   while ($reto = db_fetch_object($retos)) {
     $reporte_equipo_local = _match_get_team_resultado($reto->nid_Reto, $reto->nid_Equipo_Local);
@@ -83,14 +81,10 @@ function _match_cron_cancelar_desafios_no_aceptados () {
   $fecha = time() + ($minutos * 60);
   
   //Obtiene una lista de los desafíos que todavía no han sido aceptados
-  db_set_active('eSM');
-    $retos = db_query('SELECT * FROM {Reto} AS r INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
-                         WHERE Estado = %d AND Fecha_Inicio <= %d', CREADO, $fecha);
-  db_set_active('default');
+  $retos = db_query('SELECT * FROM {eSM_Reto} AS r INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+                       WHERE Estado = %d AND Fecha_Inicio <= %d', CREADO, $fecha);
   
   while ($reto = db_fetch_object($retos)) {
-    db_set_active('eSM');
-      db_query('UPDATE {Reto} SET Estado = %d WHERE nid_Reto = %d', CANCELADO, $reto->nid_Reto);
-    db_set_active('default');
+    db_query('UPDATE {eSM_Reto} SET Estado = %d WHERE nid_Reto = %d', CANCELADO, $reto->nid_Reto);
   }
 }

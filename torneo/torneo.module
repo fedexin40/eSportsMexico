@@ -217,9 +217,7 @@ function torneo_theme () {
  * 		NULL si no está definido el torneo
  */
 function get_settings_torneo ($nid) {
-  db_set_active('eSM');
-	$result = db_fetch_object(db_query('SELECT * FROM {Torneos} WHERE nid_Torneo = %d', $nid));
-  db_set_active('default');
+  $result = db_fetch_object(db_query('SELECT * FROM {eSM_Torneos} WHERE nid_Torneo = %d', $nid));
   
   return $result;
 }
@@ -233,9 +231,7 @@ function get_settings_torneo ($nid) {
  * 		número de participantes en número
  */
 function torneo_get_total_participantes ($nid_Torneo) {
-  db_set_active('eSM');
-		$resultado = db_result(db_query("SELECT COUNT(*) FROM {Torneos_Participantes} WHERE nid_Torneo = %d", $nid_Torneo));
-  db_set_active('default');
+  $resultado = db_result(db_query("SELECT COUNT(*) FROM {eSM_Torneos_Participantes} WHERE nid_Torneo = %d", $nid_Torneo));
   
   return $resultado;
 }
@@ -249,10 +245,8 @@ function torneo_get_total_participantes ($nid_Torneo) {
  * 		número de filas en el bracket
  */
 function torneo_get_total_brackets ($nid_Torneo) {
-  db_set_active('eSM');
-    $resultado = db_result(db_query("SELECT COUNT(*) FROM {Torneos_Brackets} WHERE nid_Torneo = %d", $nid_Torneo));
-  db_set_active('default');
-  
+  $resultado = db_result(db_query("SELECT COUNT(*) FROM {eSM_Torneos_Brackets} WHERE nid_Torneo = %d", $nid_Torneo));
+    
   return $resultado;
 }
 /**
@@ -267,9 +261,7 @@ function torneo_get_total_brackets ($nid_Torneo) {
  * 	array con la información del equipo o nulo si no existe
  */
 function _torneo_get_bracket_info ($nid_Torneo, $Ronda, $Posicion) {
-  db_set_active('eSM');
-		$team_info = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d", $nid_Torneo, $Ronda, $Posicion));
-  db_set_active('default');
+  $team_info = db_fetch_array(db_query("SELECT * FROM {eSM_Torneos_Brackets} WHERE nid_Torneo = %d AND Ronda = %d AND Posicion = %d", $nid_Torneo, $Ronda, $Posicion));
   
   return $team_info;
 }
@@ -281,9 +273,8 @@ function _torneo_get_bracket_info ($nid_Torneo, $Ronda, $Posicion) {
  * 		un db_query con todos los participantes
  */
 function torneo_get_participantes($nid_Torneo) {
-  db_set_active('eSM');                                                 //Obtiene la lista de participantes
-    $participantes = db_query('SELECT * FROM {Torneos_Participantes} WHERE nid_Torneo = %d', $nid_Torneo);
-  db_set_active('default');
+  //Obtiene la lista de participantes
+  $participantes = db_query('SELECT * FROM {eSM_Torneos_Participantes} WHERE nid_Torneo = %d', $nid_Torneo);
   
   return $participantes;
 }
@@ -294,9 +285,7 @@ function torneo_get_participantes($nid_Torneo) {
  * 		Estado a otorgar al torneo
  */
 function _torneo_update_estado($nid_Torneo, $estado) {
-  db_set_active('eSM');
-		db_query('UPDATE {Torneos} SET Estado = %d WHERE nid_Torneo = %d', $estado, $nid_Torneo);
-  db_set_active('default');
+  db_query('UPDATE {eSM_Torneos} SET Estado = %d WHERE nid_Torneo = %d', $estado, $nid_Torneo);
 }
 /**
  * Función para actualizar los resultados de un match en la tabla
@@ -305,18 +294,16 @@ function _torneo_update_estado($nid_Torneo, $estado) {
  * 		$nid_Equipo del equipo a pasar a la siguiente ronda
  */
 function _torneo_update_bracket($nid_Torneo, $nid_Equipo) {
-  db_set_active('eSM');
-		$team = db_fetch_array(db_query("SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo= %d and nid_Equipo = %d ORDER BY Ronda DESC LIMIT 1", $nid_Torneo, $nid_Equipo));
-  db_set_active('default');
+  $team = db_fetch_array(db_query("SELECT * FROM {eSM_Torneos_Brackets}
+								  WHERE nid_Torneo= %d and nid_Equipo = %d ORDER BY Ronda DESC LIMIT 1",
+								  $nid_Torneo, $nid_Equipo));
   
   $newround = $team['Ronda'] + 1;	//Calcula la nueva ronda a la que tiene que ser promovido el equipo
   $newpos = ceil((float)$team['Posicion'] / 2.0 );		//Calcula la nueva posición del equipo en el bracket
   
-  db_set_active('eSM');
-		db_query("INSERT INTO {Torneos_Brackets} (nid_Torneo, nid_Equipo, Ronda, Posicion)
-				 VALUES (%d, %d, %d, %d)",
-				 $nid_Torneo, $nid_Equipo, $newround, $newpos);
-  db_set_active('default');
+  db_query("INSERT INTO {eSM_Torneos_Brackets} (nid_Torneo, nid_Equipo, Ronda, Posicion)
+		   VALUES (%d, %d, %d, %d)",
+		   $nid_Torneo, $nid_Equipo, $newround, $newpos);
   
   //Si el móduo match está activado, manda llamar a la función para crear el match correspondiente
   if (module_exists('match')) {
@@ -346,10 +333,10 @@ function _torneo_create_match($nid_Torneo, $nid_Equipo, $ronda, $posicion) {
   //Si los dos equipos existen
   if ((is_array($away_team) && is_array($home_team)) && ($home_team['nid_Equipo'] != 1 && $away_team['nid_Equipo'] != 1)) {
 	//Obtiene la información del torneo
-	db_set_active('eSM');
-	  $torneo = db_fetch_object(db_query('SELECT * FROM {Torneos} WHERE nid_Torneo = %d', $nid_Torneo));
-	db_set_active('default');
-	
+	$torneo = db_fetch_object(db_query('SELECT * FROM {eSM_Torneos}
+									   WHERE nid_Torneo = %d',
+									   $nid_Torneo));
+		
 	//TODO: Obtener la información del número de rondas de la definición de otro lado
 	$numero_rondas = 3;
 	
@@ -373,9 +360,10 @@ function _torneo_create_match($nid_Torneo, $nid_Equipo, $ronda, $posicion) {
 	$node = _torneo_save_match(PROGRAMADO, $torneo->id_Modalidad_Juego_Temporada, $fecha, $numero_rondas, $home_team['nid_Equipo'], $away_team['nid_Equipo']);
 	
 	//Agrega el match a la tabla de Torneos_Equipos para poder desplegarlo en la vista de Detalles de Torneo
-	db_set_active('eSM');
-	  db_query('INSERT INTO {Retos_Torneos} (nid_Torneo, nid_Reto, Ronda) VALUES (%d, %d, %d)', $nid_Torneo, $node->nid, $ronda);
-	db_set_active('deafult');
+	db_query('INSERT INTO {eSM_Retos_Torneos}
+			 (nid_Torneo, nid_Reto, Ronda)
+			 VALUES (%d, %d, %d)',
+			 $nid_Torneo, $node->nid, $ronda);
   }
 }
 /**
@@ -451,9 +439,9 @@ function _torneo_finaliza_torneo($nid_Torneo) {
 	$equipos = array();
 	
 	while ($equipo = db_fetch_object($participantes)) {
-	  db_set_active('eSM');
-		$detalles_equipo = db_fetch_array(db_query('SELECT * FROM {Torneos_Brackets} WHERE nid_Torneo = %d AND nid_Equipo = %d ORDER BY Ronda DESC LIMIT 1', $nid_Torneo, $equipo->nid_Equipo));
-	  db_set_active('default');
+	  $detalles_equipo = db_fetch_array(db_query('SELECT * FROM {eSM_Torneos_Brackets}
+												 WHERE nid_Torneo = %d AND nid_Equipo = %d ORDER BY Ronda DESC LIMIT 1',
+												 $nid_Torneo, $equipo->nid_Equipo));
 	  
 	  //Arma el arreglo para pasar a la función de actualizar ránking
 	  $equipos[$detalles_equipo['nid_Equipo']]['nid_Equipo'] = $detalles_equipo['nid_Equipo'];
@@ -471,10 +459,8 @@ function _torneo_finaliza_torneo($nid_Torneo) {
   //Actualiza los badges de los equipos y jugadores
   //si el torneo está marcado para hacerlo
   if(module_exists('user_badges')) {
-	db_set_active('eSM');
-	  $badges = db_fetch_object(db_query('SELECT * FROM {Torneos_Badges} WHERE nid_Torneo = %d', $nid_Torneo));
-	db_set_active('default');
-	
+	$badges = db_fetch_object(db_query('SELECT * FROM {eSM_Torneos_Badges} WHERE nid_Torneo = %d', $nid_Torneo));
+		
 	//Si se han asignado badges a otorgar por este torneo
 	if (is_object($badges)) {
 	  _torneo_update_badges ($nid_Torneo, $badges);

@@ -56,11 +56,10 @@ function invitar_usuario_validate($form, $form_state) {
           form_set_error('invitado', 'No puedes invitar a este jugador porque ya pertenece a un equipo.');
       }
       else {
-          db_set_active('eSM');
-              $relaciones = db_query('SELECT * FROM {Integrantes_Equipo}
-                                     WHERE id_Jugador = %d AND nid_Equipo = %d',
-                                     $jugador->id_Jugador, $equipo->nid);
-          db_set_active('default');
+        $relaciones = db_query('SELECT * FROM {eSM_Integrantes_Equipo}
+                     WHERE id_Jugador = %d AND nid_Equipo = %d',
+                     $jugador->id_Jugador, $equipo->nid);
+
           while ($relacion = db_fetch_array($relaciones)) {
               switch ($relacion['Estado']) {
                   case 1:
@@ -94,12 +93,10 @@ function invitar_usuario_submit ($form, $form_state) {
     $id_Jugador = $form_state['values']['id_Jugador'];
     $uid_Invitado = $form_state['values']['uid_invitado'];
     
-    db_set_active('eSM');
-        db_query('INSERT INTO {Integrantes_Equipo}
-                 (nid_Equipo, id_Jugador, Estado, Mensaje)
-                 VALUES (%d, %d, %d, "%s")',
-                 $equipo->nid, $id_Jugador, INVITADO, $form_state['values']['Mensaje']);
-    db_set_active('default');
+    db_query('INSERT INTO {eSM_Integrantes_Equipo}
+             (nid_Equipo, id_Jugador, Estado, Mensaje)
+             VALUES (%d, %d, %d, "%s")',
+             $equipo->nid, $id_Jugador, INVITADO, $form_state['values']['Mensaje']);
     
     //Notifica al usuario que ha sido invitado a un equipo
     rules_invoke_event('usuario_invitado', $user, user_load(array('uid' => $uid_Invitado)), $equipo);

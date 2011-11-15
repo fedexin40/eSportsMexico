@@ -389,11 +389,9 @@ function term_is_active( $tid ) {
 	$modalidad  = NULL;
 	$temporada_activa = temporada_activa();
 	
-	db_set_active ('eSM');
-		$modalidades_activas = db_query('SELECT * FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}
+	$modalidades_activas = db_query('SELECT * FROM {eSM_Modalidad_Juego} AS m INNER JOIN {eSM_Modalidad_Juego_Temporada} AS t ON {m.id_Modalidad_Juego} = {t.id_Modalidad_Juego}
 										WHERE {id_Temporada} = %d', $temporada_activa->id_Temporada);
-	db_set_active ('default');
-	
+		
 	while ( $result = db_fetch_object($modalidades_activas) ) {
 		
 		//dpm( $result );
@@ -414,9 +412,7 @@ function term_is_active( $tid ) {
  */
 function temporada_activa() {
 	$temporada_activa = NULL;
-	db_set_active ('eSM');
-		$temporada_activa = db_fetch_object( db_query('SELECT * FROM {Temporada} WHERE {Estado} = %d', 1 ) );
-	db_set_active ('default');
+    $temporada_activa = db_fetch_object( db_query('SELECT * FROM {eSM_Temporada} WHERE {Estado} = %d', 1 ) );
 	return $temporada_activa;
 }
 
@@ -426,9 +422,9 @@ function temporada_activa() {
  * devuelve un objeto con todas las características de una modalidad
  */
 function get_modalidad( $id_Modalidad_Juego_Temporada ){
-	db_set_active('eSM');
-		$modalidad = db_fetch_object(db_query('SELECT * FROM {Modalidad_Juego} AS m INNER JOIN {Modalidad_Juego_Temporada} AS t ON m.{id_Modalidad_Juego} = t.{id_Modalidad_Juego} WHERE t.{id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
-	db_set_active('default');
+    $modalidad = db_fetch_object(db_query('SELECT * FROM {eSM_Modalidad_Juego} AS m INNER JOIN {eSM_Modalidad_Juego_Temporada} AS t ON m.{id_Modalidad_Juego} = t.{id_Modalidad_Juego}
+										  WHERE t.{id_Modalidad_Juego_Temporada} = %d', $id_Modalidad_Juego_Temporada));
+	
 	return $modalidad;
 }
 /**
@@ -443,9 +439,9 @@ function get_modalidades_activas (){
     $temporada = temporada_activa();   //Obtiene la temporada activa actual
     
     if (isset($temporada)) {
-        db_set_active('eSM');
-            $result = db_query('SELECT * FROM {Modalidad_Juego_Temporada} WHERE id_Temporada = %d', $temporada->id_Temporada);
-        db_set_active('default');
+
+        $result = db_query('SELECT * FROM {eSM_Modalidad_Juego_Temporada} WHERE id_Temporada = %d', $temporada->id_Temporada);
+
         $count = 0;
         while ($modalidad_activa = db_fetch_object($result)) {
             ++$count;
@@ -475,10 +471,9 @@ function get_modalidades_activas (){
  * 	Objeto Temporada con los datos de la temporada a la que pertenece el id_Modalidad_Juego_Temporada dado
  */
 function temporada_from_id_Modalida_Juego_Temporada ($id_Modalidad_Juego_Temporada) {
-  db_set_active('eSM');
-    $result = db_fetch_object(db_query('SELECT * FROM {Temporada} AS t INNER JOIN {Modalidad_Juego_Temporada} AS mjt ON t.id_Temporada = mjt.id_Temporada WHERE mjt.id_Modalidad_Juego_Temporada = %d', $id_Modalidad_Juego_Temporada));
-  db_set_active('default');
-  
+  $result = db_fetch_object(db_query('SELECT * FROM {eSM_Temporada} AS t INNER JOIN {eSM_Modalidad_Juego_Temporada} AS mjt ON t.id_Temporada = mjt.id_Temporada
+									 WHERE mjt.id_Modalidad_Juego_Temporada = %d', $id_Modalidad_Juego_Temporada));
+    
   return $result;
 }
 
@@ -492,10 +487,8 @@ function temporada_from_id_Modalida_Juego_Temporada ($id_Modalidad_Juego_Tempora
  * 	$mapas [id_Mapa] = Nombre
  */
 function mapas_get_mapas_modalidad ($id_Modalidad_Juego) {
-  db_set_active('eSM');
-    $result = db_query('SELECT * FROM {Mapa} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego);
-  db_set_active('default');
-  
+  $result = db_query('SELECT * FROM {eSM_Mapa} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego);
+    
   while ($mapa = db_fetch_object($result)) {
     $mapas[$mapa->id_Mapa] = $mapa->id_Mapa;
   }
@@ -511,10 +504,8 @@ function mapas_get_mapas_modalidad ($id_Modalidad_Juego) {
  * 	$mapas [id_Mapa] = Nombre
  */
 function modos_get_modos_modalidad ($id_Modalidad_Juego) {
-  db_set_active('eSM');
-    $result = db_query('SELECT * FROM {Modo_Juego} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego);
-  db_set_active('default');
-  
+  $result = db_query('SELECT * FROM {eSM_Modo_Juego} WHERE id_Modalidad_Juego = %d', $id_Modalidad_Juego);
+    
   while ($modo = db_fetch_object($result)) {
     $modos[$modo->id_Modo_Juego] = $modo->id_Modo_Juego;
   }
@@ -530,10 +521,8 @@ function modos_get_modos_modalidad ($id_Modalidad_Juego) {
  * 	$mapas [id_Mapa] = Nombre
  */
 function _mapas_get_mapas_nombre ($id_Mapa) {
-  db_set_active('eSM');
-    $result = db_fetch_array(db_query('SELECT * FROM {Mapa} WHERE id_Mapa = %d', $id_Mapa));
-  db_set_active('default');
-  
+  $result = db_fetch_array(db_query('SELECT * FROM {eSM_Mapa} WHERE id_Mapa = %d', $id_Mapa));
+    
   return $result['Nombre'];
 }
 /**
@@ -546,9 +535,7 @@ function _mapas_get_mapas_nombre ($id_Mapa) {
  * 	$mapas [id_Mapa] = Nombre
  */
 function _modos_get_modos_nombre ($id_Modo_Juego) {
-  db_set_active('eSM');
-    $result = db_fetch_array(db_query('SELECT * FROM {Modo_Juego} WHERE id_Modo_Juego = %d', $id_Modo_Juego));
-  db_set_active('default');
-  
+  $result = db_fetch_array(db_query('SELECT * FROM {eSM_Modo_Juego} WHERE id_Modo_Juego = %d', $id_Modo_Juego));
+    
   return $result['Nombre'];
 }

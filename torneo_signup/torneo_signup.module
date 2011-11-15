@@ -179,10 +179,9 @@ function _torneo_signup_esta_inscrito($uid, $nid_Torneo) {
  * 	$nid_Equipo
  */
 function _torneo_signup_check_team_signup($nid_Equipo, $nid_Torneo) {
-  db_set_active('eSM');
-	$result = db_fetch_array(db_query('SELECT * FROM {Torneos_Participantes} WHERE nid_Equipo = %d AND nid_Torneo = %d', $nid_Equipo, $nid_Torneo));
-  db_set_active('default');
-  
+  $result = db_fetch_array(db_query('SELECT * FROM {eSM_Torneos_Participantes}
+									WHERE nid_Equipo = %d AND nid_Torneo = %d', $nid_Equipo, $nid_Torneo));
+    
   if (is_array($result))
 	return TRUE;
   else
@@ -195,9 +194,7 @@ function _torneo_signup_check_team_signup($nid_Equipo, $nid_Torneo) {
  *		$nid_Torneo
  */
 function _torneo_signup_register_team($nid_Equipo, $nid_Torneo) {
-  db_set_active('eSM');
-	db_query('INSERT INTO {Torneos_Participantes} (nid_Torneo, nid_Equipo)
-			 VALUES (%d, %d)',
-			 $nid_Torneo, $nid_Equipo);
-  db_set_active('default');
+  db_query('INSERT INTO {eSM_Torneos_Participantes} (nid_Torneo, nid_Equipo)
+		   VALUES (%d, %d)',
+		   $nid_Torneo, $nid_Equipo);
 }

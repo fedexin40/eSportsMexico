@@ -41,12 +41,12 @@ function team_solicitud_validate($form, &$form_state) {
 	global $user;
 	$nid_Equipo = $form_state['values']['nid_Equipo'];
 	//Verifica que no se inserten dos solicitudes por parte del jugador
-	db_set_active( 'eSM' );
-		$solicitud = db_fetch_object(db_query('SELECT ie.Estado FROM {Integrantes_Equipo} AS ie
-											  INNER JOIN {Jugador} AS j ON ie.id_Jugador = j.id_Jugador
-											  WHERE j.uid = %d AND ie.nid_Equipo = %d',
-											  $user->uid, $nid_Equipo));
-	db_set_active( 'default' );
+	
+	$solicitud = db_fetch_object(db_query('SELECT ie.Estado FROM {eSM_Integrantes_Equipo} AS ie
+										  INNER JOIN {eSM_Jugador} AS j ON ie.id_Jugador = j.id_Jugador
+										  WHERE j.uid = %d AND ie.nid_Equipo = %d',
+										  $user->uid, $nid_Equipo));
+	
 	if (is_object($solicitud)) {
 		if($solicitud->Estado == INVITADO) {
 			form_set_error('nid_Equipo', t('El capitan de este equipo ya te ha invitado.'));
@@ -76,19 +76,15 @@ function team_solicitud_submit($form, &$form_state) {
 	global $user;
 	$equipo = node_load( $form_state[ 'values' ][ 'nid_Equipo' ] );
 	
-	db_set_active('eSM');
-		$jugador = db_fetch_object(db_query('SELECT * FROM {Jugador}
-																				WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
-																				$user->uid, $equipo->id_Modalidad_Juego_Temporada));
-	db_set_active('default');
+	$jugador = db_fetch_object(db_query('SELECT * FROM {eSM_Jugador}
+										WHERE uid = %d AND id_Modalidad_Juego_Temporada = %d',
+										$user->uid, $equipo->id_Modalidad_Juego_Temporada));
 	
 	//Insertar el registro de solicitud en la base de datos
-	db_set_active( 'eSM' );
-		db_query ('INSERT INTO { Integrantes_Equipo }
-							( nid_Equipo, id_Jugador, Estado, Mensaje )
-							VALUES ( %d, %d, %d, "%s" )',
-							$equipo->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['Mensaje']);
-	db_set_active('default');
+	db_query ('INSERT INTO {eSM_Integrantes_Equipo }
+			  ( nid_Equipo, id_Jugador, Estado, Mensaje )
+			  VALUES ( %d, %d, %d, "%s" )',
+			  $equipo->nid, $jugador->id_Jugador, SOLICITA, $form_state['values']['Mensaje']);
   
   //Notifica al capitán del equipo utilizando el módulo rules para disparar una acción configurable
   rules_invoke_event('solicitud_usuario', $user, user_load(array('uid' => $team->uid)), $team);

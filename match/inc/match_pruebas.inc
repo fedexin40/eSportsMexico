@@ -73,23 +73,16 @@ function match_pruebas_submit($form, &$form_state) {
 	$pruebas = match_get_pruebas($node->nid);
 	
   if (!is_array($pruebas)) {
-	db_set_active('eSM');
-	  db_query('INSERT INTO {Prueba} (nid_Reto) VALUES (%d)', $node->nid);
-	db_set_active('default');
-  }
+	db_query('INSERT INTO {eSM_Prueba} (nid_Reto) VALUES (%d)', $node->nid);
+	  }
 
   if (team_user_is_team_capitan($user->uid, $node->nid_Equipo_Local)) {
-	db_set_active('eSM');
-	  db_query('UPDATE {Prueba} SET Prueba_Jugador_Local = "%s" WHERE nid_Reto = %d', $form_state['values']['prueba'], $node->nid);
-	db_set_active('default');
+	db_query('UPDATE {eSM_Prueba} SET Prueba_Jugador_Local = "%s" WHERE nid_Reto = %d', $form_state['values']['prueba'], $node->nid);
   }
   else {
-	db_set_active('eSM');
-	  db_query('UPDATE {Prueba} SET Prueba_Jugador_Visitante = "%s" WHERE nid_Reto = %d', $form_state['values']['prueba'], $node->nid);
-	db_set_active('default');
+	db_query('UPDATE {eSM_Prueba} SET Prueba_Jugador_Visitante = "%s" WHERE nid_Reto = %d', $form_state['values']['prueba'], $node->nid);
   }
 
-	drupal_set_message('Has enviado tu prueba correctamente.');
-	drupal_goto('node/'. $node->nid);
-
+  drupal_set_message('Has enviado tu prueba correctamente.');
+  drupal_goto('node/'. $node->nid);
 }

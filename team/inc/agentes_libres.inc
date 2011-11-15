@@ -35,12 +35,10 @@ function agente_libre() {
   }
       
     //Trata de obtener la información del usuario
-    db_set_active('eSM');
-        $jugador = db_fetch_object(db_query('SELECT * FROM {Agente_Libre} AS al
-                                            INNER JOIN {Jugador} AS j ON al.id_Jugador = j.id_Jugador
-                                            WHERE j.uid = %d',
-                                            $user->uid));
-    db_set_active('default');
+    $jugador = db_fetch_object(db_query('SELECT * FROM {eSM_Agente_Libre} AS al
+                                        INNER JOIN {eSM_Jugador} AS j ON al.id_Jugador = j.id_Jugador
+                                        WHERE j.uid = %d',
+                                        $user->uid));
     
     $form['id_Modalidad_Juego_Temporada'] = array (
         '#type' => 'hidden',
@@ -139,62 +137,54 @@ function agente_libre_submit ( $form, $form_state ) {
     
     //1.- Insertar un registro en la tabla de Jugador para reflejar que el usuario se inscribió a la modalidad como agente libre
     if ($op == 'insert') {
-      db_set_active( 'eSM' );
-        db_query("INSERT INTO { Jugador }
+        db_query("INSERT INTO {eSM_Jugador}
                 (id_Modalidad_Juego_Temporada, uid, Fecha_Registro, Estado)
                 VALUES ( %d, %d, %d, %d )",
                 $id_Modalidad_Juego_Temporada, $user->uid, $fecha_registro, AGENTE_LIBRE);
-      db_set_active('default');
+
       $jugador = get_jugador($user->uid, $id_Modalidad_Juego_Temporada);
     }
     if ($op == 'update') {
-      db_set_active('eSM');
-        db_query("UPDATE {Jugador}
+        db_query("UPDATE {eSM_Jugador}
                 SET Estado = %d
                 WHERE id_Modalidad_Juego_Temporada = %d AND uid = %d",
                 AGENTE_LIBRE, $id_Modalidad_Juego_Temporada, $user->uid);
-      db_set_active( 'default' );
     }
     
-    db_set_active('eSM');
-        $no_registros = db_result(db_query('SELECT COUNT(*) FROM {Agente_Libre} WHERE id_Jugador = %d', $jugador->id_Jugador));
-    db_set_active('default');
-    
+    $no_registros = db_result(db_query('SELECT COUNT(*) FROM {eSM_Agente_Libre}
+                                       WHERE id_Jugador = %d', $jugador->id_Jugador));
+        
     if ($no_registos > 0) {
-        db_set_active('eSM');
-            //2.- Actualiza la descripción ingresada por el usuario
-            db_query("UPDATE {Agente_Libre} SET Descripcion = '%s'
-                     WHERE id_Jugador = %d",
-                    $form_state['values']['presentacion'], $jugador->id_Jugador);
-            //3.- Acutaliza la disponibilidad de días en la tabla;
-            db_query("UPDATE {Disponibilidad_Dias}
-                     SET Lunes = %d, Martes = %d, Miercoles = %d, Jueves = %d, Viernes = %d, Sabado = %d, Domingo= %d
-                     WHERE id_Jugador = %d",
-                     $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo'], $jugador->id_Jugador);
-            //4.- Actualiza la disponibildad de horas en la tabla;
-            db_query("UPDATE {Disponibilidad_Horas}
-                     SET  Morning = %d, Evening = %d, Night = %d
-                     WHERE id_Jugador = %d",
-                     $horas['morning'], $horas['evening'], $horas['nigth'], $jugador->id_Jugador);
-        db_set_active( 'default' );
+        //2.- Actualiza la descripción ingresada por el usuario
+        db_query("UPDATE {eSM_Agente_Libre} SET Descripcion = '%s'
+                 WHERE id_Jugador = %d",
+                $form_state['values']['presentacion'], $jugador->id_Jugador);
+        //3.- Acutaliza la disponibilidad de días en la tabla;
+        db_query("UPDATE {eSM_Disponibilidad_Dias}
+                 SET Lunes = %d, Martes = %d, Miercoles = %d, Jueves = %d, Viernes = %d, Sabado = %d, Domingo= %d
+                 WHERE id_Jugador = %d",
+                 $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo'], $jugador->id_Jugador);
+        //4.- Actualiza la disponibildad de horas en la tabla;
+        db_query("UPDATE {eSM_Disponibilidad_Horas}
+                 SET  Morning = %d, Evening = %d, Night = %d
+                 WHERE id_Jugador = %d",
+                 $horas['morning'], $horas['evening'], $horas['nigth'], $jugador->id_Jugador);
     }
     else {
-        db_set_active('eSM');
-            //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
-            db_query("INSERT INTO { Agente_Libre } (id_Jugador, Descripcion)
-                     VALUES ( %d, '%s' )",
-                    $jugador->id_Jugador, $form_state['values']['presentacion']);
-            //3.- Insertar la disponibilidad de días en la tabla;
-            db_query("INSERT INTO {Disponibilidad_Dias}
-                     (id_Jugador, Lunes, Martes, Miercoles, Jueves, Viernes, Sabado, Domingo)
-                     VALUES (%d, %d, %d, %d, %d, %d, %d, %d)",
-                     $jugador->id_Jugador, $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo']);
-            //4.- Insertar la disponibildad de horas en la tabla;
-            db_query("INSERT INTO {Disponibilidad_Horas}
-                     (id_Jugador, Morning, Evening, Night)
-                     VALUES (%d, %d, %d, %d)",
-                     $jugador->id_Jugador, $horas['morning'], $horas['evening'], $horas['nigth']);
-        db_set_active( 'default' );
+        //2.- Insertar un registro en la tabla de Agente_Libre relacionando el id_Agente_Libre con el id_Jugador y la descripción ingresada por el usuario
+        db_query("INSERT INTO {eSM_Agente_Libre} (id_Jugador, Descripcion)
+                 VALUES ( %d, '%s' )",
+                $jugador->id_Jugador, $form_state['values']['presentacion']);
+        //3.- Insertar la disponibilidad de días en la tabla;
+        db_query("INSERT INTO {eSM_Disponibilidad_Dias}
+                 (id_Jugador, Lunes, Martes, Miercoles, Jueves, Viernes, Sabado, Domingo)
+                 VALUES (%d, %d, %d, %d, %d, %d, %d, %d)",
+                 $jugador->id_Jugador, $dias['lunes'], $dias['martes'], $dias['miercoles'], $dias['jueves'], $dias['viernes'], $dias['sabado'], $dias['domingo']);
+        //4.- Insertar la disponibildad de horas en la tabla;
+        db_query("INSERT INTO {eSM_Disponibilidad_Horas}
+                 (id_Jugador, Morning, Evening, Night)
+                 VALUES (%d, %d, %d, %d)",
+                 $jugador->id_Jugador, $horas['morning'], $horas['evening'], $horas['nigth']);
     }
     drupal_set_message( "Te has agregado correctamente como Agente Libre." );
 } 

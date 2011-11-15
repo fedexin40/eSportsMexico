@@ -161,10 +161,9 @@ function torneo_admin_settings_form($form_state, $node = NULL, $node_type = NULL
 function torneo_admin_settings_form_validate ($form, $form_state) {
   // Encuentra si estamos haciendo una actualización de un Torneo o insertando uno nuevo.
    $node = $form['#node'];
-   db_set_active('eSM');
-    $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {Torneos} WHERE nid_Torneo = %d", $node->nid));
-   db_set_active('default');
-   
+   $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {eSM_Torneos}
+                                        WHERE nid_Torneo = %d", $node->nid));
+      
    $is_update = $settings && ($settings->n > 0);
    
    if ($is_update) {
@@ -184,10 +183,9 @@ function torneo_admin_settings_form_submit ($form, $form_state) {
    $fecha_incio = strtotime($form_state['values']['Fecha_Inicio']);
    $fecha_final = strtotime($form_state['values']['Fecha_Final']);
    
-   db_set_active('eSM');
-    $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {Torneos} WHERE nid_Torneo = %d", $node->nid));
-   db_set_active('default');
-   
+   $settings = db_fetch_object(db_query("SELECT count(nid_Torneo) as n FROM {eSM_Torneos}
+                                        WHERE nid_Torneo = %d", $node->nid));
+      
    $is_update = $settings && ($settings->n > 0);
    
    //Encuentra el id_Modalidad_Juego_Temporada de la categoría asignada al nodo.
@@ -200,34 +198,26 @@ function torneo_admin_settings_form_submit ($form, $form_state) {
       if (is_object($modalidad)) {        //El nodo es activo en una modalidad y tenemos ya los datos de la modalidad.
         
         if ($is_update) {
-          db_set_active('eSM');
-            db_query("UPDATE {Torneos}
-                     SET id_Modalidad_Juego_Temporada=%d, Tipo=%d, Eliminacion=%d, Rondas_Dia=%d, Fecha_Inicio=%d, Fecha_Final=%d WHERE nid_Torneo = %d", 
-                    $modalidad->id_Modalidad_Juego_Temporada, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, $node->nid);
-          db_set_active('default');
+          db_query("UPDATE {eSM_Torneos}
+                   SET id_Modalidad_Juego_Temporada=%d, Tipo=%d, Eliminacion=%d, Rondas_Dia=%d, Fecha_Inicio=%d, Fecha_Final=%d WHERE nid_Torneo = %d", 
+                  $modalidad->id_Modalidad_Juego_Temporada, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, $node->nid);
           
           if (module_exists('user_badges')) {
-            db_set_active('eSM');
-              db_query('UPDATE {Torneos_Badges}
+              db_query('UPDATE {eSM_Torneos_Badges}
                        SET Badge_Win = %d, Badge_Participant = %d WHERE nid_Torneo = %d',
                       $form_state['values']['Badge_Win'], $form_state['values']['Badge_Participant'], $node->nid);
-            db_set_active('default');
           }
         } 
         else {
           
-          db_set_active('eSM');
-            db_query("INSERT INTO {Torneos} (nid_Torneo, id_Modalidad_Juego_Temporada, Tipo, Eliminacion, Rondas_Dia, Fecha_Inicio, Fecha_Final, Estado) 
+          db_query("INSERT INTO {eSM_Torneos} (nid_Torneo, id_Modalidad_Juego_Temporada, Tipo, Eliminacion, Rondas_Dia, Fecha_Inicio, Fecha_Final, Estado) 
              VALUES(%d, %d, %d, %d, %d, %d, %d, %d)", 
              $node->nid, $modalidad->id_Modalidad_Juego_Temporada, $form_state['values']['Tipo'], $form_state['values']['Eliminacion'], $form_state['values']['Rondas_Dia'], $fecha_incio, $fecha_final, FUTURO);
-          db_set_active('default');
           
           if (module_exists('user_badges')) {
-            db_set_active('eSM');
-              db_query('INSERT INTO {Torneos_Badges} (nid_Torneo, Badge_Win, Badge_Participant)
-                      VALUES (%d, %d, %d)',
-                      $node->nid, $form_state['values']['Badge_Win'], $form_state['values']['Badge_Participant']);
-            db_set_active('default');
+            db_query('INSERT INTO {eSM_Torneos_Badges} (nid_Torneo, Badge_Win, Badge_Participant)
+                    VALUES (%d, %d, %d)',
+                    $node->nid, $form_state['values']['Badge_Win'], $form_state['values']['Badge_Participant']);
           }
         }
         drupal_set_message(t('Se han guardado las opciones correctamente.'));

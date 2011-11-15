@@ -164,9 +164,7 @@ function modalidad_lista_desafios_conflicto () {
  * Función para validar que el desafío efectivamente esté todavía en estado de conflicto
  */
 function modalidad_match_conflict_validate($form, $form_state) {
-  db_set_active('eSM');
-	$reto = db_fetch_object(db_query( 'SELECT Estado FROM {Reto} WHERE nid_Reto = %d', $form_state['values']['nid_Reto']));
-  db_set_active('default');
+  $reto = db_fetch_object(db_query( 'SELECT Estado FROM {eSM_Reto} WHERE nid_Reto = %d', $form_state['values']['nid_Reto']));
   
   if(!($reto->Estado == CONFLICTO))
     form_set_error('nid_Reto', t('Este desafio ya ha sido reportado.'));

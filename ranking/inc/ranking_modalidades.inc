@@ -96,13 +96,11 @@ function mostrar_puntuacion(  ) {
  * Función para saber la actividad reciente de un equipo
  */
 function get_actividad($nid_Equipo) {
-    db_set_active('eSM');
-	$time = db_fetch_array(db_query('SELECT (max( Fecha_Inicio )) AS numdays FROM { Reto } AS r
-					INNER JOIN {Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
+    $time = db_fetch_array(db_query('SELECT (max( Fecha_Inicio )) AS numdays FROM {eSM_Reto } AS r
+					INNER JOIN {eSM_Inicio_Reto} AS ir ON r.nid_Reto = ir.nid_Reto
 					WHERE ((ir.nid_Equipo_Local = %d OR ir.nid_Equipo_Visitante = %d) && r.Estado = %d)',
 					$nid_Equipo, $nid_Equipo, COMPLETADO));
-    db_set_active( 'default' );
-	
+    	
     $matches = time( ) - $time[ 'numdays' ];
     $image_path = drupal_get_path('module', 'ranking') . '/images/';
 	

@@ -6,13 +6,11 @@ function team_administrar_activos() {
   global $user;
   $equipo = node_load( arg( 1 ) );  //carga el objeto nodo o equipo
 
-  db_set_active( 'eSM' );  //Carga todos los jugadores activos en el equipo.
-    $jugadores = db_query('SELECT * FROM { Jugador } AS j
-                          INNER JOIN { Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
-                          INNER JOIN { Equipo } AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
-                          WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
-                          $equipo->nid, ACEPTADO);
-  db_set_active('default');
+  $jugadores = db_query('SELECT * FROM {eSM_Jugador } AS j
+                        INNER JOIN {eSM_Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
+                        INNER JOIN {eSM_Equipo } AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+                        WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
+                        $equipo->nid, ACEPTADO);
   
   //Despliega los jugadores
   $count = 0;
@@ -73,17 +71,15 @@ function team_administrar_activos_submit( $form, $form_state ) {
   foreach( element_children($form_state['values']['checkboxes']) as $jugador ) { 
     if ($form_state['values']['checkboxes'][$jugador] != 0) {
       ++$count;
-      db_set_active('eSM');
-        db_query('UPDATE { Integrantes_Equipo }
+        db_query('UPDATE {eSM_Integrantes_Equipo }
                  SET Estado = %d
                  WHERE nid_Equipo = %d AND id_Jugador = %d',
                  RECHAZADO, $nid_Equipo, $jugador);
         //Actualiza el estado de la tabla de jugador
-        db_query ('UPDATE { Jugador }
+        db_query ('UPDATE {eSM_Jugador }
                   SET Estado = %d
                   WHERE id_Jugador = %d',
                   AGENTE_LIBRE, $jugador);
-      db_set_active('default');
       
       //Notifica al ususario que ha sido expulsado del equipo
       rules_invoke_event('usuario_expulsado', $user, user_load(array('uid' => $jugador->uid)), node_load(array('nid' => $nid_Equipo)));
@@ -101,13 +97,12 @@ function team_administrar_activos_submit( $form, $form_state ) {
 function team_administrar_solicitudes( ) {
   $equipo = node_load(arg(1));  //carga el objeto nodo o equipo
   
-  db_set_active('eSM');  //Carga todos los jugadores que solicitaron entrar en el equipo.
-    $jugadores = db_query('SELECT * FROM { Jugador } AS j
-                          INNER JOIN { Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
-                          INNER JOIN { Equipo } AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
-                          WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
-                          $equipo->nid, SOLICITA);
-  db_set_active('default');
+  //Carga todos los jugadores que solicitaron entrar en el equipo.
+  $jugadores = db_query('SELECT * FROM {eSM_Jugador } AS j
+                        INNER JOIN {eSM_Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
+                        INNER JOIN {eSM_Equipo } AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+                        WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
+                        $equipo->nid, SOLICITA);
   
   $count = 0;
   $checkboxes = array ();
@@ -164,11 +159,10 @@ function team_administrar_solicitudes_validate($form, $form_state) {
   foreach( element_children($form_state['values']['checkboxes']) as $jugador ) { 
     if ($form_state['values']['checkboxes'][$jugador] != 0) {
       ++$count;
-      db_set_active('eSM');
-        $account = db_fetch_object(db_query('SELECT * FROM {Jugador}
-                                           WHERE id_Jugador = %d',
-                                           $jugador));
-      db_set_active('default');
+      $account = db_fetch_object(db_query('SELECT * FROM {eSM_Jugador}
+                                         WHERE id_Jugador = %d',
+                                         $jugador));
+      
       if ($account->Estado == TIENE_EQUIPO) {
         $account = user_load(array('uid' => $jugador->uid));
         form_set_error('checkboxes', t('El jugador '. $account->name .' ya pertenece a otro equipo.'));
@@ -192,17 +186,16 @@ function team_administrar_solicitudes_submit($form, $form_state) {
   foreach( element_children($form_state['values']['checkboxes']) as $jugador ) { 
     if ($form_state['values']['checkboxes'][$jugador] != 0) {
       ++$count;
-      db_set_active('eSM');
-        db_query('UPDATE { Integrantes_Equipo }
+      
+        db_query('UPDATE {eSM_Integrantes_Equipo }
                  SET Estado = %d
                  WHERE nid_Equipo = %d AND id_Jugador = %d',
                  ACEPTADO, $nid_Equipo, $jugador);
         //Actualiza el estado de la tabla de jugador
-        db_query ('UPDATE { Jugador }
+        db_query ('UPDATE {eSM_Jugador }
                   SET Estado = %d
                   WHERE id_Jugador = %d',
                   TIENE_EQUIPO, $jugador);
-      db_set_active('default');
       
       //Notifica al ususario que ha sido aceptado en el equipo
       rules_invoke_event('usuario_aceptado', $user, user_load(array('uid' => $jugador->uid)), node_load(array('nid' => $nid_Equipo)));
@@ -224,13 +217,11 @@ function team_administrar_invitados( ) {
   $output = '<fieldset class="collapsible"><legend>Jugadores Invitados</legend>';
   
   //Carga todos los jugadores invitados en el equipo.
-  db_set_active( 'eSM' );  
-    $jugadores = db_query('SELECT * FROM { Jugador } AS j
-                          INNER JOIN { Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
-                          INNER JOIN { Equipo }  AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
-                          WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
-                          $equipo->nid, INVITADO);
-  db_set_active( 'default' );
+  $jugadores = db_query('SELECT * FROM {eSM_Jugador } AS j
+                        INNER JOIN {eSM_Integrantes_Equipo } AS ie ON j.{ id_Jugador } = ie.{ id_Jugador }
+                        INNER JOIN {eSM_Equipo }  AS e ON ie.{ nid_Equipo } = e.{ nid_Equipo }
+                        WHERE e.{ nid_Equipo } = %d AND ie.{ Estado } = %d',
+                        $equipo->nid, INVITADO);
   
   $count = 0;
   //Despliega los jugadores 

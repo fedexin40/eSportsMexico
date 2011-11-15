@@ -194,11 +194,9 @@ function ranking_rules_event_info() {
  *		
  */
 function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $nid_Ganador, $Puntuacion_Local, $Puntuacion_Visitante) {	
-	db_set_active('eSM');
-		$puntos_jugador_superior = db_query('SELECT * FROM {Puntos_Desafio_Jugador_Superior}');
-		$puntos_jugador_inferior = db_query('SELECT * FROM {Puntos_Desafio_Jugador_Inferior}');
-	db_set_active('default');
-	
+	$puntos_jugador_superior = db_query('SELECT * FROM {eSM_Puntos_Desafio_Jugador_Superior}');
+	$puntos_jugador_inferior = db_query('SELECT * FROM {eSM_Puntos_Desafio_Jugador_Inferior}');
+		
 	$diferenciaPuntuacion = $Puntuacion_Local - $Puntuacion_Visitante;
 			
 	if( $diferenciaPuntuacion < 0 ) {		//El Equipo Local es el de Puntuación Inferior
@@ -255,10 +253,6 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
 		}
 	}	
 }
-	
-	
-	
-	
 /**
  *	Función para calcular el ranking luego de un desafío
  *	@Param 
@@ -268,10 +262,8 @@ function _ranking_calcula_desafio ($nid_Equipo_Local, $nid_Equipo_Visitante, $ni
  *		$equipos [$i]['ronda']
  */
 function _ranking_calcula_torneo( $equipos ) {
-	db_set_active('eSM');
-		$resultado = db_query('SELECT * FROM {Puntuacion_Torneos} ORDER BY Inscritos ASC');
-	db_set_active('default');
-	
+    $resultado = db_query('SELECT * FROM {eSM_Puntuacion_Torneos} ORDER BY Inscritos ASC');
+		
 	$numero_equipos = sizeof( $equipos );
 	
 	while($tabla_puntuacion = db_fetch_array($resultado)) {
@@ -313,9 +305,7 @@ function _ranking_calcula_torneo( $equipos ) {
  * La variable win indica si ganó o perdió el desafío y el valor por defecto es 0 (Perdió el desafío)
  */
 function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
-    db_set_active('eSM');
-        $puntuacion = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
-    db_set_active('default');
+    $puntuacion = db_fetch_object(db_query('SELECT * FROM {eSM_Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
 
     if ($torneo == 0) {         //El partido es un desafío, hace la actualización de puntos y partidos jugados
 		
@@ -357,10 +347,11 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
             ++$puntuacion->TG;
     }
     
-    db_set_active('eSM');
-        db_query('UPDATE {Puntuacion} SET Puntuacion = %d, PJ = %d, PG = %d, Racha = %d, TJ = %d, TG = %d WHERE nid_Equipo = %d', $puntuacion->Puntuacion, $puntuacion->PJ, $puntuacion->PG, $puntuacion->Racha, $puntuacion->TJ, $puntuacion->TG, $nid_Equipo);
-    db_set_active('default');
-    
+    db_query('UPDATE {eSM_Puntuacion}
+			 SET Puntuacion = %d, PJ = %d, PG = %d, Racha = %d, TJ = %d, TG = %d
+			 WHERE nid_Equipo = %d',
+			 $puntuacion->Puntuacion, $puntuacion->PJ, $puntuacion->PG, $puntuacion->Racha, $puntuacion->TJ, $puntuacion->TG, $nid_Equipo);
+        
     return;
 }
 /**
@@ -373,13 +364,11 @@ function actualizar_ranking($nid_Equipo, $puntos, $torneo = 0, $win = 0) {
  * 		objeto db_query con la tabla ordenada de equipos
  */
 function ranking_get_ranking($id_Modalidad_Juego_Temporada) {
-	db_set_active('eSM');
-		$result = db_query('SELECT * FROM {Puntuacion} AS p INNER JOIN {Equipo} AS e
+		$result = db_query('SELECT * FROM {eSM_Puntuacion} AS p INNER JOIN {eSM_Equipo} AS e
 				   ON p.nid_Equipo = e.nid_Equipo
 				   WHERE id_Modalidad_Juego_Temporada = %d AND e.Estado = %d
 				   ORDER BY Puntuacion DESC, PG DESC, TJ DESC, PJ DESC, p.nid_Equipo ASC',
 				   $id_Modalidad_Juego_Temporada, ACTIVO);
-	db_set_active('default');
 	
 	return $result;
 }
@@ -436,10 +425,8 @@ function ranking_get_ranking_equipo ($nid_Equipo, $id_Modalidad_Juego_Temporada)
  *  division
  */
 function ranking_get_division_equipo ($posicion) {
-  db_set_active('eSM');
-    $divisiones = db_query('SELECT * FROM {Puntuacion_Divisiones} ORDER BY Jugadores ASC');
-  db_set_active('default');
-  
+  $divisiones = db_query('SELECT * FROM {eSM_Puntuacion_Divisiones} ORDER BY Jugadores ASC');
+    
   while($division = db_fetch_object($divisiones)) {
     if(!($posicion > $division->Jugadores))
       return $division->Nombre;
@@ -454,10 +441,8 @@ function ranking_get_division_equipo ($posicion) {
  *  nid_Equipo
  */
 function _ranking_get_team_puntuacion ($nid_Equipo) {
-	db_set_active('eSM');
-		$result = db_fetch_object(db_query('SELECT * FROM {Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
-	db_set_active('default');
-	
+    $result = db_fetch_object(db_query('SELECT * FROM {eSM_Puntuacion} WHERE nid_Equipo = %d', $nid_Equipo));
+		
 	return $result;
 }
 /**

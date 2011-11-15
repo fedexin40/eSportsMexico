@@ -9,9 +9,7 @@ function taxonomy_term_rules () {
   
   
   //Obtenemos las reglas
-  db_set_active('eSM');
-	$reglas = db_fetch_object(db_query('SELECT * FROM {Reglas} WHERE id_Modalidad_Juego = %d', $modalidad->id_Modalidad_Juego));
-  db_set_active('default');
+  $reglas = db_fetch_object(db_query('SELECT * FROM {eSM_Reglas} WHERE id_Modalidad_Juego = %d', $modalidad->id_Modalidad_Juego));
   
   //Colocamos el título de la pestaña
   drupal_set_title(t('Reglamento '. $modalidad->Nombre));

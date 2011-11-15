@@ -2,11 +2,9 @@
 //Función que recibe un identificador de juego y temporada
 //y devuelve un arreglo con los datos de todos los equipos inscritos
 function get_equipos( $id_Modalidad_Juego_Temporada ) {
-    db_set_active('eSM');
-        $result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {Equipo}
-			    WHERE {id_Modalidad_Juego_Temporada} = %d AND {Estado} = %d',
-			    $id_Modalidad_Juego_Temporada, ACTIVO));
-    db_set_active('default');
+	$result = (db_query('SELECT {nid_Equipo}, {Abreviacion} FROM {eSM_Equipo}
+			WHERE {id_Modalidad_Juego_Temporada} = %d AND {Estado} = %d',
+			$id_Modalidad_Juego_Temporada, ACTIVO));
     
     $equipos = array( );
     
@@ -48,31 +46,16 @@ function is_capitan($uid, $id_Modalidad_Juego_Temporada) {
  *  un tid y de una variable_modalidades almacenada en la tabla variables de drupal
  *  que contiene el vid de nuestro vocabulario
  */
-function get_term_data( $tid )
-{
+function get_term_data( $tid ) {
     
-    $term_data_set = db_query
-    (
-      "SELECT
-      { vid }
-      FROM
-      { term_data }
-      WHERE
-      { tid } = %d
-      AND
-      { vid } = %d",
-      arg( 2 ),
-      variable_get( 'vocabulario_modalidades', NULL )
-    );
+    $term_data_set = db_query("SELECT { vid } FROM { term_data }
+							  WHERE { tid } = %d AND { vid } = %d",
+							  arg( 2 ), variable_get( 'vocabulario_modalidades', NULL ));
     
     $term_data_set = db_fetch_object( $term_data_set );
     
     return $term_data_set;
-    
 }
-
-
-
 /**
  * función para obtener los equipos inscritos
  * en una modalidad de la temporada activa
@@ -82,9 +65,10 @@ function get_term_data( $tid )
  * o db_fetch_array
  */
 function get_user_not_affiliated_teams( $user ) {
-	db_set_active('eSM');
-		$teams = db_query('SELECT * FROM {Equipo} AS e INNER JOIN {Puntuacion} AS p ON e.nid_Equipo = p.nid_Equipo WHERE {id_Modalidad_Juego_Temporada} = %d ORDER BY Puntuacion DESC', $id_Modalidad_Juego_Temporada);
-	db_set_active('default');
-	
+	$teams = db_query('SELECT * FROM {eSM_Equipo} AS e
+					  INNER JOIN {eSM_Puntuacion} AS p ON e.nid_Equipo = p.nid_Equipo
+					  WHERE {id_Modalidad_Juego_Temporada} = %d ORDER BY Puntuacion DESC',
+					  $id_Modalidad_Juego_Temporada);
+		
 	return $teams;
 }
