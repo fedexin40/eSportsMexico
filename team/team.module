@@ -531,14 +531,18 @@ function team_block( $op = 'list', $delta = 0, $edit = array()) {
         
         case 1:
           $block = array();
-          $block['subject'] = t('Juegos en los que participa');
-          $block['content'] = team_active_games_block();
+          if($content = team_active_games_block()) {
+            $block['subject'] = t('Juegos en los que participa');
+            $block['content'] = $content;
+          }
           return $block;
           
         case 2:
           $block = array();
-          $block['subject'] = t('Team Roster');
-          $block['content'] = $content;
+          if($content = team_roster_get_block()) {
+            $block['subject'] = t('Team Roster');
+            $block['content'] = $content;
+          }
           return $block;
         
         case 3:
